@@ -8,7 +8,7 @@
 
 ## 확정 스택
 - 프론트: Astro 5+ (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4
-- 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, Workers Builds로 배포), D1, KV, (2차) Vectorize·Workers AI. Pages는 쓰지 않는다
+- 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, 로컬 wrangler CLI로만 배포), D1, KV, (2차) Vectorize·Workers AI. Pages는 쓰지 않는다
 - 런타임: Node 24 (`.nvmrc`), pnpm 12 (`packageManager`). 로컬 확인은 `pnpm preview`(wrangler dev)
 - 인증: Better Auth (D1 어댑터), 이메일 매직링크 + Google OAuth, 비밀번호 없음
 - 메일: Resend / 알림: Telegram 봇
@@ -22,7 +22,8 @@
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
 - `/admin`과 `/api/admin/*`는 관리자 이메일 허용목록(`ADMIN_EMAILS`) 검증, 비관리자는 404
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
-- 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. `main` 푸시가 곧 운영 배포(Workers Builds)이므로 푸시 전 로컬 `pnpm build`가 통과해야 한다
+- 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. 푸시 전 로컬 `pnpm build`가 통과해야 한다
+- 배포: GitHub 푸시로는 배포되지 않는다. 운영 배포는 로컬 `pnpm run deploy`(`pnpm deploy` 아님)로만 하고, 사용자가 요청할 때만 실행한다
 
 ## 단계 순서
 0 인프라 → 1 프론트+반응형 → 2 인증 → 3 레터 → 4 어드민(MVP 공개) → 5–6 챗+RAG → 7 3D
