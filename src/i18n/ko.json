@@ -1,0 +1,116 @@
+{
+  "site": {
+    "description": "빌더 yhy의 포트폴리오 — 무엇을 왜 만들었고 결과가 어땠는지."
+  },
+  "nav": {
+    "project": "프로젝트",
+    "contact": "연락",
+    "language": "English",
+    "skip": "본문으로 건너뛰기"
+  },
+  "intro": {
+    "name": "yhy",
+    "tagline": "만들면서 배우고, 만든 것으로 이야기하는 빌더입니다."
+  },
+  "project": {
+    "heading": "프로젝트",
+    "more": "자세히 보기",
+    "stack": "기술 스택",
+    "changelog": "변경 이력",
+    "back": "← 홈으로"
+  },
+  "contact": {
+    "heading": "연락",
+    "body": "궁금한 점이나 함께하고 싶은 일이 있다면 레터를 보내주세요. 로그인한 뒤 보낼 수 있어요.",
+    "letter": "레터 보내기",
+    "login": "로그인"
+  },
+  "footer": {
+    "privacy": "개인정보처리방침"
+  },
+  "ui": {
+    "close": "닫기",
+    "cancel": "취소",
+    "sending": "보내는 중…",
+    "error": "문제가 생겼어요. 잠시 후 다시 시도해 주세요."
+  },
+  "auth": {
+    "title": "로그인",
+    "desc": "이메일로 받은 링크를 누르면 로그인돼요. 비밀번호는 없어요.",
+    "email": "이메일",
+    "emailPlaceholder": "you@example.com",
+    "sendLink": "로그인 링크 받기",
+    "or": "또는",
+    "google": "Google로 계속하기",
+    "sentTitle": "메일함을 확인하세요",
+    "sentBody": "{email}로 로그인 링크를 보냈어요. 링크는 15분 동안 한 번만 쓸 수 있어요.",
+    "resend": "다른 이메일로 받기",
+    "expired": "링크가 만료됐거나 이미 쓰였어요. 다시 보낼까요?",
+    "rateLimited": "요청이 너무 많아요. 10분 뒤에 다시 시도해 주세요.",
+    "invalidEmail": "이메일 주소를 확인해 주세요.",
+    "googleUnavailable": "Google 로그인은 아직 준비 중이에요. 이메일로 로그인해 주세요.",
+    "blocked": "로그인할 수 없는 계정이에요.",
+    "notice": "로그인 이메일과 보낸 레터가 저장돼요.",
+    "privacy": "개인정보처리방침"
+  },
+  "menu": {
+    "label": "계정 메뉴",
+    "signedInAs": "로그인 계정",
+    "deleteAccount": "계정 삭제",
+    "signOut": "로그아웃"
+  },
+  "account": {
+    "title": "계정 삭제",
+    "desc": "계정과 로그인 기록이 삭제돼요. 이미 보낸 레터 본문은 기록으로 남지만 계정·답장 주소와의 연결은 끊어져요.",
+    "confirmLabel": "확인을 위해 \"삭제\"를 입력하세요",
+    "confirmWord": "삭제",
+    "submit": "계정 삭제"
+  },
+  "toast": {
+    "signedIn": "로그인됐어요. 하던 작업을 이어가세요.",
+    "signedOut": "로그아웃했어요.",
+    "deleted": "계정이 삭제됐어요.",
+    "letterSent": "전달됐어요."
+  },
+  "letter": {
+    "title": "레터 보내기",
+    "subject": "제목 (선택)",
+    "body": "내용",
+    "bodyPlaceholder": "하고 싶은 이야기를 적어주세요. 링크는 5개까지 넣을 수 있어요.",
+    "replyTo": "답장 받을 이메일",
+    "counter": "{n} / 2,000",
+    "minHint": "10자 이상 적어주세요.",
+    "submit": "보내기",
+    "notice": "로그인 이메일과 내용이 저장됩니다.",
+    "errors": {
+      "limit": "하루에 3통까지 보낼 수 있어요. 내일 다시 보내주세요.",
+      "links": "링크는 http(s) 주소로 5개까지 넣을 수 있어요.",
+      "duplicate": "직전에 보낸 레터와 내용이 같아요.",
+      "blocked": "레터를 보낼 수 없는 계정이에요.",
+      "invalid": "입력한 내용을 확인해 주세요."
+    }
+  },
+  "chat": {
+    "open": "포트폴리오 에이전트에게 묻기",
+    "title": "포트폴리오 에이전트",
+    "greeting": "저는 yhy의 포트폴리오 에이전트예요. 프로젝트나 쓴 기술, 연락 방법을 물어보세요.",
+    "chips": [
+      "어떤 프로젝트를 만들었나요?",
+      "어떤 기술을 써 봤나요?",
+      "어떻게 연락하나요?"
+    ],
+    "placeholder": "질문을 입력하세요",
+    "send": "보내기",
+    "limitAnon": "로그인하지 않으면 하루 3번까지 물어볼 수 있어요. 로그인하면 더 이어갈 수 있어요.",
+    "limitSignedIn": "오늘은 여기까지예요. 레터로 이어가요.",
+    "error": "답을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    "letter": "레터 보내기",
+    "login": "로그인",
+    "sources": {
+      "about": "소개",
+      "stack": "기술 스택",
+      "project": "프로젝트"
+    },
+    "notice": "AI가 사이트 문서를 바탕으로 답해요. 질문은 기록되고, 답변은 저장하지 않아요."
+  }
+}

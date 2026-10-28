@@ -1,0 +1,33 @@
+---
+import { env } from 'cloudflare:workers';
+import { count, gte } from 'drizzle-orm';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import BarChart from '../../components/admin/BarChart.astro';
+import { letters, user } from '../../db/schema';
+import { getDb } from '../../lib/server/db';
+import { kstDate, kstDayStart, lastKstDays } from '../../lib/server/dates';
+
+export const prerender = false;
+
+const db = getDb();
+const days = lastKstDays(7);
+const [{ users }] = await db.select({ users: count() }).from(user);
+const recent = await db.select({ createdAt: letters.createdAt }).from(letters).where(gte(letters.createdAt, kstDayStart(days[0])));
+
+const lettersByDay = days.map((day) => ({ day, value: recent.filter((l) => kstDate(l.createdAt) === day).length }));
+const loginsByDay = await Promise.all(
+  days.map(async (day) => ({ day, value: Number((await env.KV.get(`stats:login:${day}`)) ?? 0) })),
+);
+---
+
+<AdminLayout title="지표">
+  <h1 class="text-2xl font-bold">지표</h1>
+  <div class="mt-6 grid gap-4 md:grid-cols-3">
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4">
+      <p class="text-sm text-muted">가입자 수</p>
+      <p class="mt-1 text-4xl font-bold tabular-nums">{users}</p>
+    </div>
+    <BarChart title="레터" unit="통" data={lettersByDay} />
+    <BarChart title="로그인" unit="회" data={loginsByDay} />
+  </div>
+</AdminLayout>

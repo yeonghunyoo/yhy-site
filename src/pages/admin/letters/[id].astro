@@ -1,0 +1,96 @@
+---
+import { asc, eq } from 'drizzle-orm';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import StatusBadge from '../../../components/admin/StatusBadge.astro';
+import { letterReplies, letters, user } from '../../../db/schema';
+import { getDb } from '../../../lib/server/db';
+import { formatKst } from '../../../lib/server/dates';
+
+export const prerender = false;
+
+const id = Astro.params.id!;
+const db = getDb();
+const letter = await db
+  .select({ letter: letters, email: user.email })
+  .from(letters)
+  .leftJoin(user, eq(letters.userId, user.id))
+  .where(eq(letters.id, id))
+  .get();
+if (!letter) return Astro.rewrite('/404');
+
+// 열면 읽음 처리
+if (letter.letter.status === 'sent') {
+  const readAt = new Date();
+  await db.update(letters).set({ status: 'read', readAt }).where(eq(letters.id, id));
+  letter.letter.status = 'read';
+  letter.letter.readAt = readAt;
+}
+const l = letter.letter;
+const replies = await db.select().from(letterReplies).where(eq(letterReplies.letterId, id)).orderBy(asc(letterReplies.createdAt));
+---
+
+<AdminLayout title={l.subject ?? '레터'}>
+  <a href="/admin/letters" class="-ml-2 inline-flex min-h-11 items-center px-2 text-sm text-muted">← 목록</a>
+  <div class="mt-2 flex items-start justify-between gap-3">
+    <h1 class="min-w-0 text-xl font-bold break-words md:text-2xl">{l.subject ?? '(제목 없음)'}</h1>
+    <StatusBadge status={l.status} />
+  </div>
+  <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+    <dt class="text-muted">보낸 사람</dt><dd class="break-all">{letter.email ?? '(삭제된 계정)'}</dd>
+    <dt class="text-muted">답장 주소</dt><dd class="break-all">{l.replyTo ?? '—'}</dd>
+    <dt class="text-muted">보낸 시각</dt><dd>{formatKst(l.createdAt)}</dd>
+    <dt class="text-muted">읽은 시각</dt><dd>{formatKst(l.readAt)}</dd>
+    <dt class="text-muted">언어</dt><dd>{l.locale}</dd>
+  </dl>
+
+  <div class="prose-body mt-6 rounded-[var(--radius)] border border-border bg-surface p-4 whitespace-pre-wrap break-words">{l.body}</div>
+
+  {
+    l.status === 'failed' && (
+      <form method="post" action={`/api/admin/letters/${l.id}/resend`} class="mt-4">
+        <button class="btn btn-ghost">내 메일로 재전송</button>
+      </form>
+    )
+  }
+
+  {
+    replies.length > 0 && (
+      <section class="mt-8" aria-labelledby="replies-heading">
+        <h2 id="replies-heading" class="font-semibold">보낸 답장</h2>
+        <ul class="mt-3 space-y-3">
+          {replies.map((r) => (
+            <li class="rounded-[var(--radius)] border border-border p-4">
+              <p class="flex justify-between gap-2 text-xs text-muted">
+                <time>{formatKst(r.createdAt)}</time>
+                <span class:list={[r.status === 'failed' && 'text-danger']}>{r.status === 'failed' ? '⚠ 전송 실패' : '전송됨'}</span>
+              </p>
+              <p class="mt-2 whitespace-pre-wrap break-words">{r.body}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    l.replyTo ? (
+      <form
+        method="post"
+        action={`/api/admin/letters/${l.id}/reply`}
+        class:list={[
+          'mt-8 border-t border-border bg-bg pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:border-0',
+          // 첫 답장 전에는 모바일 하단에 고정. 답장 뒤에는 보낸 답장을 가리지 않게 풀어둔다.
+          replies.length === 0 && 'sticky bottom-0 -mx-4 px-4 md:static md:mx-0 md:px-0',
+        ]}
+      >
+        <label for="reply-body" class="text-sm font-semibold">
+          답장 ({l.replyTo}로 메일 발송)
+        </label>
+        <textarea id="reply-body" name="body" required minlength="1" maxlength="2000" rows="4" class="field mt-2 resize-y" />
+        <button class="btn btn-primary mt-2 w-full md:w-auto">답장 보내기</button>
+      </form>
+    ) : (
+      <p class="mt-8 text-sm text-muted">계정이 삭제되어 답장할 주소가 없어요.</p>
+    )
+  }
+</AdminLayout>

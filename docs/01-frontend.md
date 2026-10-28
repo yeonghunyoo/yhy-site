@@ -6,7 +6,7 @@
 
 **렌더링 모드**: `output: 'static'` (Astro 5+, 구 `hybrid` 모드가 여기에 통합됨) — 기본 정적(prerender), `/admin/*`·`/api/*`·`/auth/*`만 페이지에 `export const prerender = false`. 어댑터는 `@astrojs/cloudflare`.
 
-**i18n**: Astro 내장 `i18n` 설정, `defaultLocale: 'ko'`, `locales: ['ko','en']`, `prefixDefaultLocale: true`. 루트 `/`는 `Accept-Language`로 `/ko` 또는 `/en`으로 리다이렉트(미들웨어). 문자열은 `src/i18n/ko.json`·`en.json`, 긴 본문(프로젝트 설명)은 `src/content/projects/{slug}.ko.md`·`.en.md`로 Content Collections에 둔다.
+**i18n**: Astro 내장 i18n 라우팅은 쓰지 않는다(접두어 없는 `/admin`까지 404로 만든다). `src/pages/[locale]/`의 `getStaticPaths`로 `/ko`·`/en`을 만들고, 루트 `/`는 `src/pages/index.astro`(동적)가 `Accept-Language`로 `/ko` 또는 `/en`에 302로 보낸다. 문자열은 `src/i18n/ko.json`·`en.json`(+ `src/i18n/index.ts` 헬퍼), 긴 본문(프로젝트 설명)은 `src/content/projects/{slug}.ko.md`·`.en.md`로 Content Collections에 둔다(id는 파일명 그대로 `{slug}.{locale}`).
 
 **섹션 (1차)**
 
@@ -18,26 +18,37 @@
 
 ```
 src/
+  pages/index.astro                # 동적: Accept-Language → /ko·/en
+  pages/404.astro                  # 동적(미들웨어 rewrite 대상)
   pages/[locale]/index.astro       # 인트로 + 프로젝트 + 연락
   pages/[locale]/projects/[slug].astro
-  pages/admin/*.astro              # SSR, 세션 체크
-  pages/api/*.ts                   # letters, chat(2차)
-  pages/auth/[...all].ts           # Better Auth 핸들러
-  components/ui/                   # Astro 컴포넌트 (Tailwind)
-  components/islands/              # React: LoginModal, LetterModal, ChatDock, Hero3D
+  pages/[locale]/privacy.astro
+  pages/admin/                     # SSR: 지표, letters/, letters/[id], users
+  pages/api/                       # letters, account, admin/…(폼 POST)
+  pages/auth/[...all].ts           # Better Auth 핸들러(basePath /auth)
+  components/ui/                   # Astro 컴포넌트 (Header, Footer)
+  components/admin/                # BarChart(SVG), StatusBadge
+  components/islands/              # React: Overlay(시트·토스트), AuthMenu, Sheet, Login/Letter/AccountSheet
+  directives/demand.ts             # client:demand 하이드레이션 디렉티브
   content/projects/                # ko/en 마크다운
-  i18n/                            # ko.json, en.json
-  lib/auth.ts, lib/db.ts, lib/mail.ts
-  middleware.ts                    # locale 리다이렉트, admin 가드
+  db/                              # Drizzle 스키마(auth-schema.ts는 Better Auth CLI 생성)
+  i18n/                            # ko.json, en.json, index.ts
+  lib/server/                      # auth, db, mail, templates, notify, ratelimit, errors, admin, dates
+  lib/auth-client.ts, lib/letters.ts
+  middleware.ts                    # 세션 주입, admin 가드(404), 5xx 알림
 ```
 
 **아일랜드 로딩 전략**
 
 | 아일랜드 | 지시어 | 이유 |
 | --- | --- | --- |
-| LoginModal, LetterModal | `client:idle` | 첫 페인트 후 로드, 클릭 즉시 반응 |
-| ChatDock (2차) | `client:idle` | 접힌 독만 먼저, 패널은 열 때 동적 import |
+| Overlay(로그인·레터·계정 삭제 시트), AuthMenu | `client:demand` (커스텀) | 비로그인 방문자는 React를 받지 않는다. 로그인 상태이거나 로그인 복귀 직후면 바로, 아니면 `[data-action]` 버튼을 처음 누를 때 하이드레이트하고 그 클릭을 이어서 처리 |
+| ChatDock (2차) | `client:demand` 또는 `client:idle` | 접힌 독만 먼저, 패널은 열 때 동적 import |
 | Hero3D (옵션) | `client:visible` + 저사양 감지 | 모바일·저사양은 정적 그라디언트 폴백 |
+
+> `client:idle`로는 React DOM 때문에 초기 JS가 약 87KB(gzip)라 예산(50KB)을 넘었다. `client:demand`로 비로그인 첫 화면의 JS는 인라인 2.4KB다(10/29 측정).
+
+**보안 헤더(CSP)**: Astro `security.csp`로 페이지마다 `<meta>` CSP를 넣고, Astro가 인라인 스크립트·스타일을 해시로 허용한다. 그래서 HTML의 `style=""` 속성은 쓰지 않는다(Tailwind 클래스로). React의 `style` prop은 DOM API라 괜찮다. Shiki 코드 하이라이트는 인라인 style을 써서 꺼 두었다.
 
 **스타일**: Tailwind v4. 디자인 토큰은 `src/styles/tokens.css`의 CSS 변수로 두고, 세계관 콘셉트가 정해지면 이 파일만 교체한다. 컴포넌트 라이브러리는 디자인 MCP 결정 후 추가.
 
@@ -65,7 +76,7 @@ src/
 **타이포·가독성**
 
 - 본문 16px 이상, 줄 간격 1.6, 한글은 `word-break: keep-all`
-- 한/영 폰트 페어링은 세계관 논의에서 결정하되, 웹폰트는 `font-display: swap` + 서브셋(한글은 Pretendard 가변 서브셋 권장)
+- 지금은 시스템 글꼴 스택만 쓴다(웹폰트 0KB). 한/영 폰트 페어링은 세계관 논의에서 결정하되, 웹폰트는 `font-display: swap` + 서브셋(한글은 Pretendard 가변 서브셋 권장)
 
 **성능 예산 (모바일 4G 기준)**
 

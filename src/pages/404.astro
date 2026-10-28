@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { isLocale, defaultLocale } from '../i18n';
+
+// 동적 렌더 — 미들웨어가 비관리자의 /admin 요청을 이 페이지로 rewrite한다(정적이면 서버 번들에 없어 실패).
+export const prerender = false;
+
+const first = Astro.url.pathname.split('/')[1];
+const locale = isLocale(first) ? first : defaultLocale;
+const ko = locale === 'ko';
+---
+
+<BaseLayout locale={locale} title="404">
+  <section class="container-page grid min-h-[60dvh] place-items-center py-16 text-center">
+    <div>
+      <p class="font-mono text-sm text-muted">404</p>
+      <h1 class="mt-2 text-2xl font-bold">{ko ? '페이지를 찾을 수 없어요' : 'Page not found'}</h1>
+      <a href={`/${locale}/`} class="btn btn-ghost mt-8">{ko ? '홈으로' : 'Home'}</a>
+    </div>
+  </section>
+</BaseLayout>

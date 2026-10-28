@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { locales, type Locale } from '../../i18n';
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+const ko = locale === 'ko';
+// 초안: 문구는 공개 전에 다시 확인한다. 연락처는 사이트의 레터 기능.
+---
+
+<BaseLayout locale={locale} title={ko ? '개인정보처리방침' : 'Privacy'}>
+  <article class="container-page py-10 md:py-16">
+    <div class="prose-body">
+      {
+        ko ? (
+          <>
+            <h1 class="text-3xl font-bold">개인정보처리방침</h1>
+            <h2>수집하는 정보</h2>
+            <ul>
+              <li>로그인 이메일 주소와 로그인 방식(이메일 링크 또는 Google)</li>
+              <li>보낸 레터의 제목·본문·답장 받을 이메일</li>
+              <li>로그인 세션 정보(접속 IP, 브라우저 정보) — 보안과 남용 방지 목적</li>
+            </ul>
+            <h2>목적</h2>
+            <p>로그인, 레터 전달과 답장, 남용 방지에만 씁니다. 광고나 제3자 제공은 하지 않습니다.</p>
+            <h2>보관 기간</h2>
+            <ul>
+              <li>계정 정보: 계정을 삭제할 때까지</li>
+              <li>레터 본문: 기록으로 보관하되, 계정을 삭제하면 계정·답장 주소와의 연결을 끊습니다</li>
+              <li>챗 기록(도입 시): 90일</li>
+            </ul>
+            <h2>삭제 방법</h2>
+            <p>로그인 후 오른쪽 위 아바타 메뉴 → 계정 삭제에서 바로 삭제할 수 있습니다.</p>
+            <h2>처리 위탁</h2>
+            <p>호스팅·데이터베이스는 Cloudflare, 메일 발송은 Resend를 이용합니다.</p>
+            <h2>연락처</h2>
+            <p>궁금한 점은 사이트의 레터로 보내주세요.</p>
+          </>
+        ) : (
+          <>
+            <h1 class="text-3xl font-bold">Privacy</h1>
+            <h2>What we collect</h2>
+            <ul>
+              <li>Your sign-in email and how you signed in (email link or Google)</li>
+              <li>The subject, message, and reply-to address of letters you send</li>
+              <li>Session details (IP address, browser) for security and abuse prevention</li>
+            </ul>
+            <h2>Why</h2>
+            <p>Only for sign-in, delivering and replying to letters, and preventing abuse. No ads, no sharing with third parties.</p>
+            <h2>How long</h2>
+            <ul>
+              <li>Account data: until you delete your account</li>
+              <li>Letters: kept on record, but unlinked from your account and reply address when you delete your account</li>
+              <li>Chat logs (if introduced): 90 days</li>
+            </ul>
+            <h2>Deleting your data</h2>
+            <p>Sign in, open the avatar menu at the top right, and choose Delete account.</p>
+            <h2>Processors</h2>
+            <p>Hosting and database by Cloudflare; email delivery by Resend.</p>
+            <h2>Contact</h2>
+            <p>Send me a letter through this site.</p>
+          </>
+        )
+      }
+    </div>
+  </article>
+</BaseLayout>

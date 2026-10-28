@@ -3,6 +3,12 @@
   "name": "portfolio-web",
   "compatibility_date": "2026-10-20",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true }
-  // 바인딩(D1 `DB`, KV `KV`)은 2단계에서 추가한다. 목록은 docs/common.md
+  "observability": { "enabled": true },
+  // 바인딩 목록은 docs/common.md. id가 없는 리소스는 첫 배포 때 자동 생성된다.
+  "d1_databases": [{ "binding": "DB", "database_name": "portfolio-web", "migrations_dir": "migrations" }],
+  "kv_namespaces": [{ "binding": "KV" }],
+  // 비밀이 아닌 설정값. 비밀은 .dev.vars(로컬) / wrangler secret put(운영)
+  "vars": {
+    "SITE_NAME": "yhy"
+  }
 }

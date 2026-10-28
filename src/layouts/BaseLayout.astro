@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+import Header from '../components/ui/Header.astro';
+import Footer from '../components/ui/Footer.astro';
+import AuthMenu from '../components/islands/AuthMenu';
+import Overlay from '../components/islands/Overlay';
+import ChatDock from '../components/islands/ChatDock';
+import { locales, t, type Locale, switchLocalePath } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  title?: string;
+  description?: string;
+}
+
+const { locale, title, description } = Astro.props;
+const dict = t(locale);
+const pageTitle = title ? `${title} · ${dict.intro.name}` : dict.intro.name;
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description ?? dict.site.description} />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {locales.map((l) => <link rel="alternate" hreflang={l} href={switchLocalePath(path, l)} />)}
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-[var(--radius)] focus:bg-surface focus:px-4 focus:py-2"
+      >{dict.nav.skip}</a
+    >
+    <Header locale={locale}>
+      <AuthMenu slot="auth" client:demand dict={dict} />
+    </Header>
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+    <Footer locale={locale} />
+    <Overlay client:demand dict={dict} locale={locale} />
+    {/* 2차 챗: 빌드 때 PUBLIC_CHAT_ENABLED=1일 때만 독을 넣는다(서버는 CHAT_ENABLED로 따로 잠금) */}
+    {import.meta.env.PUBLIC_CHAT_ENABLED === '1' && <ChatDock client:demand dict={dict} locale={locale} />}
+  </body>
+</html>

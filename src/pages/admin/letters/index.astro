@@ -1,0 +1,74 @@
+---
+import { desc, eq } from 'drizzle-orm';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import StatusBadge from '../../../components/admin/StatusBadge.astro';
+import { letters, user } from '../../../db/schema';
+import { getDb } from '../../../lib/server/db';
+import { formatKst } from '../../../lib/server/dates';
+
+export const prerender = false;
+
+const FILTERS = [
+  { key: 'all', label: '전체' },
+  { key: 'sent', label: '안 읽음' },
+  { key: 'replied', label: '답장함' },
+  { key: 'failed', label: '실패' },
+] as const;
+type FilterKey = (typeof FILTERS)[number]['key'];
+
+const param = Astro.url.searchParams.get('status');
+const filter: FilterKey = FILTERS.some((f) => f.key === param) ? (param as FilterKey) : 'all';
+
+const db = getDb();
+const base = db
+  .select({
+    id: letters.id,
+    subject: letters.subject,
+    body: letters.body,
+    status: letters.status,
+    createdAt: letters.createdAt,
+    email: user.email,
+  })
+  .from(letters)
+  .leftJoin(user, eq(letters.userId, user.id));
+const rows = await (filter === 'all' ? base : base.where(eq(letters.status, filter))).orderBy(desc(letters.createdAt)).limit(100);
+---
+
+<AdminLayout title="레터">
+  <h1 class="text-2xl font-bold">레터</h1>
+  <nav class="mt-4 flex flex-wrap gap-2" aria-label="상태 필터">
+    {
+      FILTERS.map((f) => (
+        <a
+          href={f.key === 'all' ? '/admin/letters' : `/admin/letters?status=${f.key}`}
+          aria-current={filter === f.key ? 'true' : undefined}
+          class:list={['flex min-h-11 items-center rounded-full border px-4 text-sm', filter === f.key ? 'border-fg bg-fg text-bg' : 'border-border']}
+        >
+          {f.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  {rows.length === 0 && <p class="mt-10 text-muted">레터가 없어요.</p>}
+
+  <ul class="mt-6 space-y-3">
+    {
+      rows.map((r) => (
+        <li>
+          <a href={`/admin/letters/${r.id}`} class="block rounded-[var(--radius)] border border-border bg-surface p-4 hover:border-fg/40">
+            <div class="flex items-start justify-between gap-3">
+              <p class:list={['min-w-0 truncate', r.status === 'sent' && 'font-bold']}>{r.subject ?? r.body.split('\n')[0].slice(0, 60)}</p>
+              <StatusBadge status={r.status} />
+            </div>
+            <p class="mt-1 truncate text-sm text-muted">{r.subject ? r.body.split('\n')[0] : ''}</p>
+            <p class="mt-2 flex flex-wrap gap-x-3 text-xs text-muted">
+              <span class="break-all">{r.email ?? '(삭제된 계정)'}</span>
+              <time>{formatKst(r.createdAt)}</time>
+            </p>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</AdminLayout>

@@ -1,0 +1,116 @@
+{
+  "site": {
+    "description": "Portfolio of yhy, a builder — what I made, why, and how it turned out."
+  },
+  "nav": {
+    "project": "Project",
+    "contact": "Contact",
+    "language": "한국어",
+    "skip": "Skip to content"
+  },
+  "intro": {
+    "name": "yhy",
+    "tagline": "A builder who learns by making — and lets the work do the talking."
+  },
+  "project": {
+    "heading": "Project",
+    "more": "Read more",
+    "stack": "Stack",
+    "changelog": "Changelog",
+    "back": "← Home"
+  },
+  "contact": {
+    "heading": "Contact",
+    "body": "Questions, or something we could build together? Send me a letter — you'll need to sign in first.",
+    "letter": "Send a letter",
+    "login": "Sign in"
+  },
+  "footer": {
+    "privacy": "Privacy"
+  },
+  "ui": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "error": "Something went wrong. Please try again in a moment."
+  },
+  "auth": {
+    "title": "Sign in",
+    "desc": "We'll email you a link that signs you in. No password needed.",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "sendLink": "Email me a sign-in link",
+    "or": "or",
+    "google": "Continue with Google",
+    "sentTitle": "Check your inbox",
+    "sentBody": "We sent a sign-in link to {email}. It works once and expires in 15 minutes.",
+    "resend": "Use a different email",
+    "expired": "That link expired or was already used. Send a new one?",
+    "rateLimited": "Too many requests. Please try again in 10 minutes.",
+    "invalidEmail": "Please check the email address.",
+    "googleUnavailable": "Google sign-in isn't ready yet. Please use email instead.",
+    "blocked": "This account can't sign in.",
+    "notice": "Your sign-in email and the letters you send are stored.",
+    "privacy": "Privacy"
+  },
+  "menu": {
+    "label": "Account menu",
+    "signedInAs": "Signed in as",
+    "deleteAccount": "Delete account",
+    "signOut": "Sign out"
+  },
+  "account": {
+    "title": "Delete account",
+    "desc": "Your account and sign-in records will be deleted. Letters you already sent stay on record, but they'll no longer be linked to your account or reply address.",
+    "confirmLabel": "Type \"delete\" to confirm",
+    "confirmWord": "delete",
+    "submit": "Delete account"
+  },
+  "toast": {
+    "signedIn": "You're signed in. Pick up where you left off.",
+    "signedOut": "Signed out.",
+    "deleted": "Your account was deleted.",
+    "letterSent": "Delivered."
+  },
+  "letter": {
+    "title": "Send a letter",
+    "subject": "Subject (optional)",
+    "body": "Message",
+    "bodyPlaceholder": "What's on your mind? You can include up to 5 links.",
+    "replyTo": "Reply to",
+    "counter": "{n} / 2,000",
+    "minHint": "Please write at least 10 characters.",
+    "submit": "Send",
+    "notice": "Your sign-in email and this message will be stored.",
+    "errors": {
+      "limit": "You can send up to 3 letters a day. Please try again tomorrow.",
+      "links": "You can include up to 5 links, and only http(s) addresses.",
+      "duplicate": "This is the same as the letter you just sent.",
+      "blocked": "This account can't send letters.",
+      "invalid": "Please check what you entered."
+    }
+  },
+  "chat": {
+    "open": "Ask the portfolio agent",
+    "title": "Portfolio agent",
+    "greeting": "I'm yhy's portfolio agent. Ask me about projects, the tools used, or how to get in touch.",
+    "chips": [
+      "What projects have you built?",
+      "What tools have you used?",
+      "How can I get in touch?"
+    ],
+    "placeholder": "Ask a question",
+    "send": "Send",
+    "limitAnon": "Without signing in you can ask 3 questions a day. Sign in to keep going.",
+    "limitSignedIn": "That's it for today. Let's continue by letter.",
+    "error": "Couldn't get an answer. Please try again in a moment.",
+    "letter": "Send a letter",
+    "login": "Sign in",
+    "sources": {
+      "about": "About",
+      "stack": "Stack",
+      "project": "Project"
+    },
+    "notice": "An AI answers from this site's documents. Questions are logged; answers are not stored."
+  }
+}

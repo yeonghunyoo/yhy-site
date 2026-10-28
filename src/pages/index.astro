@@ -1,30 +1,9 @@
 ---
-// 0단계 배포 확인용. 1단계에서 /ko·/en 구조로 교체한다.
----
+import { pickLocale } from '../i18n';
 
-<html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Hello</title>
-    <style>
-      body {
-        margin: 0;
-        min-height: 100dvh;
-        display: grid;
-        place-items: center;
-        padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-        font-family: system-ui, sans-serif;
-        background: #fafafa;
-        color: #111;
-      }
-      @media (prefers-color-scheme: dark) {
-        body { background: #111; color: #fafafa; }
-      }
-      h1 { font-size: clamp(2rem, 8vw, 4rem); margin: 0; }
-    </style>
-  </head>
-  <body>
-    <h1>Hello</h1>
-  </body>
-</html>
+// 루트는 Accept-Language로 /ko 또는 /en에 보낸다.
+export const prerender = false;
+
+const locale = pickLocale(Astro.request.headers.get('accept-language'));
+return Astro.redirect(`/${locale}/`, 302);
+---

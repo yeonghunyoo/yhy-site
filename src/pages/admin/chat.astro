@@ -1,0 +1,55 @@
+---
+import { env } from 'cloudflare:workers';
+import { count, desc, isNotNull } from 'drizzle-orm';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { chatLogs, ragChunks } from '../../db/schema';
+import { getDb } from '../../lib/server/db';
+import { formatKst, kstDate } from '../../lib/server/dates';
+import { hasVectorSearch } from '../../lib/server/rag';
+
+export const prerender = false;
+
+// 질문 로그만 본다(답변 제외). 어떤 질문이 들어오는지가 RAG 문서 보강의 근거.
+const db = getDb();
+const logs = await db.select().from(chatLogs).orderBy(desc(chatLogs.createdAt)).limit(100);
+const [{ chunks }] = await db.select({ chunks: count() }).from(ragChunks);
+const [{ vectors }] = await db.select({ vectors: count() }).from(ragChunks).where(isNotNull(ragChunks.vectorId));
+const monthTokens = Number((await env.KV.get(`chat:month:${kstDate(new Date()).slice(0, 7)}`)) ?? 0);
+const vectorReady = hasVectorSearch();
+---
+
+<AdminLayout title="챗">
+  <h1 class="text-2xl font-bold">챗</h1>
+  <dl class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">상태</dt><dd class="mt-1 font-semibold">{env.CHAT_ENABLED === '1' ? '켜짐' : '꺼짐'}</dd></div>
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">이번 달 토큰</dt><dd class="mt-1 font-semibold tabular-nums">{monthTokens.toLocaleString()}</dd></div>
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">청크</dt><dd class="mt-1 font-semibold tabular-nums">{chunks}</dd></div>
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">벡터</dt><dd class="mt-1 font-semibold tabular-nums">{vectorReady ? vectors : '바인딩 없음(키워드만)'}</dd></div>
+  </dl>
+  {
+    vectorReady && (
+      <form method="post" action="/api/admin/rag/reindex" class="mt-4">
+        <button class="btn btn-ghost">벡터 다시 만들기</button>
+      </form>
+    )
+  }
+
+  <h2 class="mt-10 font-semibold">최근 질문</h2>
+  {logs.length === 0 && <p class="mt-4 text-muted">아직 질문이 없어요.</p>}
+  <ul class="mt-4 space-y-3">
+    {
+      logs.map((l) => (
+        <li class="rounded-[var(--radius)] border border-border bg-surface p-4">
+          <p class="break-words">{l.question}</p>
+          <p class="mt-2 flex flex-wrap gap-x-3 text-xs text-muted">
+            <time>{formatKst(l.createdAt)}</time>
+            <span>{l.locale}</span>
+            <span>{l.userId ? '로그인' : '비로그인'}</span>
+            <span class="tabular-nums">in {l.tokensIn} / out {l.tokensOut}</span>
+            <span>{l.sources.length ? l.sources.join(', ') : '출처 없음'}</span>
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+</AdminLayout>

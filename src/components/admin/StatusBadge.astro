@@ -1,0 +1,16 @@
+---
+interface Props {
+  status: 'sent' | 'read' | 'replied' | 'failed';
+}
+const LABEL = { sent: '안 읽음', read: '읽음', replied: '답장함', failed: '실패' } as const;
+const { status } = Astro.props;
+---
+
+<span
+  class:list={[
+    'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs',
+    status === 'failed' ? 'border-danger/50 text-danger' : status === 'sent' ? 'border-fg font-semibold' : 'border-border text-muted',
+  ]}
+>
+  {status === 'failed' ? '⚠ ' : status === 'replied' ? '↩ ' : status === 'sent' ? '● ' : ''}{LABEL[status]}
+</span>

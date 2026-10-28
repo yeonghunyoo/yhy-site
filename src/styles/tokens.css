@@ -1,0 +1,35 @@
+/*
+ * 디자인 토큰 — 색·글꼴·모서리는 이 파일에만 둔다.
+ * 세계관 콘셉트가 정해지면 이 파일만 교체한다. (지금은 중립 임시 톤)
+ */
+:root {
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-fg: #18181b;
+  --color-muted: #52525b;
+  --color-border: #e4e4e7;
+  --color-accent: #18181b;
+  --color-accent-fg: #fafafa;
+  --color-danger: #b91c1c;
+  --color-success: #15803d;
+
+  --font-sans: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius: 0.75rem;
+  --header-h: 3.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f0f11;
+    --color-surface: #18181b;
+    --color-fg: #f4f4f5;
+    --color-muted: #a1a1aa;
+    --color-border: #2e2e33;
+    --color-accent: #f4f4f5;
+    --color-accent-fg: #18181b;
+    --color-danger: #f87171;
+    --color-success: #4ade80;
+  }
+}

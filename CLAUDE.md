@@ -7,16 +7,18 @@
 빌더·개발자 포트폴리오. 한/영 정적 사이트 + 이메일/Google 로그인 + 레터 모달 + 간략 어드민이 MVP. 챗/RAG와 3D는 2차.
 
 ## 확정 스택
-- 프론트: Astro 5+ (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4
+- 프론트: Astro 7 (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4
 - 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, 로컬 wrangler CLI로만 배포), D1, KV, (2차) Vectorize·Workers AI. Pages는 쓰지 않는다
-- 런타임: Node 24 (`.nvmrc`), pnpm 12 (`packageManager`). 로컬 확인은 `pnpm preview`(wrangler dev)
+- 런타임: Node 24 (`.nvmrc`), pnpm 12 (`packageManager`). 로컬 확인은 `pnpm preview`(wrangler dev, 빌드 후 서버 재시작 필요), 타입 검사는 `pnpm check`(TypeScript 6 고정 — astro check가 7 미지원)
 - 인증: Better Auth (D1 어댑터), 이메일 매직링크 + Google OAuth, 비밀번호 없음
 - 메일: Resend / 알림: Telegram 봇
 - 패키지 매니저: pnpm. 레포는 GitHub Public
 
 ## 규칙
-- i18n: `/ko`, `/en` 경로 분리, 기본 ko. 문자열은 `src/i18n/*.json`, 긴 본문은 content collection의 `{slug}.ko.md` / `.en.md`
+- i18n: `/ko`, `/en` 경로 분리(`src/pages/[locale]/`), 기본 ko. Astro 내장 i18n 라우팅은 쓰지 않는다. 문자열은 `src/i18n/*.json`, 긴 본문은 content collection의 `{slug}.ko.md` / `.en.md`
 - 모바일 우선: 기본 스타일이 모바일, `md` 이상에서 확장. 터치 타깃 44px, `100dvh`, safe-area. 성능 예산은 `docs/01-frontend.md`
+- React 아일랜드는 `client:demand`(src/directives/demand.ts)로 필요할 때만 로드한다. 초기 JS 예산 50KB
+- HTML에 `style=""` 속성 금지(CSP). Tailwind 클래스를 쓴다
 - 3D·챗은 지연 로드 아일랜드로 격리하고 저사양·reduced-motion 폴백을 둔다
 - 디자인 토큰은 `src/styles/tokens.css`에만. 세계관/UI 라이브러리는 미정이므로 임의로 정하지 않는다
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`

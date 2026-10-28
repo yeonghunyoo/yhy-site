@@ -1,0 +1,16 @@
+# 로컬 개발용 비밀값 예시. `cp .dev.vars.example .dev.vars` 후 채운다. (.dev.vars는 커밋 금지)
+# 비어 있는 외부 키는 로컬에서 콘솔 출력으로 대체된다(메일·Telegram). Google은 버튼이 오류를 안내한다.
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:8787
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+RESEND_API_KEY=
+MAIL_FROM=
+LETTER_TO=
+ADMIN_EMAILS=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+# 2차: 챗 + RAG. CHAT_ENABLED=1일 때만 /api/chat이 열린다. 키가 없으면 로컬은 검색 결과만 돌려주는 모의 답변.
+CHAT_ENABLED=
+ANTHROPIC_API_KEY=
+CHAT_MONTHLY_TOKEN_CAP=

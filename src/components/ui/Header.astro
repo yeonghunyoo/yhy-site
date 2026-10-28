@@ -1,0 +1,32 @@
+---
+import { t, otherLocale, switchLocalePath, type Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const dict = t(locale);
+const other = otherLocale(locale);
+---
+
+<header
+  class="sticky top-0 z-30 border-b border-border bg-bg/85 pt-[env(safe-area-inset-top)] backdrop-blur"
+>
+  <div class="container-page flex h-[var(--header-h)] items-center justify-between gap-2">
+    <a href={`/${locale}/`} class="-ml-2 flex min-h-11 items-center px-2 text-lg font-bold">{dict.intro.name}</a>
+    <nav class="flex items-center gap-1 text-sm" aria-label="Main">
+      <a href={`/${locale}/#project`} class="hidden min-h-11 items-center px-2 sm:flex">{dict.nav.project}</a>
+      <a href={`/${locale}/#contact`} class="hidden min-h-11 items-center px-2 sm:flex">{dict.nav.contact}</a>
+      <a
+        href={switchLocalePath(Astro.url.pathname, other)}
+        hreflang={other}
+        lang={other}
+        class="flex min-h-11 items-center px-2">{dict.nav.language}</a
+      >
+      <slot name="auth">
+        <button type="button" class="btn btn-ghost text-sm" data-action="login">{dict.contact.login}</button>
+      </slot>
+    </nav>
+  </div>
+</header>

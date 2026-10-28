@@ -49,6 +49,19 @@
 
 **아직 정할 것**: 청크 크기 튜닝(500자 시작, 실제 질문 로그로 조정), `rag/stack.md`의 경험 수준 표기 방식(예: 실무 / 개인 프로젝트 / 학습 중 3단계).
 
+## 초안 구현 메모 (10/29)
+
+코드는 들어가 있고 기본으로 꺼져 있다. 연동·콘텐츠 확인은 [guides/chat-rag-setup.md](guides/chat-rag-setup.md).
+
+- 모델 `claude-haiku-5-5`(Anthropic TS SDK, 스트리밍), effort `low`, `max_tokens` 2048 — Haiku 5.5는 생각 토큰이 `max_tokens`에 포함돼 600이면 잘릴 수 있다. 길이는 프롬프트로 제한
+- 문서: `src/content/rag/{about,stack}.{ko,en}.md` + 프로젝트 상세 본문(`src/content/projects/`)을 그대로 재사용. slug는 `about`, `stack`, `projects/{slug}`
+- 키워드 검색: FTS5 `tokenize='trigram'`(3글자 이상 부분 일치) + 2글자 말은 LIKE, 흔한 한국어 조사·어미를 떼어 어간도 검색
+- 벡터: 빌드 스크립트가 아니라 배포된 Worker가 임베딩한다(`/admin/chat` → 벡터 다시 만들기, `POST /api/admin/rag/reindex`). 바인딩이 없으면 키워드만
+- 스위치: `PUBLIC_CHAT_ENABLED`(빌드, 독 노출) + `CHAT_ENABLED`(런타임, API). 키가 없으면 검색 결과로 만든 모의 답변
+- 범위 밖 답변은 `[[letter]]` 토큰을 붙여 레터 칩을 띄운다. 출처는 답변의 `[[slug]]` 중 실제 검색된 문서만
+- 90일 지난 `chat_logs`는 cron 대신 챗 요청 때 함께 지운다
+- 독은 `client:demand`로 첫 클릭 때 로드
+
 ## 완료 기준
 
 - 5: 비로그인 3턴 제한과 월 상한이 동작, 모바일 시트에서 키보드가 올라와도 입력창이 가려지지 않는다
