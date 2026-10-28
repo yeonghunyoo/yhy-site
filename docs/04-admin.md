@@ -36,7 +36,7 @@ Astro SSR 페이지 + `middleware.ts`에서 `/admin` 접두 경로 가드. 차�
 
 구현: `lib/notify.ts` 함수 하나, `https://api.telegram.org/bot{TOKEN}/sendMessage`. 모든 호출은 `ctx.waitUntil`로 응답과 분리. 실패는 무시.
 
-**모니터링**: Cloudflare 기본 로그(Workers 로그·Pages 분석)만 사용. 5xx는 `middleware.ts`의 try/catch에서 잡아 Telegram으로 보내고 500 응답. 외부 서비스 추가 없음. MVP 공개 후 에러량 보고 Sentry 도입 여부 재판단.
+**모니터링**: Cloudflare 기본 로그(Workers 로그·observability)만 사용. 5xx는 `middleware.ts`의 try/catch에서 잡아 Telegram으로 보내고 500 응답. 외부 서비스 추가 없음. MVP 공개 후 에러량 보고 Sentry 도입 여부 재판단.
 
 **사용자 화면 추가 사항**: 삭제된 계정은 목록에 없음(하드 삭제). 차단 토글 시 해당 유저의 세션 전부 삭제 → 즉시 로그아웃 효과.
 

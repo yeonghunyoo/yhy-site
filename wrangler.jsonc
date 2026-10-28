@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "portfolio-web",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true }
+  // 바인딩(D1 `DB`, KV `KV`)은 2단계에서 추가한다. 목록은 docs/common.md
+}

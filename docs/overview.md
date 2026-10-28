@@ -25,7 +25,7 @@ MVP는 "빌더로서의 yhy를 보여주는 한/영 정적 사이트 + 로그인
 | 항목 | 결정 | 근거 |
 | --- | --- | --- |
 | 목표 | MVP | 1차는 정적 사이트 + 로그인 + 레터 + 어드민까지 |
-| 인프라 | Cloudflare 단일 | Pages·Functions·D1·KV·Vectorize·Registrar를 한 계정에서, 월 비용 0에 가깝게 |
+| 인프라 | Cloudflare 단일 (Workers) | Workers(정적 자산 + 동적)·D1·KV·Vectorize·Registrar를 한 계정에서, 월 비용 0에 가깝게. 10/28 Pages에서 전환 — Astro 어댑터가 Pages 지원 중단 |
 | 프론트 | Astro | 정적 우선, 상호작용 부분만 React 아일랜드 |
 | 언어 | 한/영, /ko·/en 경로 분리 | SEO와 공유 링크에 유리 |
 | 도메인 | 브랜드/닉네임 기반, 이름은 미정 | 세계관 콘셉트와 묶어 결정 |
@@ -44,8 +44,8 @@ MVP는 "빌더로서의 yhy를 보여주는 한/영 정적 사이트 + 로그인
 
 ```mermaid
 flowchart LR
-  B["방문자 브라우저<br/>Astro 정적 HTML + React 아일랜드"] --> P["Pages 정적 자산<br/>/ko, /en"]
-  B --> F["Pages Functions<br/>/auth /api /admin SSR"]
+  B["방문자 브라우저<br/>Astro 정적 HTML + React 아일랜드"] --> P["Workers 정적 자산<br/>/ko, /en"]
+  B --> F["Worker 코드<br/>/auth /api /admin SSR"]
   F --> D1[("D1<br/>유저·세션·레터")]
   F --> KV[("KV<br/>레이트리밋")]
   F --> R["Resend<br/>매직링크·레터·답장"]
@@ -56,7 +56,7 @@ flowchart LR
   F -.2차.-> H["Anthropic Haiku"]
 ```
 
-브라우저는 정적 자산을 Pages에서, 동적 요청은 Functions에서 받는다. Functions만 D1·KV·외부 서비스에 닿고, 비밀은 전부 Functions 쪽 환경변수에 있다. 서비스별 한도와 배포 흐름은 [00-infra.md](00-infra.md) 참조. 점선은 2차(MVP 이후)에 추가되는 요소다.
+하나의 Worker가 정적 자산과 동적 요청을 함께 받는다. 정적 페이지는 Workers 정적 자산으로 바로 나가고, 동적 경로만 Worker 코드가 처리한다. Worker 코드만 D1·KV·외부 서비스에 닿고, 비밀은 전부 Worker 시크릿에 있다. 서비스별 한도와 배포 흐름은 [00-infra.md](00-infra.md) 참조. 점선은 2차(MVP 이후)에 추가되는 요소다.
 
 ## 단계별 로드맵
 

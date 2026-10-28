@@ -8,7 +8,8 @@
 
 ## 확정 스택
 - 프론트: Astro 5+ (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4
-- 인프라: Cloudflare 단일 — Pages, Pages Functions, D1, KV, (2차) Vectorize·Workers AI
+- 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, Workers Builds로 배포), D1, KV, (2차) Vectorize·Workers AI. Pages는 쓰지 않는다
+- 런타임: Node 24 (`.nvmrc`), pnpm 12 (`packageManager`). 로컬 확인은 `pnpm preview`(wrangler dev)
 - 인증: Better Auth (D1 어댑터), 이메일 매직링크 + Google OAuth, 비밀번호 없음
 - 메일: Resend / 알림: Telegram 봇
 - 패키지 매니저: pnpm. 레포는 GitHub Public

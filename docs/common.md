@@ -46,7 +46,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹�
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | 레터·에러·삭제 알림 | 예 |
 | `SITE_NAME` | 메일 제목 접두어 | 예 |
 
-바인딩(`wrangler.toml`): D1 `DB`, KV `KV`, (2차) Vectorize `VEC`, Workers AI `AI`.
+바인딩(`wrangler.jsonc`): D1 `DB`, KV `KV`, (2차) Vectorize `VEC`, Workers AI `AI`.
 
 ## 보안 체크리스트
 
