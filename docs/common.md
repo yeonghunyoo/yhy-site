@@ -50,7 +50,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹�
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | 레터·에러·삭제 알림 | 예 |
 | `SITE_NAME` | 메일 제목 접두어 | 예 |
 
-바인딩(`wrangler.jsonc`): D1 `DB`, KV `KV`, (2차) Vectorize `VEC`, Workers AI `AI`. id를 적지 않은 D1·KV는 첫 배포 때 자동 생성된다. `SITE_NAME`은 비밀이 아니라 `vars`에 둔다.
+바인딩(`wrangler.jsonc`): D1 `DB`, KV `KV`, (2차) Vectorize `VEC`, Workers AI `AI`. D1·KV id는 운영 리소스 것이다(2026-10-29 생성). `SITE_NAME`·`BETTER_AUTH_URL`은 비밀이 아니라 `vars`에 두고, 로컬은 `.dev.vars` 값이 우선한다.
 
 로컬: `.dev.vars.example`을 복사해 `.dev.vars`를 만든다. 마이그레이션은 `pnpm db:generate`(Drizzle Kit) → `pnpm db:migrate:local` / `pnpm db:migrate:remote`.
 

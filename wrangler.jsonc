@@ -4,11 +4,13 @@
   "compatibility_date": "2026-10-20",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // 바인딩 목록은 docs/common.md. id가 없는 리소스는 첫 배포 때 자동 생성된다.
-  "d1_databases": [{ "binding": "DB", "database_name": "portfolio-web", "migrations_dir": "migrations" }],
-  "kv_namespaces": [{ "binding": "KV" }],
+  // 바인딩 목록은 docs/common.md. id는 운영 리소스(로컬 wrangler dev는 .wrangler/에 따로 에뮬레이션)
+  "d1_databases": [{ "binding": "DB", "database_name": "portfolio-web", "database_id": "bd597ce5-ef1f-41ad-b549-12f4cc7d2604", "migrations_dir": "migrations" }],
+  "kv_namespaces": [{ "binding": "KV", "id": "923982f21f4b41d8ac46b2dbd45d415b" }],
   // 비밀이 아닌 설정값. 비밀은 .dev.vars(로컬) / wrangler secret put(운영)
   "vars": {
-    "SITE_NAME": "yhy"
+    "SITE_NAME": "yhy",
+    // 운영 주소. 로컬은 .dev.vars 값이 우선한다. 도메인 연결 후 교체
+    "BETTER_AUTH_URL": "https://portfolio-web.yeonghun-yoo.workers.dev"
   }
 }
