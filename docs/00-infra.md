@@ -53,11 +53,11 @@
 1. 브랜드/도메인 확정 → Registrar에서 구매
 2. GitHub Public 레포 생성(pnpm), 푸시
 3. 레포 골격(위 표) 작성, 로컬 `pnpm preview`로 Hello 확인
-4. Cloudflare 대시보드 → Workers & Pages → Create → Import a repository로 Worker 생성
+4. Cloudflare 대시보드 → Workers & Pages → Create application → GitHub에서 레포(`yhy-site`)를 골라 Worker 생성
    - Worker 이름은 `wrangler.jsonc`의 `name`(`portfolio-web`)과 같아야 한다
    - 빌드 명령 `pnpm build`, 배포 명령 `npx wrangler deploy`, 운영 브랜치 `main`
    - `*.workers.dev` 주소에서 Hello 확인
-5. 커스텀 도메인 연결(Worker → Settings → Domains & Routes), HTTPS 확인
+5. 커스텀 도메인 연결(Worker → Settings → Domains & Routes → Add → Custom Domain), 인증서는 자동 발급. HTTPS 확인
 6. Web Analytics 켜기(선택)
 
 **완료 기준**: 도메인으로 접속 시 "Hello" 페이지가 모바일·데스크톱에서 열린다.
