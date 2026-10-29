@@ -27,6 +27,35 @@ const other = otherLocale(locale);
       <slot name="auth">
         <button type="button" class="btn btn-ghost text-sm" data-action="login">{dict.contact.login}</button>
       </slot>
+      <!-- 모바일 메뉴: Popover API라 React 없이 열고 닫는다(바깥 탭·Esc로 닫힘) -->
+      <button
+        type="button"
+        popovertarget="mobile-nav"
+        class="-mr-2 grid size-11 place-items-center sm:hidden"
+        aria-label={dict.nav.menu}
+      >
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+      </button>
+      <div
+        id="mobile-nav"
+        popover
+        class="fixed inset-x-0 top-[calc(var(--header-h)+env(safe-area-inset-top))] bottom-auto m-0 h-auto w-auto border-0 border-b border-border bg-surface p-0 text-fg shadow-xl backdrop:bg-black/20"
+      >
+        <ul class="container-page py-2 text-base">
+          <li><a href={`/${locale}/#project`} class="flex min-h-12 items-center">{dict.nav.project}</a></li>
+          <li><a href={`/${locale}/#contact`} class="flex min-h-12 items-center">{dict.nav.contact}</a></li>
+        </ul>
+      </div>
     </nav>
   </div>
 </header>
+
+<script>
+  // 같은 페이지 앵커로 이동해도 팝오버는 열려 있으므로 링크를 누르면 닫는다.
+  const menu = document.getElementById('mobile-nav');
+  menu?.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('a')) menu.hidePopover();
+  });
+</script>
