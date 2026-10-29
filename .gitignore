@@ -3,6 +3,7 @@ dist/
 .astro/
 .wrangler/
 .dev.vars
+.prod.vars
 .env
 .env.*
 .DS_Store

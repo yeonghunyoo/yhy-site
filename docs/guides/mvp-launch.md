@@ -11,17 +11,17 @@
 
 D1 `portfolio-web`(APAC)과 KV를 만들어 id를 `wrangler.jsonc`에 넣었고, 운영 DB에 마이그레이션(0000, 0001)을 적용했다. 새 마이그레이션이 생기면 배포 전에 `pnpm db:migrate:remote`.
 
-## 2. 비밀값 (`wrangler secret put <이름>`)
+## 2. 비밀값 (`.prod.vars`)
 
-`BETTER_AUTH_URL`·`SITE_NAME`은 비밀이 아니라 `wrangler.jsonc`의 `vars`에 있다. 비밀값은 본인이 터미널에서 넣는다(값을 입력하라는 프롬프트가 뜬다).
+`BETTER_AUTH_URL`·`SITE_NAME`은 비밀이 아니라 `wrangler.jsonc`의 `vars`에 있다. 운영 비밀은 `.prod.vars`(gitignore)에 적고 `pnpm run deploy`로 함께 올린다. 파일에 없는 비밀은 그대로 남으니 새로 넣거나 바꿀 것만 적으면 된다.
 
 ```bash
-nvm use
-openssl rand -base64 32 | ./node_modules/.bin/wrangler secret put BETTER_AUTH_SECRET
-./node_modules/.bin/wrangler secret put ADMIN_EMAILS
-./node_modules/.bin/wrangler secret put LETTER_TO
+cp .prod.vars.example .prod.vars   # 채울 줄만 주석을 풀고 값을 넣는다
+pnpm run deploy
 ./node_modules/.bin/wrangler secret list
 ```
+
+`BETTER_AUTH_SECRET`·`ADMIN_EMAILS`·`LETTER_TO`는 10/29 `wrangler secret put`으로 넣어 두었다.
 
 | 이름 | 값 | 시점 |
 | --- | --- | --- |
@@ -39,10 +39,11 @@ openssl rand -base64 32 | ./node_modules/.bin/wrangler secret put BETTER_AUTH_SE
 
 ## 3. Google OAuth
 
-[Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth 클라이언트 ID(웹) 2개:
+GCP 프로젝트 `portfolio-web-yhy`(10/29 `gcloud projects create`로 생성). OAuth 동의 화면과 클라이언트는 CLI·API가 없어 [Google Auth Platform](https://console.cloud.google.com/auth/clients?project=portfolio-web-yhy)에서 만든다. OAuth 클라이언트 ID(웹) 1개를 로컬·운영이 같이 쓴다. 같은 값을 `.dev.vars`와 `.prod.vars`에 둔다. 승인된 리디렉션 URI:
 
-- 운영용: 승인된 리디렉션 URI `https://portfolio-web.yeonghun-yoo.workers.dev/auth/callback/google` (도메인 연결 후 그 주소도)
-- 로컬용: `http://localhost:8787/auth/callback/google` — 값은 `.dev.vars`에만
+- `http://localhost:8787/auth/callback/google`
+- `https://portfolio-web.yeonghun-yoo.workers.dev/auth/callback/google` (도메인 연결 후 그 주소도 추가)
+- 대상(Audience)을 프로덕션으로 게시해야 테스트 사용자 외에도 로그인된다
 
 ## 4. Telegram 봇
 

@@ -32,7 +32,12 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹�
 
 ## 환경변수·비밀
 
-레포가 Public이므로 비밀은 전부 Cloudflare 대시보드(또는 `wrangler secret`)에만 두고, 로컬은 `.dev.vars`(gitignore)로 쓴다.
+레포가 Public이므로 비밀은 전부 Worker 시크릿에만 두고, 로컬은 `.dev.vars`(gitignore)로 쓴다.
+
+- 운영 비밀은 `.prod.vars`(gitignore)에 적어 두면 `pnpm run deploy`가 `wrangler deploy --secrets-file`로 함께 올린다(10/29). 추가 방식이라 파일에 없는 비밀은 지워지지 않고 그대로 남는다. 빈 값(`KEY=`)이 있으면 운영 비밀을 덮어쓰지 않도록 배포가 멈춘다
+- `.dev.vars`와 `.prod.vars`는 따로다. `.prod.vars`에는 운영에 넣을 비밀만 적고 `.dev.vars`를 통째로 복사하지 않는다(`BETTER_AUTH_URL=localhost`·`CHAT_ENABLED` 같은 로컬 값이 운영을 덮는다). Google OAuth 클라이언트는 로컬·운영 공용이라 그 두 값만 같다
+- dotenv 형식이라 값 안의 `$`는 `\$`로 쓴다. 같은 이름의 셸 환경변수가 있으면 파일 값보다 우선한다
+- `wrangler secret put`도 쓸 수 있지만 값 입력 프롬프트가 필요해 별도 터미널에서 실행한다(Claude Code의 `!`에서는 빈 값이 들어갈 수 있다)
 
 | 변수 | 용도 | 1차 필요 |
 | --- | --- | --- |
@@ -52,11 +57,11 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹�
 
 바인딩(`wrangler.jsonc`): D1 `DB`, KV `KV`, (2차) Vectorize `VEC`, Workers AI `AI`. D1·KV id는 운영 리소스 것이다(2026-10-29 생성). `SITE_NAME`·`BETTER_AUTH_URL`은 비밀이 아니라 `vars`에 두고, 로컬은 `.dev.vars` 값이 우선한다.
 
-로컬: `.dev.vars.example`을 복사해 `.dev.vars`를 만든다. 마이그레이션은 `pnpm db:generate`(Drizzle Kit) → `pnpm db:migrate:local` / `pnpm db:migrate:remote`.
+로컬: `.dev.vars.example`을 복사해 `.dev.vars`를 만든다. 운영: `.prod.vars.example`을 복사해 `.prod.vars`를 만든다. 마이그레이션은 `pnpm db:generate`(Drizzle Kit) → `pnpm db:migrate:local` / `pnpm db:migrate:remote`.
 
 ## 보안 체크리스트
 
-- [x] `.dev.vars`, `.wrangler/`가 `.gitignore`에 포함
+- [x] `.dev.vars`, `.prod.vars`, `.wrangler/`가 `.gitignore`에 포함
 - [x] 모든 `/api/*`는 세션 또는 레이트리밋 중 하나 이상 통과해야 응답
 - [x] 레터 본문은 HTML 이스케이프 후 메일 템플릿에 삽입 (XSS·메일 인젝션 방지)
 - [x] CSP: `default-src 'self'`, 폰트·이미지 출처 명시. 정적 페이지라 nonce 대신 Astro `security.csp`의 해시를 `<meta>`로

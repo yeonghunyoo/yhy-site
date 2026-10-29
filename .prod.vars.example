@@ -1,0 +1,19 @@
+# 운영 비밀값 예시. `cp .prod.vars.example .prod.vars` 후 넣을 줄만 주석을 풀고 채운다. (.prod.vars는 커밋 금지)
+# pnpm run deploy가 wrangler deploy --secrets-file로 함께 올린다. 파일에 없는 비밀은 운영에 그대로 남는다.
+# 빈 값(KEY=)이 있으면 배포가 멈춘다. 값 안의 $는 \$로 쓴다.
+# BETTER_AUTH_URL·SITE_NAME은 비밀이 아니라 wrangler.jsonc의 vars에 있으니 여기 넣지 않는다.
+# BETTER_AUTH_SECRET=
+# ADMIN_EMAILS=
+# LETTER_TO=
+# Google OAuth 클라이언트는 로컬·운영 공용 — .dev.vars와 같은 값
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+# 도메인 인증 후
+# RESEND_API_KEY=
+# MAIL_FROM=
+# TELEGRAM_BOT_TOKEN=
+# TELEGRAM_CHAT_ID=
+# 2차: 챗 + RAG
+# CHAT_ENABLED=
+# ANTHROPIC_API_KEY=
+# CHAT_MONTHLY_TOKEN_CAP=

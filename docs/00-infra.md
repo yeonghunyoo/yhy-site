@@ -40,7 +40,7 @@
 
 ## 배포·로컬
 
-**배포 흐름**: 로컬에서 `pnpm run deploy`(= `astro build && wrangler deploy`) → 운영. GitHub 푸시는 코드 보관일 뿐 배포를 일으키지 않는다. D1 마이그레이션은 배포 전 `wrangler d1 migrations apply --remote`로 수동 적용.
+**배포 흐름**: 로컬에서 `pnpm run deploy`(= `scripts/deploy.sh`: `astro build` → `wrangler deploy`, `.prod.vars`가 있으면 `--secrets-file`로 운영 비밀도 함께) → 운영. GitHub 푸시는 코드 보관일 뿐 배포를 일으키지 않는다. D1 마이그레이션은 배포 전 `wrangler d1 migrations apply --remote`로 수동 적용.
 
 - `pnpm deploy`는 pnpm 내장 명령과 겹치므로 반드시 `pnpm run deploy`로 실행한다
 - 배포 전 `pnpm preview`로 로컬 확인, 배포 후 운영 주소에서 확인
@@ -50,7 +50,7 @@
 
 - `nvm use` 후 `pnpm dev` — Astro 개발 서버
 - `pnpm preview` — 빌드 후 `wrangler dev`로 운영과 같은 Workers 런타임에서 확인(`http://localhost:8787`). D1·KV 로컬 에뮬레이션 포함
-- 비밀은 `.dev.vars`
+- 비밀은 `.dev.vars`(로컬), `.prod.vars`(운영 배포 때 업로드). 상세는 [common.md](common.md)의 "환경변수·비밀"
 
 **Cloudflare 계정**: wrangler는 `wrangler login`(브라우저 OAuth)으로 로그인한다. 확인은 `wrangler whoami`.
 
