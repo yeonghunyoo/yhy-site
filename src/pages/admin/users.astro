@@ -33,7 +33,7 @@ const me = Astro.locals.user?.id;
             {u.id !== me && (
               <form method="post" action={`/api/admin/users/${u.id}/block`}>
                 <input type="hidden" name="blocked" value={u.isBlocked ? '0' : '1'} />
-                <button class:list={['btn shrink-0 text-sm whitespace-nowrap', u.isBlocked ? 'btn-ghost' : 'border border-danger/50 text-danger']}>
+                <button class:list={['btn shrink-0 text-sm whitespace-nowrap', !u.isBlocked && 'btn-outline btn-error']}>
                   {u.isBlocked ? '차단 해제' : '차단'}
                 </button>
               </form>

@@ -65,7 +65,7 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
         <div className="py-2" role="status">
           <p className="font-semibold">{dict.auth.sentTitle}</p>
           <p className="mt-2 text-muted">{dict.auth.sentBody.replace('{email}', email.trim())}</p>
-          <button type="button" className="btn btn-ghost mt-6 w-full" onClick={() => setSent(false)}>
+          <button type="button" className="btn mt-6 w-full" onClick={() => setSent(false)}>
             {dict.auth.resend}
           </button>
         </div>
@@ -102,7 +102,7 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
             {dict.auth.or}
             <span className="h-px flex-1 bg-border" />
           </div>
-          <button type="button" className="btn btn-ghost w-full" onClick={google} disabled={busy}>
+          <button type="button" className="btn w-full" onClick={google} disabled={busy}>
             {dict.auth.google}
           </button>
           <p className="mt-5 text-xs text-muted">

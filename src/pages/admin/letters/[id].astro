@@ -48,7 +48,7 @@ const replies = await db.select().from(letterReplies).where(eq(letterReplies.let
   {
     l.status === 'failed' && (
       <form method="post" action={`/api/admin/letters/${l.id}/resend`} class="mt-4">
-        <button class="btn btn-ghost">내 메일로 재전송</button>
+        <button class="btn">내 메일로 재전송</button>
       </form>
     )
   }

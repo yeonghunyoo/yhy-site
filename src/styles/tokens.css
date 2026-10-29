@@ -18,6 +18,27 @@
 
   --radius: 0.75rem;
   --header-h: 3.5rem;
+
+  /* daisyUI 테마 변수 — 값은 위 토큰에서 가져온다(다크 모드도 위 토큰을 따라감) */
+  --color-base-100: var(--color-bg);
+  --color-base-200: var(--color-border);
+  --color-base-300: var(--color-border);
+  --color-base-content: var(--color-fg);
+  --color-primary: var(--color-accent);
+  --color-primary-content: var(--color-accent-fg);
+  --color-neutral: var(--color-accent);
+  --color-neutral-content: var(--color-accent-fg);
+  --color-error: var(--color-danger);
+  --color-error-content: #ffffff;
+  --color-success-content: #ffffff;
+  --radius-field: var(--radius);
+  --radius-box: var(--radius);
+  --radius-selector: var(--radius);
+  --size-field: 0.275rem; /* 버튼·입력 높이 = 10배 = 44px(터치 타깃) */
+  --size-selector: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
 }
 
 @media (prefers-color-scheme: dark) {

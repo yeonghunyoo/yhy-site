@@ -37,7 +37,7 @@ const projects = await getProjects(locale);
                 <li class="rounded-full border border-border px-3 py-1 text-sm">{s}</li>
               ))}
             </ul>
-            <a href={`/${locale}/projects/${project.slug}/`} class="btn btn-ghost mt-6 self-start">
+            <a href={`/${locale}/projects/${project.slug}/`} class="btn mt-6 self-start">
               {dict.project.more}
             </a>
           </li>

@@ -31,7 +31,7 @@ export default function AuthMenu({ dict }: Props) {
   // 클릭은 Overlay(하이드레이트 전에는 client:demand)가 [data-action]으로 받는다.
   if (!data) {
     return (
-      <button type="button" className="btn btn-ghost text-sm" data-action="login">
+      <button type="button" className="btn text-sm" data-action="login">
         {dict.contact.login}
       </button>
     );

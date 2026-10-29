@@ -177,7 +177,7 @@ export default function ChatDock({ dict, locale }: Props) {
         {turns.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {dict.chat.chips.map((chip) => (
-              <button key={chip} type="button" className="btn btn-ghost min-h-11 text-sm font-normal" onClick={() => void ask(chip)}>
+              <button key={chip} type="button" className="btn min-h-11 text-sm font-normal" onClick={() => void ask(chip)}>
                 {chip}
               </button>
             ))}
@@ -204,12 +204,12 @@ export default function ChatDock({ dict, locale }: Props) {
                     );
                   })}
                   {t.notice === 'login' && (
-                    <button type="button" data-action="login" className="btn btn-ghost min-h-11 text-sm">
+                    <button type="button" data-action="login" className="btn min-h-11 text-sm">
                       {dict.chat.login}
                     </button>
                   )}
                   {(t.notice === 'letter' || t.content.includes('[[letter]]')) && (
-                    <button type="button" data-action="letter" className="btn btn-ghost min-h-11 text-sm">
+                    <button type="button" data-action="letter" className="btn min-h-11 text-sm">
                       {dict.chat.letter}
                     </button>
                   )}
