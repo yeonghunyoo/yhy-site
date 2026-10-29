@@ -7,7 +7,7 @@
 빌더·개발자 포트폴리오. 한/영 정적 사이트 + 이메일/Google 로그인 + 레터 모달 + 간략 어드민이 MVP. 챗/RAG와 3D는 2차.
 
 ## 확정 스택
-- 프론트: Astro 7 (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4
+- 프론트: Astro 7 (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4 + daisyUI 5(CSS 전용)
 - 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, 로컬 wrangler CLI로만 배포), D1, KV, (2차) Vectorize·Workers AI. Pages는 쓰지 않는다
 - 런타임: Node 24 (`.nvmrc`), pnpm 12 (`packageManager`). 로컬 확인은 `pnpm preview`(wrangler dev, 빌드 후 서버 재시작 필요), 타입 검사는 `pnpm check`(TypeScript 6 고정 — astro check가 7 미지원)
 - 인증: Better Auth (D1 어댑터), 이메일 매직링크 + Google OAuth, 비밀번호 없음
@@ -20,7 +20,7 @@
 - React 아일랜드는 `client:demand`(src/directives/demand.ts)로 필요할 때만 로드한다. 초기 JS 예산 50KB
 - HTML에 `style=""` 속성 금지(CSP). Tailwind 클래스를 쓴다
 - 3D·챗은 지연 로드 아일랜드로 격리하고 저사양·reduced-motion 폴백을 둔다
-- 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, CSS 라이브러리와 세계관은 미정이므로 임의로 정하지 않는다
+- 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI. 세계관은 미정이므로 테마 색·글꼴을 임의로 정하지 않는다
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
 - `/admin`과 `/api/admin/*`는 관리자 이메일 허용목록(`ADMIN_EMAILS`) 검증, 비관리자는 404
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
@@ -31,4 +31,4 @@
 0 인프라 → 1 프론트+반응형 → 2 인증 → 3 레터 → 4 어드민(MVP 공개) → 5–6 챗+RAG → 7 3D
 
 ## 아직 미정 (임의 결정 금지)
-브랜드/도메인, 세계관 콘셉트, CSS 라이브러리, 레터 수신 메일·관리자 이메일. 상세는 `docs/overview.md`의 "미결정 사항".
+브랜드/도메인, 세계관 콘셉트, 레터 수신 메일·관리자 이메일. 상세는 `docs/overview.md`의 "미결정 사항".
