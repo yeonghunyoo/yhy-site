@@ -44,6 +44,10 @@
 }
 
 @layer components {
+  /* daisyUI 버튼 기본 글자(14px)를 본문과 같은 16px로. btn-sm 등 크기 클래스는 그대로 우선한다 */
+  .btn {
+    --fontsize: 1rem;
+  }
   .container-page {
     width: 100%;
     max-width: 1200px;
