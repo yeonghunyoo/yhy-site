@@ -56,9 +56,11 @@ GCP 프로젝트 `portfolio-web-yhy`(10/29 `gcloud projects create`로 생성). 
 pnpm check && pnpm run deploy
 ```
 
-- [ ] `/ko`, `/en`, 프로젝트 상세, 개인정보 페이지가 열린다
+- [x] `/ko`, `/en`, 프로젝트 상세, 개인정보 페이지가 열린다 (10/29)
 - [ ] 로그인(Google, 도메인 후 이메일) → 레터 보내기 → 내 메일 도착 + Telegram 알림
+  - [x] Google 로그인 → 레터 저장 (10/29, workers.dev). 메일·Telegram은 키가 없어 로그로만 — 이때 레터는 `status = sent`로 남아 재전송 대상이 아니다
 - [ ] 관리자로 `/admin` 지표·레터 답장·사용자 차단, 비관리자는 404
+  - [x] 관리자 `/admin` 접속 (10/29)
 - [ ] 실기기 2대(iOS Safari, Android Chrome) 레이아웃
 - [ ] 문제 시 `./node_modules/.bin/wrangler rollback`
 
