@@ -50,7 +50,7 @@ src/
 
 **보안 헤더(CSP)**: Astro `security.csp`로 페이지마다 `<meta>` CSP를 넣고, Astro가 인라인 스크립트·스타일을 해시로 허용한다. 그래서 HTML의 `style=""` 속성은 쓰지 않는다(Tailwind 클래스로). React의 `style` prop은 DOM API라 괜찮다. Shiki 코드 하이라이트는 인라인 style을 써서 꺼 두었다.
 
-**스타일**: Tailwind v4. 디자인 토큰은 `src/styles/tokens.css`의 CSS 변수로 두고, 세계관 콘셉트가 정해지면 이 파일만 교체한다. 컴포넌트 라이브러리는 디자인 MCP 결정 후 추가.
+**스타일**: Tailwind v4. 디자인 토큰은 `src/styles/tokens.css`의 CSS 변수로 두고, 세계관 콘셉트가 정해지면 이 파일만 교체한다. UI 레퍼런스는 Mobbin, CSS 라이브러리는 선정 후 추가(기준은 overview의 결정 표).
 
 ## 반응형·모바일 UX
 

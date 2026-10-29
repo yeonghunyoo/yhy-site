@@ -20,7 +20,7 @@
 - React 아일랜드는 `client:demand`(src/directives/demand.ts)로 필요할 때만 로드한다. 초기 JS 예산 50KB
 - HTML에 `style=""` 속성 금지(CSP). Tailwind 클래스를 쓴다
 - 3D·챗은 지연 로드 아일랜드로 격리하고 저사양·reduced-motion 폴백을 둔다
-- 디자인 토큰은 `src/styles/tokens.css`에만. 세계관/UI 라이브러리는 미정이므로 임의로 정하지 않는다
+- 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, CSS 라이브러리와 세계관은 미정이므로 임의로 정하지 않는다
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
 - `/admin`과 `/api/admin/*`는 관리자 이메일 허용목록(`ADMIN_EMAILS`) 검증, 비관리자는 404
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
@@ -31,4 +31,4 @@
 0 인프라 → 1 프론트+반응형 → 2 인증 → 3 레터 → 4 어드민(MVP 공개) → 5–6 챗+RAG → 7 3D
 
 ## 아직 미정 (임의 결정 금지)
-브랜드/도메인, 세계관 콘셉트, 디자인 MCP·컴포넌트 라이브러리, 레터 수신 메일·관리자 이메일. 상세는 `docs/overview.md`의 "미결정 사항".
+브랜드/도메인, 세계관 콘셉트, CSS 라이브러리, 레터 수신 메일·관리자 이메일. 상세는 `docs/overview.md`의 "미결정 사항".
