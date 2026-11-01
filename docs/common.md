@@ -29,7 +29,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `chat:{userId 또는 ip}:{YYYY-MM-DD}` (2차) | 턴 수 | 1일 |
 | `chat:month:{YYYY-MM}` (2차) | 누적 토큰 | 31일 |
 
-**보존 정책**: 레터·답장은 영구(계정 삭제 시 `user_id`·`reply_to`만 NULL), `chat_logs`는 90일 후 월 1회 cron(Workers Cron Trigger)으로 삭제.
+**보존 정책**: 레터·답장은 영구(계정 삭제 시 `user_id`·`reply_to`만 NULL), `chat_logs`는 90일 지난 행을 챗 요청 때 함께 삭제(cron 없음, [05-06-chat-rag.md](05-06-chat-rag.md)).
 
 ## 환경변수·비밀
 
@@ -66,7 +66,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 - [x] 레터 본문은 HTML 이스케이프 후 메일 템플릿에 삽입 (XSS·메일 인젝션 방지)
 - [x] CSP: `default-src 'self'`, 폰트·이미지 출처 명시. 정적 페이지라 nonce 대신 Astro `security.csp`의 해시를 `<meta>`로
 - [x] `/admin` 미인가는 404 (401/403 아님)
-- [ ] Google OAuth 리디렉션 URI에 운영 도메인만 (로컬은 별도 클라이언트)
+- [x] Google OAuth 리디렉션 URI는 등록한 주소만 — 로컬(`localhost:8787`)과 운영(workers.dev, 도메인 연결 후 그 주소). 클라이언트는 로컬·운영 공용 1개(10/29, [02-auth.md](02-auth.md))
 - [x] 레이트리밋 키의 IP는 `CF-Connecting-IP` 사용
 - [ ] Cloudflare 무료 WAF 규칙으로 `/api/*` 국가별·봇 점수 기반 챌린지 (선택)
 - [x] 개인정보 고지: 로그인 이메일·레터 저장 사실을 레터 시트 하단에 한 줄 명시
