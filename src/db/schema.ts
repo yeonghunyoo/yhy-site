@@ -67,6 +67,8 @@ export const chatLogs = sqliteTable(
     sources: text('sources', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
     // 프롬프트에 넣은 부모 섹션과 점수(JSON) — 튜닝용
     retrieval: text('retrieval', { mode: 'json' }).$type<RetrievalLog[]>().notNull().default(sql`'[]'`),
+    // 가드레일 판정(injection / unsafe:S9 / self_harm:S11 / out_of_scope / output_blocked), 통과면 NULL
+    flag: text('flag'),
     tokensIn: integer('tokens_in').notNull().default(0),
     tokensOut: integer('tokens_out').notNull().default(0),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(now),

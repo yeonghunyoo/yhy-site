@@ -18,7 +18,8 @@ export const RAG = {
   /** bge-reranker-base는 한국어 점수 차이가 거의 없어(11/01 측정) 끈다. 영어 문서만 쓰게 되면 다시 재본다 */
   rerank: false,
   rerankCandidates: 20,
-  topSections: 4,
+  /** 프롬프트에 넣는 부모 섹션 수. 초안 문서가 섹션 10개 남짓이라 4개면 재작성 질문에 따라 필요한 섹션이 빠졌다(11/01) */
+  topSections: 6,
   localeBoost: 1.2,
   faqBoost: 1.1,
 } as const;

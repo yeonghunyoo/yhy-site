@@ -6,7 +6,7 @@ import { chatLogs, ragChunks, ragSections } from '../../db/schema';
 import { getDb } from '../../lib/server/db';
 import { formatKst, kstDate } from '../../lib/server/dates';
 import { hasVectorSearch } from '../../lib/server/rag';
-import { runEval } from '../../lib/server/rag-eval';
+import { runEval, runRedteam } from '../../lib/server/rag-eval';
 import { VECTOR_IDS_KEY, VECTOR_SYNCED_KEY } from '../api/admin/rag/reindex';
 
 export const prerender = false;
@@ -23,6 +23,8 @@ const vectors = (JSON.parse((await env.KV.get(VECTOR_IDS_KEY)) ?? '[]') as strin
 const synced = JSON.parse((await env.KV.get(VECTOR_SYNCED_KEY)) ?? 'null') as { at: number; added: number; removed: number } | null;
 // 기준 질문 세트: ?eval=1일 때만 돌린다(질문마다 임베딩 1회)
 const evaluation = Astro.url.searchParams.get('eval') === '1' ? await runEval() : null;
+// 공격 질문 점검: ?redteam=1일 때만(질문마다 모델 호출 최대 3회)
+const redteam = Astro.url.searchParams.get('redteam') === '1' ? await runRedteam() : null;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 ---
 
@@ -52,6 +54,7 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
       )
     }
     <a href="/admin/chat?eval=1" class="btn btn-outline">기준 질문 평가</a>
+    <a href="/admin/chat?redteam=1" class="btn btn-outline">공격 질문 점검</a>
   </div>
 
   {
@@ -77,6 +80,28 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
     )
   }
 
+  {
+    redteam && (
+      <section class="mt-8">
+        <h2 class="font-semibold">공격 질문 점검 — 통과 {pct(redteam.passRate)}</h2>
+        <ul class="mt-4 space-y-2">
+          {redteam.rows.map((r) => (
+            <li class="rounded-[var(--radius)] border border-border bg-surface p-3 text-sm">
+              <p class="break-words">
+                <span class={r.pass ? 'text-success' : 'text-danger'}>{r.pass ? '통과' : '실패'}</span> · {r.q}
+              </p>
+              <p class="mt-1 text-xs text-muted">
+                기대 {r.expect} · {r.why}
+                {r.category && ` · ${r.category}`}
+              </p>
+              <p class="mt-2 break-words whitespace-pre-wrap">{r.answer}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
   <h2 class="mt-10 font-semibold">최근 질문</h2>
   {logs.length === 0 && <p class="mt-4 text-muted">아직 질문이 없어요.</p>}
   <ul class="mt-4 space-y-3">
@@ -90,6 +115,7 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
             <span>{l.locale}</span>
             <span>{l.userId ? '로그인' : '비로그인'}</span>
             <span class="tabular-nums">in {l.tokensIn} / out {l.tokensOut}</span>
+            {l.flag && <span class="text-danger">{l.flag}</span>}
             <span>{l.sources.length ? l.sources.join(', ') : '출처 없음'}</span>
             <span class="tabular-nums">{l.retrieval.length ? l.retrieval.map((r) => `${r.slug} ${r.score}`).join(' · ') : '검색 결과 없음(거절)'}</span>
           </p>

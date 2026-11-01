@@ -10,6 +10,8 @@ interface Turn {
   role: 'user' | 'assistant';
   content: string;
   sources?: string[];
+  /** 서버가 답변에 붙인 서명 — 다음 요청 때 이력과 함께 돌려보낸다(서명 없는 답변은 이력에서 빠진다) */
+  sig?: string;
   /** 한도 초과 등 안내(서버로 보내는 대화 기록에는 넣지 않는다) */
   notice?: 'login' | 'letter' | 'error';
 }
@@ -80,7 +82,7 @@ export default function ChatDock({ dict, locale }: Props) {
     if (!q || busy) return;
     setBusy(true);
     setInput('');
-    const history = turns.filter((t) => !t.notice).map(({ role, content }) => ({ role, content }));
+    const history = turns.filter((t) => !t.notice).map(({ role, content, sig }) => ({ role, content, sig }));
     setTurns((prev) => [...prev, { role: 'user', content: q }, { role: 'assistant', content: '' }]);
 
     const patchLast = (patch: Partial<Turn> | ((t: Turn) => Partial<Turn>)) =>
@@ -118,9 +120,9 @@ export default function ChatDock({ dict, locale }: Props) {
         for (const raw of events) {
           const line = raw.replace(/^data: /, '');
           if (!line) continue;
-          const event = JSON.parse(line) as { t: 'delta' | 'done' | 'error'; text?: string; sources?: string[] };
+          const event = JSON.parse(line) as { t: 'delta' | 'done' | 'error'; text?: string; sources?: string[]; sig?: string };
           if (event.t === 'delta') patchLast((t) => ({ content: t.content + (event.text ?? '') }));
-          if (event.t === 'done') patchLast({ sources: event.sources ?? [] });
+          if (event.t === 'done') patchLast({ sources: event.sources ?? [], sig: event.sig });
           if (event.t === 'error') throw new Error('stream error');
         }
       }

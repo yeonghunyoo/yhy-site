@@ -28,6 +28,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `notify:5xx:{YYYY-MM-DDTHH:MM}` | 5xx 알림 중복 억제 | 2분 |
 | `chat:{userId 또는 ip}:{YYYY-MM-DD}` (2차) | 턴 수 | 1일 |
 | `chat:month:{YYYY-MM}` (2차) | 누적 토큰 | 31일 |
+| `notify:chat-guard:{YYYY-MM-DDTHH}` (2차) | 챗 가드 알림 중복 억제(UTC 시간 단위) | 2시간 |
 | `rag:vector-ids` (2차) | Vectorize에 넣은 청크 id 목록(JSON) | 없음 |
 | `rag:vector-synced` (2차) | 마지막 벡터 갱신 시각·추가·삭제 수 | 없음 |
 
@@ -76,6 +77,8 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 - [x] `DELETE /api/account`는 세션 + 확인 문자열 둘 다 검증, 트랜잭션(D1 batch)으로 처리
 - [x] `/api/admin/*`는 관리자 세션 검증을 미들웨어와 핸들러 양쪽에서 수행
 - [x] Telegram 메시지에 방문자 이메일 전체를 넣지 않는다(앞 3자 + 도메인만)
+- [x] (2차) 챗 가드레일: 이력 서명, 태그 이스케이프, 주입 검사, Llama Guard 유해 검사(자해는 도움 안내), 범위 판단, 출력 검사 — [05-06-chat-rag.md](05-06-chat-rag.md) "보안·가드레일"
+- [ ] (2차, 선택) Cloudflare WAF 속도 제한 규칙으로 `/api/chat` IP당 분당 요청 제한
 
 ## 접근성 (전 단계)
 

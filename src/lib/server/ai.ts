@@ -6,6 +6,7 @@ export const AI_MODELS = {
   chat: '@cf/google/gemma-4-26b-a4b-it',
   embedding: '@cf/baai/bge-m3',
   rerank: '@cf/baai/bge-reranker-base',
+  moderation: '@cf/meta/llama-guard-3-8b',
 } as const;
 
 
@@ -50,6 +51,17 @@ export async function rerank(query: string, texts: string[]): Promise<number[]> 
   const scores = texts.map(() => 0);
   for (const r of result.response ?? []) if (r.id !== undefined) scores[r.id] = r.score ?? 0;
   return scores;
+}
+
+/**
+ * 유해 요청 검사(Llama Guard 3). 질문만 넣는다. 결과는 `safe` 또는 `unsafe\nS9`(MLCommons 위험 분류 코드).
+ * 11/01 확인: 폭탄·마약·해킹·자해 같은 한국어 요청도 잡는다. 프롬프트 주입·모욕은 잡지 않는다(guard.ts가 따로 본다).
+ */
+export async function moderate(text: string): Promise<{ safe: boolean; category: string | null }> {
+  const result = (await ai()!.run(AI_MODELS.moderation, { messages: [{ role: 'user', content: text }] })) as { response?: unknown };
+  const verdict = String(result.response ?? '').trim();
+  if (!verdict.startsWith('unsafe')) return { safe: true, category: null };
+  return { safe: false, category: verdict.split('\n')[1]?.trim() ?? null };
 }
 
 type Completion = {

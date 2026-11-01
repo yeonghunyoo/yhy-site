@@ -3,64 +3,40 @@ import { env, waitUntil } from 'cloudflare:workers';
 import { lt } from 'drizzle-orm';
 import { isLocale, type Locale } from '../../i18n';
 import { chatLogs } from '../../db/schema';
-import { complete, hasAi, streamChat, type ChatMessage } from '../../lib/server/ai';
-import { CHAT_LIMITS, citedSources, documentsBlock, hashIp, rewriteMessages, runawayCitations, systemPrompt } from '../../lib/server/chat';
+import { streamChat } from '../../lib/server/ai';
+import { CHAT_LIMITS, citedSources, hashIp, runawayCitations } from '../../lib/server/chat';
+import { prepare, verifiedHistory, type Prepared } from '../../lib/server/chat-pipeline';
 import { getDb } from '../../lib/server/db';
 import { kstDate } from '../../lib/server/dates';
+import { GUARD_REPLY, outputBlocked, signTurn, type GuardFlag } from '../../lib/server/guard';
 import { notify } from '../../lib/server/notify';
-import { retrieve, type ScoredSection } from '../../lib/server/rag';
 import { clientIp } from '../../lib/server/ratelimit';
 
 export const prerender = false;
 
-type Turn = { role: 'user' | 'assistant'; content: string };
-
 const encoder = new TextEncoder();
 const sse = (data: unknown) => encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
+const SSE_HEADERS = { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' };
 
 const CAPPED: Record<Locale, string> = {
   ko: '오늘은 쉬어요. 궁금한 건 레터로 보내주세요. [[letter]]',
   en: "I'm taking a break today. Please send a letter instead. [[letter]]",
 };
 
-/** 검색 결과가 범위 밖이면 모델을 부르지 않고 이 문장으로 거절한다(docs/05-06-chat-rag.md 질문 파이프라인 4). */
-const OUT_OF_SCOPE: Record<Locale, string> = {
-  ko: '그건 제가 아는 범위가 아니에요. 직접 물어보고 싶으시면 레터를 보내주세요. [[letter]]',
-  en: "That's outside what I know. If you'd like to ask yhy directly, please send a letter. [[letter]]",
-};
-
-/** AI 바인딩이 없을 때(로컬 확인용) — 검색 결과로 만든 모의 답변 */
-function devAnswer(locale: Locale, sections: ScoredSection[]): string {
-  const list = sections.map((s) => `「${s.section.heading}」`).join(', ');
-  const slugs = [...new Set(sections.map((s) => `[[${s.section.slug}]]`))].join(' ');
-  return locale === 'ko'
-    ? `(로컬 모드 — AI 바인딩이 없어 검색 결과만 보여줘요) 관련 문서: ${list}. ${slugs}`
-    : `(local mode — no AI binding, showing search results only) Related: ${list}. ${slugs}`;
-}
-
-function cleanHistory(raw: unknown): Turn[] {
-  if (!Array.isArray(raw)) return [];
-  const turns = raw
-    .filter((t): t is Turn => (t?.role === 'user' || t?.role === 'assistant') && typeof t?.content === 'string')
-    .map((t) => ({ role: t.role, content: t.content.slice(0, 1000) }))
-    .slice(-CHAT_LIMITS.historyTurns);
-  // 첫 메시지는 user여야 한다.
-  while (turns[0]?.role === 'assistant') turns.shift();
-  return turns;
-}
-
-/** 고정 문장 하나를 스트림처럼 보낸다. */
-const fixedReply = (text: string) =>
-  new Response(
+/** 고정 문장 하나를 스트림처럼 보낸다. 다음 턴 이력에 쓸 수 있게 서명을 붙인다. */
+async function fixedReply(text: string) {
+  const sig = await signTurn(text);
+  return new Response(
     new ReadableStream({
       start(c) {
         c.enqueue(sse({ t: 'delta', text }));
-        c.enqueue(sse({ t: 'done', sources: [] }));
+        c.enqueue(sse({ t: 'done', sources: [], sig }));
         c.close();
       },
     }),
-    { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' } },
+    { headers: SSE_HEADERS },
   );
+}
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (env.CHAT_ENABLED !== '1') return Response.json({ error: 'not_found' }, { status: 404 });
@@ -93,73 +69,61 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return fixedReply(CAPPED[locale]);
   }
 
-  const history = cleanHistory(input?.history);
+  const history = await verifiedHistory(input?.history);
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();
 
   const run = async () => {
     let answer = '';
-    let rewritten: string | null = null;
-    let sections: ScoredSection[] = [];
-    let retrieval: { id: string; slug: string; score: number }[] = [];
-    let tokensIn = 0;
-    let tokensOut = 0;
+    let prepared: Prepared | null = null;
+    let flag: GuardFlag | null = null;
+    const usage = { tokensIn: 0, tokensOut: 0 };
     const send = async (text: string) => {
       answer += text;
       await writer.write(sse({ t: 'delta', text }));
     };
     try {
-      // 2. 질문 재작성(두 번째 턴부터) — 실패하면 원 질문으로 검색한다.
-      if (history.length && hasAi()) {
-        const result = await complete(rewriteMessages(history, question), CHAT_LIMITS.rewriteMaxTokens).catch((error) => {
-          console.error('[chat:rewrite]', error);
-          return null;
-        });
-        if (result?.text) {
-          rewritten = result.text.split('\n')[0].slice(0, CHAT_LIMITS.questionMax);
-          tokensIn += result.usage.tokensIn;
-          tokensOut += result.usage.tokensOut;
-        }
-      }
-
-      // 3~7. 검색 → 범위 판단 → 부모 섹션 top-k
-      const found = await retrieve(rewritten ?? question, locale);
-      sections = found.sections;
-      retrieval = found.trace.sections.map(({ id, slug, score }) => ({ id, slug, score }));
-
-      if (sections.length === 0) await send(OUT_OF_SCOPE[locale]);
-      else if (!hasAi()) {
-        for (const piece of devAnswer(locale, sections).match(/.{1,12}/gsu) ?? []) {
-          await send(piece);
-          await new Promise((r) => setTimeout(r, 30));
-        }
-      } else {
-        // 8~9. 프롬프트 → 스트리밍 답변
-        const messages: ChatMessage[] = [
-          { role: 'system', content: systemPrompt(locale) },
-          ...history,
-          { role: 'user', content: `${documentsBlock(sections)}\n\n<question>\n${question}\n</question>` },
-        ];
-        const result = await streamChat(messages, CHAT_LIMITS.answerMaxTokens, async (text) => {
-          await send(text);
+      prepared = await prepare(question, history, locale);
+      flag = prepared.flag;
+      usage.tokensIn += prepared.usage.tokensIn;
+      usage.tokensOut += prepared.usage.tokensOut;
+      if (prepared.reply !== null) await send(prepared.reply);
+      else {
+        // 9. 스트리밍 답변. 코드 블록(출력 가드)이나 출처 표기 폭주가 보이면 거기서 끊는다.
+        let pending = '';
+        const result = await streamChat(prepared.messages, CHAT_LIMITS.answerMaxTokens, async (text) => {
+          pending += text;
+          if (outputBlocked(answer + pending)) {
+            const safe = (answer + pending).split('```')[0].slice(answer.length);
+            if (safe) await send(safe);
+            await send(`${answer ? '\n' : ''}${GUARD_REPLY.output_blocked[locale]}`);
+            flag = 'output_blocked';
+            return false;
+          }
+          // 백틱이 이어 올 수 있으니 끝의 백틱은 다음 조각까지 잡아 둔다.
+          const hold = pending.match(/`{1,2}$/)?.[0] ?? '';
+          const ready = pending.slice(0, pending.length - hold.length);
+          pending = hold;
+          if (ready) await send(ready);
           return !runawayCitations(answer);
         });
-        tokensIn += result.usage.tokensIn;
-        tokensOut += result.usage.tokensOut;
+        if (pending && flag !== 'output_blocked') await send(pending);
+        usage.tokensIn += result.usage.tokensIn;
+        usage.tokensOut += result.usage.tokensOut;
       }
-      await writer.write(sse({ t: 'done', sources: citedSources(answer, sections) }));
+      await writer.write(sse({ t: 'done', sources: citedSources(answer, prepared.sections), sig: await signTurn(answer) }));
     } catch (error) {
       // Workers AI 한도·오류: 아직 아무것도 못 보냈으면 "오늘은 쉬어요"로 끝낸다.
       console.error('[chat]', error);
       if (!answer) {
         await send(CAPPED[locale]).catch(() => {});
-        await writer.write(sse({ t: 'done', sources: [] })).catch(() => {});
+        await writer.write(sse({ t: 'done', sources: [], sig: await signTurn(answer) })).catch(() => {});
       } else await writer.write(sse({ t: 'error' })).catch(() => {});
     } finally {
       await writer.close().catch(() => {});
     }
 
-    // 10~11. 질문·재작성 질문·검색 기록·토큰만 남긴다(답변 본문 저장 안 함). 90일 지난 로그는 여기서 함께 지운다.
+    // 10~11. 질문·재작성 질문·검색 기록·가드 판정·토큰만 남긴다(답변 본문 저장 안 함). 90일 지난 로그는 여기서 함께 지운다.
     const db = getDb();
     await db.insert(chatLogs).values({
       id: crypto.randomUUID(),
@@ -167,19 +131,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
       ipHash,
       locale,
       question,
-      rewritten,
-      sources: citedSources(answer, sections),
-      retrieval,
-      tokensIn,
-      tokensOut,
+      rewritten: prepared?.rewritten ?? null,
+      sources: citedSources(answer, prepared?.sections ?? []),
+      retrieval: prepared?.retrieval ?? [],
+      flag: flag && prepared?.category ? `${flag}:${prepared.category}` : flag,
+      tokensIn: usage.tokensIn,
+      tokensOut: usage.tokensOut,
     });
     await db.delete(chatLogs).where(lt(chatLogs.createdAt, new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)));
-    if (tokensIn + tokensOut > 0) {
+    if (usage.tokensIn + usage.tokensOut > 0) {
       const current = Number((await env.KV.get(monthKey)) ?? 0);
-      await env.KV.put(monthKey, String(current + tokensIn + tokensOut), { expirationTtl: 60 * 60 * 24 * 32 });
+      await env.KV.put(monthKey, String(current + usage.tokensIn + usage.tokensOut), { expirationTtl: 60 * 60 * 24 * 32 });
+    }
+    // 유해·자해·출력 차단은 알린다. 같은 시간대에는 한 번만(연속 공격에 알림이 쏟아지지 않게).
+    if (flag === 'unsafe' || flag === 'self_harm' || flag === 'output_blocked') {
+      const notifyKey = `notify:chat-guard:${new Date().toISOString().slice(0, 13)}`;
+      if (!(await env.KV.get(notifyKey))) {
+        await env.KV.put(notifyKey, '1', { expirationTtl: 60 * 60 * 2 });
+        notify(`🛡 챗 가드 ${flag}${prepared?.category ? ` ${prepared.category}` : ''} — /admin/chat`);
+      }
     }
   };
   waitUntil(run().catch((e) => console.error('[chat:log]', e)));
 
-  return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store' } });
+  return new Response(readable, { headers: SSE_HEADERS });
 };
