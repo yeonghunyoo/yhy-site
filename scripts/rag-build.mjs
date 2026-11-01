@@ -15,7 +15,7 @@ const dry = process.argv.includes('--dry');
 
 const hash = (...parts) => createHash('sha256').update(parts.join('\u0000')).digest('hex').slice(0, 24);
 
-/** 아주 단순한 frontmatter 파서(title, summary, stack만 쓴다) */
+/** 아주 단순한 frontmatter 파서(title, summary, stack만 쓴다). frontmatter에 title이 없으면 첫 `#` 제목을 쓴다. */
 function parse(source) {
   const match = source.match(/^---\n([\s\S]*?)\n---\n?/);
   const meta = {};
@@ -25,7 +25,11 @@ function parse(source) {
       if (kv) meta[kv[1]] = kv[2].replace(/^\[|\]$/g, '').replace(/^['"]|['"]$/g, '');
     }
   }
-  const body = (match ? source.slice(match[0].length) : source).replace(/<!--[\s\S]*?-->/g, '').trim();
+  const body = (match ? source.slice(match[0].length) : source)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // 이미지는 대체 텍스트만
+    .trim();
+  meta.title ??= body.match(/^#\s+(.+)$/m)?.[1].trim();
   return { meta, body };
 }
 
@@ -99,7 +103,10 @@ for (const file of mdFiles(ragDir)) {
   const match = relative(ragDir, file).match(/^(.+)\.(ko|en)\.md$/);
   if (!match) continue;
   const [, slug, locale] = match;
-  const { meta, body } = parse(readFileSync(file, 'utf8'));
+  const source = readFileSync(file, 'utf8');
+  // rag:import로 만든 PDF 변환본은 검토 표시(주석)를 지워야 검토가 끝난 것으로 본다.
+  if (source.includes('rag-import:')) console.warn(`검토 전 문서: ${file} — 변환 결과를 확인하고 rag-import 주석을 지운다`);
+  const { meta, body } = parse(source);
   docs.push({ slug, locale, kind: slug === 'faq' ? 'faq' : 'doc', title: meta.title ?? slug, body });
 }
 const projectDir = 'src/content/projects';
