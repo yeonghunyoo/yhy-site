@@ -47,6 +47,8 @@ GCP 프로젝트 `portfolio-web-yhy`(10/29 `gcloud projects create`로 생성). 
 
 ## 4. Telegram 봇
 
+봇 사용자명은 `@yh_postman_bot`(11/01 결정). 알림만 보내는 단방향 봇이라 명령·웹훅은 없다. 표시 이름·사진은 세계관이 정해지면 `/setname`·`/setuserpic`으로 바꾼다.
+
 1. Telegram에서 [@BotFather](https://t.me/BotFather) → `/newbot` → 토큰
 2. 만든 봇에게 아무 메시지나 보낸 뒤 `https://api.telegram.org/bot<토큰>/getUpdates`에서 `chat.id` 확인
 
