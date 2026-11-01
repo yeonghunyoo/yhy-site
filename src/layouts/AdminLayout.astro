@@ -23,7 +23,7 @@ const FLASH: Record<string, string> = {
   blocked: '사용자를 차단하고 세션을 모두 끊었어요.',
   unblocked: '차단을 해제했어요.',
   invalid: '입력을 확인해 주세요.',
-  reindexed: '벡터를 다시 만들었어요.',
+  reindexed: '벡터를 갱신했어요. 검색에 반영되기까지 몇 초 걸릴 수 있어요.',
   no_vector: 'Vectorize·Workers AI 바인딩이 없어요(docs/guides/chat-rag-setup.md).',
 };
 const flash = FLASH[Astro.url.searchParams.get('flash') ?? ''];

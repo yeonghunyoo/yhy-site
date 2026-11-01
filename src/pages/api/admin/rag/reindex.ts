@@ -1,39 +1,43 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
-import { eq } from 'drizzle-orm';
 import { ragChunks } from '../../../../db/schema';
 import { adminGuard, backTo } from '../../../../lib/server/admin';
+import { embed } from '../../../../lib/server/ai';
 import { getDb } from '../../../../lib/server/db';
-import { EMBEDDING_MODEL, vectorBindings } from '../../../../lib/server/rag';
+import { hasVectorSearch } from '../../../../lib/server/rag';
 
 export const prerender = false;
 
 const BATCH = 50;
-const IDS_KEY = 'rag:vector-ids';
+export const VECTOR_IDS_KEY = 'rag:vector-ids';
+export const VECTOR_SYNCED_KEY = 'rag:vector-synced';
 
-/** D1 rag_chunks 전체를 임베딩해 Vectorize에 넣는다. 사라진 청크의 벡터는 지운다. */
+/**
+ * D1 rag_chunks와 Vectorize를 맞춘다. id가 내용 해시라 새로 생긴 청크만 임베딩하고 사라진 청크만 지운다.
+ * Vectorize에는 id 목록 API가 없어, 넣어 둔 id를 KV에 적어 두고 비교한다.
+ */
 export const POST: APIRoute = async (context) => {
   const denied = adminGuard(context);
   if (denied) return denied;
-  const { AI, VEC } = vectorBindings();
-  if (!AI || !VEC) return backTo('/admin/chat', 'no_vector');
+  if (!hasVectorSearch()) return backTo('/admin/chat', 'no_vector');
+  const VEC = (env as unknown as { VEC: VectorizeIndex }).VEC;
 
-  const db = getDb();
-  const chunks = await db.select().from(ragChunks);
-  for (let i = 0; i < chunks.length; i += BATCH) {
-    const batch = chunks.slice(i, i + BATCH);
-    const embedded = (await AI.run(EMBEDDING_MODEL, { text: batch.map((c) => `${c.heading}\n${c.text}`) })) as { data: number[][] };
-    await VEC.upsert(batch.map((c, j) => ({ id: c.id, values: embedded.data[j], metadata: { slug: c.slug, locale: c.locale } })));
-    await db.batch(
-      batch.map((c) => db.update(ragChunks).set({ vectorId: c.id }).where(eq(ragChunks.id, c.id))) as [never, ...never[]],
+  const chunks = await getDb().select().from(ragChunks);
+  const current = new Set(chunks.map((c) => c.id));
+  const previous = new Set(JSON.parse((await env.KV.get(VECTOR_IDS_KEY)) ?? '[]') as string[]);
+  const added = chunks.filter((c) => !previous.has(c.id));
+  const stale = [...previous].filter((id) => !current.has(id));
+
+  for (let i = 0; i < added.length; i += BATCH) {
+    const batch = added.slice(i, i + BATCH);
+    const vectors = await embed(batch.map((c) => c.text));
+    await VEC.upsert(
+      batch.map((c, j) => ({ id: c.id, values: vectors[j], metadata: { section_id: c.sectionId, slug: c.slug, locale: c.locale, kind: c.kind } })),
     );
   }
+  for (let i = 0; i < stale.length; i += 100) await VEC.deleteByIds(stale.slice(i, i + 100));
 
-  const current = new Set(chunks.map((c) => c.id));
-  const previous = JSON.parse((await env.KV.get(IDS_KEY)) ?? '[]') as string[];
-  const stale = previous.filter((id) => !current.has(id));
-  if (stale.length) await VEC.deleteByIds(stale);
-  await env.KV.put(IDS_KEY, JSON.stringify([...current]));
-
+  await env.KV.put(VECTOR_IDS_KEY, JSON.stringify([...current]));
+  await env.KV.put(VECTOR_SYNCED_KEY, JSON.stringify({ at: Date.now(), added: added.length, removed: stale.length }));
   return backTo('/admin/chat', 'reindexed');
 };

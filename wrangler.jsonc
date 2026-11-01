@@ -7,6 +7,9 @@
   // 바인딩 목록은 docs/common.md. id는 운영 리소스(로컬 wrangler dev는 .wrangler/에 따로 에뮬레이션)
   "d1_databases": [{ "binding": "DB", "database_name": "portfolio-web", "database_id": "bd597ce5-ef1f-41ad-b549-12f4cc7d2604", "migrations_dir": "migrations" }],
   "kv_namespaces": [{ "binding": "KV", "id": "923982f21f4b41d8ac46b2dbd45d415b" }],
+  // 챗·RAG(docs/05-06-chat-rag.md). AI는 로컬에서도 원격 호출(무료 범위에 잡힌다), Vectorize는 로컬 에뮬레이션이 없어 원격 인덱스를 쓴다
+  "ai": { "binding": "AI", "remote": true },
+  "vectorize": [{ "binding": "VEC", "index_name": "portfolio-rag", "remote": true }],
   // 비밀이 아닌 설정값. 비밀은 .dev.vars(로컬) / wrangler secret put(운영)
   "vars": {
     "SITE_NAME": "yhy",

@@ -20,7 +20,6 @@
     "rag:build:remote": "node scripts/rag-build.mjs --remote"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.3.0",
     "@astrojs/cloudflare": "^14.4.2",
     "@astrojs/react": "^7.1.1",
     "@tailwindcss/vite": "^4.3.3",

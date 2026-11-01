@@ -1,36 +1,79 @@
 ---
 import { env } from 'cloudflare:workers';
-import { count, desc, isNotNull } from 'drizzle-orm';
+import { count, desc } from 'drizzle-orm';
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { chatLogs, ragChunks } from '../../db/schema';
+import { chatLogs, ragChunks, ragSections } from '../../db/schema';
 import { getDb } from '../../lib/server/db';
 import { formatKst, kstDate } from '../../lib/server/dates';
 import { hasVectorSearch } from '../../lib/server/rag';
+import { runEval } from '../../lib/server/rag-eval';
+import { VECTOR_IDS_KEY, VECTOR_SYNCED_KEY } from '../api/admin/rag/reindex';
 
 export const prerender = false;
 
 // 질문 로그만 본다(답변 제외). 어떤 질문이 들어오는지가 RAG 문서 보강의 근거.
 const db = getDb();
 const logs = await db.select().from(chatLogs).orderBy(desc(chatLogs.createdAt)).limit(100);
+const [{ sections }] = await db.select({ sections: count() }).from(ragSections);
 const [{ chunks }] = await db.select({ chunks: count() }).from(ragChunks);
-const [{ vectors }] = await db.select({ vectors: count() }).from(ragChunks).where(isNotNull(ragChunks.vectorId));
 const monthTokens = Number((await env.KV.get(`chat:month:${kstDate(new Date()).slice(0, 7)}`)) ?? 0);
 const vectorReady = hasVectorSearch();
+// 벡터 수: KV에 적어 둔 id 수(Vectorize describe는 반영이 늦어 참고만)
+const vectors = (JSON.parse((await env.KV.get(VECTOR_IDS_KEY)) ?? '[]') as string[]).length;
+const synced = JSON.parse((await env.KV.get(VECTOR_SYNCED_KEY)) ?? 'null') as { at: number; added: number; removed: number } | null;
+// 기준 질문 세트: ?eval=1일 때만 돌린다(질문마다 임베딩 1회)
+const evaluation = Astro.url.searchParams.get('eval') === '1' ? await runEval() : null;
+const pct = (n: number) => `${Math.round(n * 100)}%`;
 ---
 
 <AdminLayout title="챗">
   <h1 class="text-2xl font-bold">챗</h1>
-  <dl class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+  <dl class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
     <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">상태</dt><dd class="mt-1 font-semibold">{env.CHAT_ENABLED === '1' ? '켜짐' : '꺼짐'}</dd></div>
     <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">이번 달 토큰</dt><dd class="mt-1 font-semibold tabular-nums">{monthTokens.toLocaleString()}</dd></div>
-    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">청크</dt><dd class="mt-1 font-semibold tabular-nums">{chunks}</dd></div>
-    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">벡터</dt><dd class="mt-1 font-semibold tabular-nums">{vectorReady ? vectors : '바인딩 없음(키워드만)'}</dd></div>
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4"><dt class="text-sm text-muted">섹션 / 청크</dt><dd class="mt-1 font-semibold tabular-nums">{sections} / {chunks}</dd></div>
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4">
+      <dt class="text-sm text-muted">벡터</dt>
+      <dd class={`mt-1 font-semibold tabular-nums ${vectorReady && vectors !== chunks ? 'text-danger' : ''}`}>
+        {vectorReady ? (vectors === chunks ? vectors : `${vectors} — 갱신 필요`) : '바인딩 없음(키워드만)'}
+      </dd>
+    </div>
+    <div class="rounded-[var(--radius)] border border-border bg-surface p-4">
+      <dt class="text-sm text-muted">마지막 갱신</dt>
+      <dd class="mt-1 text-sm font-semibold">{synced ? `${formatKst(new Date(synced.at))} (+${synced.added} −${synced.removed})` : '없음'}</dd>
+    </div>
   </dl>
+  <div class="mt-4 flex flex-wrap gap-2">
+    {
+      vectorReady && (
+        <form method="post" action="/api/admin/rag/reindex">
+          <button class="btn">벡터 갱신</button>
+        </form>
+      )
+    }
+    <a href="/admin/chat?eval=1" class="btn btn-outline">기준 질문 평가</a>
+  </div>
+
   {
-    vectorReady && (
-      <form method="post" action="/api/admin/rag/reindex" class="mt-4">
-        <button class="btn">벡터 다시 만들기</button>
-      </form>
+    evaluation && (
+      <section class="mt-8">
+        <h2 class="font-semibold">
+          기준 질문 평가 — 재현율 {pct(evaluation.recall)} · 범위 밖 거절 {pct(evaluation.refusal)}
+        </h2>
+        <ul class="mt-4 space-y-2">
+          {evaluation.rows.map((r) => (
+            <li class="rounded-[var(--radius)] border border-border bg-surface p-3 text-sm">
+              <p class="break-words">
+                <span class={r.pass ? 'text-success' : 'text-danger'}>{r.pass ? '통과' : '실패'}</span> · {r.q}
+              </p>
+              <p class="mt-1 text-xs break-words text-muted">
+                기대 {r.expect.length ? r.expect.join(', ') : '거절'} → 결과 {r.got.length ? r.got.join(', ') : '거절'} · 최고 벡터{' '}
+                {r.maxVector === null ? '없음' : r.maxVector.toFixed(3)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
     )
   }
 
@@ -41,12 +84,14 @@ const vectorReady = hasVectorSearch();
       logs.map((l) => (
         <li class="rounded-[var(--radius)] border border-border bg-surface p-4">
           <p class="break-words">{l.question}</p>
+          {l.rewritten && <p class="mt-1 text-sm break-words text-muted">→ {l.rewritten}</p>}
           <p class="mt-2 flex flex-wrap gap-x-3 text-xs text-muted">
             <time>{formatKst(l.createdAt)}</time>
             <span>{l.locale}</span>
             <span>{l.userId ? '로그인' : '비로그인'}</span>
             <span class="tabular-nums">in {l.tokensIn} / out {l.tokensOut}</span>
             <span>{l.sources.length ? l.sources.join(', ') : '출처 없음'}</span>
+            <span class="tabular-nums">{l.retrieval.length ? l.retrieval.map((r) => `${r.slug} ${r.score}`).join(' · ') : '검색 결과 없음(거절)'}</span>
           </p>
         </li>
       ))

@@ -28,6 +28,8 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `notify:5xx:{YYYY-MM-DDTHH:MM}` | 5xx 알림 중복 억제 | 2분 |
 | `chat:{userId 또는 ip}:{YYYY-MM-DD}` (2차) | 턴 수 | 1일 |
 | `chat:month:{YYYY-MM}` (2차) | 누적 토큰 | 31일 |
+| `rag:vector-ids` (2차) | Vectorize에 넣은 청크 id 목록(JSON) | 없음 |
+| `rag:vector-synced` (2차) | 마지막 벡터 갱신 시각·추가·삭제 수 | 없음 |
 
 **보존 정책**: 레터·답장은 영구(계정 삭제 시 `user_id`·`reply_to`만 NULL), `chat_logs`는 90일 지난 행을 챗 요청 때 함께 삭제(cron 없음, [05-06-chat-rag.md](05-06-chat-rag.md)).
 

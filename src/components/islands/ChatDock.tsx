@@ -136,12 +136,15 @@ export default function ChatDock({ dict, locale }: Props) {
     void ask(input);
   }
 
+  // FAQ는 이동할 화면이 없어 칩을 만들지 않는다.
   const sourceLink = (slug: string) =>
-    slug.startsWith('projects/')
-      ? { href: `/${locale}/${slug}/`, label: `${dict.chat.sources.project} · ${slug.slice('projects/'.length)}` }
-      : slug === 'about'
-        ? { href: `/${locale}/#intro`, label: dict.chat.sources.about }
-        : { href: `/${locale}/#project`, label: dict.chat.sources.stack };
+    slug === 'faq'
+      ? null
+      : slug.startsWith('projects/')
+        ? { href: `/${locale}/${slug}/`, label: `${dict.chat.sources.project} · ${slug.slice('projects/'.length)}` }
+        : slug === 'about'
+          ? { href: `/${locale}/#intro`, label: dict.chat.sources.about }
+          : { href: `/${locale}/#project`, label: dict.chat.sources.stack };
 
   if (!open) {
     return (
@@ -197,6 +200,7 @@ export default function ChatDock({ dict, locale }: Props) {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {t.sources?.map((slug) => {
                     const link = sourceLink(slug);
+                    if (!link) return null;
                     return (
                       <a key={slug} href={link.href} className="inline-flex min-h-11 items-center rounded-full border border-border px-3 text-sm">
                         {link.label}

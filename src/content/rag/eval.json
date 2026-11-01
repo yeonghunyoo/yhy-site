@@ -1,0 +1,15 @@
+{
+  "_comment": "기준 질문 세트(docs/05-06-chat-rag.md 평가). expect는 상위 섹션에 하나라도 나와야 할 slug, 빈 배열은 범위 밖(거절해야 함). 문서 소스를 받으면 다시 만든다.",
+  "questions": [
+    { "q": "이 사이트는 무엇으로 만들었어?", "locale": "ko", "expect": ["faq", "stack", "projects/this-portfolio"] },
+    { "q": "연락은 어떻게 해?", "locale": "ko", "expect": ["faq", "about"] },
+    { "q": "이 포트폴리오가 풀려는 문제가 뭐야?", "locale": "ko", "expect": ["projects/this-portfolio"] },
+    { "q": "어떤 기술 스택을 써 봤어?", "locale": "ko", "expect": ["stack"] },
+    { "q": "What stack did you use?", "locale": "en", "expect": ["stack", "faq"] },
+    { "q": "Who is yhy?", "locale": "en", "expect": ["about"] },
+    { "q": "How do I get in touch?", "locale": "en", "expect": ["faq", "about"] },
+    { "q": "오늘 서울 날씨 어때?", "locale": "ko", "expect": [] },
+    { "q": "파이썬으로 피보나치 코드 짜줘", "locale": "ko", "expect": [] },
+    { "q": "What's the best pizza in New York?", "locale": "en", "expect": [] }
+  ]
+}

@@ -15,6 +15,20 @@
       "when": 1793200485649,
       "tag": "0001_chat_rag",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793496307828,
+      "tag": "0002_rag_v2_reset",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793496308271,
+      "tag": "0003_rag_v2",
+      "breakpoints": true
     }
   ]
 }
