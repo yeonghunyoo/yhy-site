@@ -4,7 +4,7 @@
 
 ## 막혀 있는 것
 
-- **도메인**: Resend로 방문자에게 매직링크를 보내려면 발신 도메인 인증(DKIM·SPF)이 필요하다. 도메인이 없으면 Resend는 계정 본인 메일로만 보낼 수 있어 **방문자 이메일 로그인이 안 된다.** 도메인 전까지 운영 로그인은 Google만 가능
+- **도메인**: Resend로 방문자에게 매직링크를 보내려면 발신 도메인 인증(DKIM·SPF)이 필요하다. 도메인이 없으면 Resend는 계정 본인 메일로만 보낼 수 있어 **방문자 이메일 로그인이 안 된다.** 도메인 전까지 운영 로그인은 Google만 가능. 도메인을 연결한 뒤 절차는 [resend-setup.md](resend-setup.md)
 - **Google OAuth 클라이언트**, **Telegram 봇**: 본인 계정에서 발급
 
 ## 1. 운영 D1·KV 만들기 — 완료 (10/29)
@@ -29,7 +29,7 @@ pnpm run deploy
 | `ADMIN_EMAILS` | `yeonghun.yoo@gmail.com` | 배포 전 |
 | `LETTER_TO` | `yeonghun.yoo@gmail.com` | 배포 전 |
 | `MAIL_FROM` | `letters@{도메인}` | 도메인 인증 후 |
-| `RESEND_API_KEY` | [Resend](https://resend.com/) 대시보드에서 발급 | 도메인 인증 후 |
+| `RESEND_API_KEY` | [Resend](https://resend.com/) 대시보드에서 발급 ([resend-setup.md](resend-setup.md)) | 도메인 인증 후 |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 아래 3 | 발급 후 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | 아래 4 | 등록함 (11/01) |
 

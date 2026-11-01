@@ -38,7 +38,7 @@ Better Auth를 Workers에서 돌리고, 세션은 D1, 메일은 Resend, 소셜�
 ## 본인이 해야 하는 설정
 
 - [x] Google Cloud Console에서 OAuth 클라이언트 1개 생성(10/29, 프로젝트 `portfolio-web-yhy`) — 로컬·운영 공용. 승인된 리디렉션 URI에 `localhost`와 운영 주소를 함께 등록하고, 같은 값을 `.dev.vars`와 `.prod.vars`에 둔다. 1인 프로젝트라 클라이언트를 나누는 이득보다 관리 부담이 커서 공용으로 바꿨다
-- [ ] Resend 계정 + 발신 도메인 DNS(DKIM·SPF) 등록 — 도메인 확정 후 가능
+- [ ] Resend 계정 + 발신 도메인 DNS(DKIM·SPF) 등록 — 도메인 확정 후 가능 ([guides/resend-setup.md](guides/resend-setup.md))
 
 ## 상세 설계 (확정)
 
