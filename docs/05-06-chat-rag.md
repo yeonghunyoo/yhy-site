@@ -151,9 +151,9 @@ WeKnora의 지식 그래프(Neo4j)·위키, 에이전트(ReAct) 모드, 웹 검�
 
 ## 구현 메모 (11/01)
 
-초안 문서(`src/content/rag/` 자리표시)로 로컬에서 구현·측정했다. 기본으로 꺼져 있다. 연동 절차는 [guides/chat-rag-setup.md](guides/chat-rag-setup.md).
+초안 문서(`src/content/rag/` 자리표시)로 로컬에서 구현·측정했다. 기본으로 꺼져 있다. 운영 D1에는 마이그레이션 0004까지 적용됐지만 청크는 아직 넣지 않았다(11/01 저녁 확인). 연동 절차는 [guides/chat-rag-setup.md](guides/chat-rag-setup.md).
 
-- 코드: Workers AI 어댑터 `src/lib/server/ai.ts`(모델 id는 여기만), 검색 `src/lib/server/rag.ts`(파라미터 `RAG` 상수), 프롬프트 `src/lib/server/chat.ts`, 질의 `src/pages/api/chat.ts`, 넣기 `scripts/rag-build.mjs`, 평가 `src/lib/server/rag-eval.ts`
+- 코드: Workers AI 어댑터 `src/lib/server/ai.ts`(모델 id는 여기만), 검색 `src/lib/server/rag.ts`(파라미터 `RAG` 상수), 프롬프트 `src/lib/server/chat.ts`, 질문 파이프라인 1~8단계 `src/lib/server/chat-pipeline.ts`(챗·공격 점검 공용), 가드레일 `src/lib/server/guard.ts`, 질의 `src/pages/api/chat.ts`, 넣기 `scripts/rag-build.mjs`, PDF 가져오기 `scripts/rag-import.mjs`, 평가 `src/lib/server/rag-eval.ts`
 - 마이그레이션: `0002_rag_v2_reset`(옛 청크·FTS5 삭제, `chat_logs`에 `rewritten`·`retrieval`) + `0003_rag_v2`(`rag_sections`, `rag_chunks`, FTS5). Drizzle Kit이 이름 바뀐 컬럼을 대화형으로 묻기 때문에 두 번에 나눠 생성했다
 - Vectorize 인덱스 `portfolio-rag`는 하나를 로컬·운영이 같이 쓴다(로컬 에뮬레이션 없음). id가 내용 해시라 같은 문서면 id도 같다. 넣은 id 목록은 KV `rag:vector-ids`, 마지막 갱신은 `rag:vector-synced`. 업서트 후 검색에 보이기까지 약 25초
 - 측정(bge-m3 코사인, 초안 문서): 범위 안 질문의 최고 점수 0.52~0.72, 범위 밖(날씨·코드·피자) 0.27~0.39 → 범위 기준 0.42. 날씨 질문이 0.386이라 여유가 크지 않다 — 문서를 받으면 다시 잰다
