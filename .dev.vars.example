@@ -5,6 +5,7 @@ BETTER_AUTH_URL=http://localhost:8787
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 RESEND_API_KEY=
+# 도메인 전에는 onboarding@resend.dev (Resend 가입 이메일로만 발송) — docs/guides/resend-setup.md
 MAIL_FROM=
 LETTER_TO=
 ADMIN_EMAILS=

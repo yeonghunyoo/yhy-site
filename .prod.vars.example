@@ -8,7 +8,7 @@
 # Google OAuth 클라이언트는 로컬·운영 공용 — .dev.vars와 같은 값
 # GOOGLE_CLIENT_ID=
 # GOOGLE_CLIENT_SECRET=
-# 도메인 인증 후
+# 메일 — docs/guides/resend-setup.md. 도메인 전에는 MAIL_FROM=onboarding@resend.dev (Resend 가입 이메일로만 발송)
 # RESEND_API_KEY=
 # MAIL_FROM=
 # TELEGRAM_BOT_TOKEN=

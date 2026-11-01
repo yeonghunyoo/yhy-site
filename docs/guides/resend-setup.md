@@ -4,6 +4,20 @@
 
 코드는 이미 준비돼 있다(`src/lib/server/mail.ts`). `RESEND_API_KEY`가 비어 있으면 메일을 로그로만 남기고, 채우면 Resend API로 보낸다. 그래서 이 가이드는 **계정·DNS·비밀값 작업만** 다룬다.
 
+## 도메인 전: 테스트 발신으로 나만 먼저 (선택)
+
+도메인 없이도 Resend 테스트 발신 주소 `onboarding@resend.dev`로 **Resend 가입 이메일 한 곳에만** 보낼 수 있다. 가입 이메일이 `ADMIN_EMAILS`·`LETTER_TO`와 같으므로, 이것만으로 관리자 본인 이메일 로그인과 새 레터 알림 메일이 열린다. 방문자에게는 아직 못 보낸다(Resend 403 → 방문자는 "문제가 생겼어요" 안내, 나에게는 Telegram `⚠️ Resend 실패`). 방문자는 그동안 Google 로그인을 쓴다.
+
+1. 아래 2의 1번(가입)과 3(API 키, 도메인 제한 없이 Sending access)만 한다
+2. `.prod.vars`(로컬에서 보려면 `.dev.vars`도)에 넣고 배포 — `.dev.vars`를 바꾸면 `pnpm preview`를 다시 켠다
+   ```
+   RESEND_API_KEY=re_...
+   MAIL_FROM=onboarding@resend.dev
+   ```
+3. 가입 이메일로 로그인 링크 요청 → `[yhy] 로그인 링크` 도착 → 로그인돼서 원래 자리로 복귀하면 성공
+
+도메인이 생기면 아래 0부터 진행하고 `MAIL_FROM`만 바꾼다. 도메인 제한 키를 새로 만들었다면 `RESEND_API_KEY`도 교체한다.
+
 ## 0. 먼저 끝나 있어야 하는 것
 
 - [ ] 도메인 구매, Cloudflare DNS에 연결(네임서버를 Cloudflare로)
@@ -76,6 +90,8 @@ pnpm check && pnpm run deploy
 - [ ] 한/영: `/en`에서 요청한 매직링크는 영어 메일
 
 ## 문제가 생기면
+
+매직링크 발송이 실패하면 Resend가 준 사유가 `./node_modules/.bin/wrangler tail`에 `[mail] magic link failed: …`로, Telegram에 `⚠️ Resend 실패`로 그대로 나온다(11/01부터). 실패한 요청은 같은 이메일 10분 제한을 되돌려서 고친 뒤 바로 다시 시도할 수 있다(IP당 10분 3회는 유지).
 
 | 증상 | 원인·해결 |
 | --- | --- |

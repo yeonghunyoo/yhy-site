@@ -11,6 +11,7 @@ import { sendMail } from './mail';
 import { magicLinkEmail } from './templates';
 import { clientIp, hit } from './ratelimit';
 import { kstDate } from './dates';
+import { maskEmail, notify } from './notify';
 
 /** 매직링크 URL의 callbackURL(`/en/...`)에서 메일 언어를 고른다. */
 function localeFromMagicLink(url: string): Locale {
@@ -74,7 +75,14 @@ function createAuth() {
         expiresIn: 60 * 15,
         sendMagicLink: async ({ email, url }) => {
           const result = await sendMail({ to: email, ...magicLinkEmail(localeFromMagicLink(url), url) });
-          if (!result.ok) throw new APIError('INTERNAL_SERVER_ERROR', { message: 'mail_failed' });
+          if (!result.ok) {
+            // 발송 실패(도메인 미인증·키 오류 등)는 Resend 사유를 로그 + Telegram으로 남기고, 같은 이메일 카운터는
+            // 돌려줘 바로 다시 시도할 수 있게 한다(IP 카운터는 그대로 — 남용 방지).
+            console.error(`[mail] magic link failed: ${result.error}`);
+            notify(`⚠️ Resend 실패\n로그인 링크 ${maskEmail(email)}\n${result.error.slice(0, 120)}`);
+            await env.KV.delete(`ml:email:${email.trim().toLowerCase()}`);
+            throw new APIError('INTERNAL_SERVER_ERROR', { message: 'mail_failed' });
+          }
         },
       }),
     ],

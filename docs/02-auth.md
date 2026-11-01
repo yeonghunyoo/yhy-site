@@ -38,7 +38,7 @@ Better Auth를 Workers에서 돌리고, 세션은 D1, 메일은 Resend, 소셜�
 ## 본인이 해야 하는 설정
 
 - [x] Google Cloud Console에서 OAuth 클라이언트 1개 생성(10/29, 프로젝트 `portfolio-web-yhy`) — 로컬·운영 공용. 승인된 리디렉션 URI에 `localhost`와 운영 주소를 함께 등록하고, 같은 값을 `.dev.vars`와 `.prod.vars`에 둔다. 1인 프로젝트라 클라이언트를 나누는 이득보다 관리 부담이 커서 공용으로 바꿨다
-- [ ] Resend 계정 + 발신 도메인 DNS(DKIM·SPF) 등록 — 도메인 확정 후 가능 ([guides/resend-setup.md](guides/resend-setup.md))
+- [ ] Resend 계정 + 발신 도메인 DNS(DKIM·SPF) 등록 — 도메인 전에는 테스트 발신(`onboarding@resend.dev`)으로 관리자 본인만 가능. 절차는 [guides/resend-setup.md](guides/resend-setup.md)
 
 ## 상세 설계 (확정)
 
@@ -73,6 +73,8 @@ Better Auth를 Workers에서 돌리고, 세션은 D1, 메일은 Resend, 소셜�
 - 로그인 수: `databaseHooks.session.create.after`가 KV `stats:login:{KST 날짜}`를 1 올린다(어드민 지표용)
 - Google 키가 없으면 Google 버튼은 "아직 준비 중" 안내를 띄운다. 키를 넣으면 코드 수정 없이 동작
 - 메일·Telegram 키가 없으면(로컬) 링크·알림을 콘솔에 출력한다
+- 매직링크 발송 실패(11/01): Resend 사유를 `[mail] magic link failed: …` 로그와 Telegram `⚠️ Resend 실패`로 남기고, 같은 이메일 카운터(`ml:email:*`)를 지워 바로 재시도할 수 있게 한다. IP 카운터는 유지. 시트에는 일반 오류 문구
+- 로컬 검증(11/01, wrangler dev): 요청 200 → 링크로 302 복귀(`?signed_in=1#해시`) + 세션 쿠키 → 재사용 시 `?auth_error=1&error=INVALID_TOKEN` → 로그아웃 → 같은 이메일 재요청 429. 실제 메일 수신은 Resend 키를 넣은 뒤 확인
 - 복귀: `callbackURL`은 `{현재 경로}?signed_in=1{#해시}`. 복귀 후 `pendingAction`이 있으면 그 시트를, 없으면 토스트를 띄우고 파라미터를 지운다
 
 ## 완료 기준
