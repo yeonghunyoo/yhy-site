@@ -3,7 +3,7 @@ import { env } from 'cloudflare:workers';
 // Workers AI 어댑터 — 답변·재작성·임베딩·리랭크를 모두 `AI` 바인딩 하나로 부른다(docs/05-06-chat-rag.md).
 // 모델을 바꿀 때는 이 상수만 고친다. 답변 모델은 환경변수 `CHAT_MODEL`로 덮어쓸 수 있다(모델 비교용).
 export const AI_MODELS = {
-  chat: '@cf/qwen/qwen3-30b-a3b-fp8',
+  chat: '@cf/google/gemma-4-26b-a4b-it',
   embedding: '@cf/baai/bge-m3',
   rerank: '@cf/baai/bge-reranker-base',
 } as const;
