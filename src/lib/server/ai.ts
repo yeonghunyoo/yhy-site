@@ -1,15 +1,13 @@
 import { env } from 'cloudflare:workers';
 
 // Workers AI 어댑터 — 답변·재작성·임베딩·리랭크를 모두 `AI` 바인딩 하나로 부른다(docs/05-06-chat-rag.md).
-// 모델을 바꿀 때는 이 상수만 고친다.
+// 모델을 바꿀 때는 이 상수만 고친다. 답변 모델은 환경변수 `CHAT_MODEL`로 덮어쓸 수 있다(모델 비교용).
 export const AI_MODELS = {
   chat: '@cf/qwen/qwen3-30b-a3b-fp8',
   embedding: '@cf/baai/bge-m3',
   rerank: '@cf/baai/bge-reranker-base',
 } as const;
 
-/** Qwen3는 사용자 턴 끝의 `/no_think`로 추론을 끈다. 짧은 사실 답변이라 끄고 지연·비용을 줄인다. */
-const NO_THINK = ' /no_think';
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 export type Usage = { tokensIn: number; tokensOut: number };
@@ -20,10 +18,20 @@ interface AiBinding {
 const ai = () => (env as unknown as { AI?: AiBinding }).AI;
 export const hasAi = () => Boolean(ai());
 
-function withNoThink(messages: ChatMessage[]): ChatMessage[] {
+export const chatModel = () => (env as unknown as { CHAT_MODEL?: string }).CHAT_MODEL || AI_MODELS.chat;
+
+/**
+ * 답변 모델 요청 본문. 짧은 사실 답변이라 추론을 끄고 지연·비용을 줄인다 —
+ * Qwen3는 사용자 턴 끝의 `/no_think`, 나머지(Gemma 4 등)는 `chat_template_kwargs.enable_thinking`.
+ */
+function chatInput(messages: ChatMessage[], maxTokens: number, stream: boolean) {
+  const model = chatModel();
   const last = messages.at(-1);
-  if (!last || last.role !== 'user') return messages;
-  return [...messages.slice(0, -1), { ...last, content: last.content + NO_THINK }];
+  if (model.includes('qwen3') && last?.role === 'user') {
+    messages = [...messages.slice(0, -1), { ...last, content: `${last.content} /no_think` }];
+    return { model, input: { messages, max_tokens: maxTokens, stream } };
+  }
+  return { model, input: { messages, max_tokens: maxTokens, stream, chat_template_kwargs: { enable_thinking: false } } };
 }
 
 /** 추론 모델이 본문에 섞어 내는 <think> 블록을 지운다(닫히지 않은 블록 포함). */
@@ -52,7 +60,8 @@ type Completion = {
 
 /** 스트리밍 없이 한 번에 받는다(질문 재작성용). */
 export async function complete(messages: ChatMessage[], maxTokens: number): Promise<{ text: string; usage: Usage }> {
-  const result = (await ai()!.run(AI_MODELS.chat, { messages: withNoThink(messages), max_tokens: maxTokens })) as Completion;
+  const { model, input } = chatInput(messages, maxTokens, false);
+  const result = (await ai()!.run(model, input)) as Completion;
   const text = result.choices?.[0]?.message?.content ?? result.response ?? '';
   return {
     text: stripThink(text).trim(),
@@ -69,18 +78,15 @@ type StreamEvent = {
 /**
  * 스트리밍 답변. 본문 조각마다 onDelta를 부르고, 끝나면 전체 본문과 토큰 수를 돌려준다. onDelta가 false를 돌려주면 거기서 끊는다.
  * Workers AI는 OpenAI 형식 조각(choices[].delta)을 보내다 마지막에 합계 usage만 담은 `{ response, usage }`를 보낸다.
- * 추론 조각(delta.reasoning_content)은 버린다.
+ * 추론 조각(delta.reasoning·reasoning_content)은 버린다.
  */
 export async function streamChat(
   messages: ChatMessage[],
   maxTokens: number,
   onDelta: (text: string) => Promise<boolean | void>,
 ): Promise<{ text: string; usage: Usage }> {
-  const stream = (await ai()!.run(AI_MODELS.chat, {
-    messages: withNoThink(messages),
-    max_tokens: maxTokens,
-    stream: true,
-  })) as ReadableStream<Uint8Array>;
+  const { model, input } = chatInput(messages, maxTokens, true);
+  const stream = (await ai()!.run(model, input)) as ReadableStream<Uint8Array>;
 
   const decoder = new TextDecoder();
   let raw = '';

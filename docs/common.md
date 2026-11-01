@@ -53,6 +53,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `ADMIN_EMAILS` | 쉼표 구분 허용목록 | 예 |
 | `CHAT_MONTHLY_TOKEN_CAP` | 월 상한(기본 2,000,000) | 2차 |
 | `CHAT_ENABLED` | `1`이면 `/api/chat` 열림 | 2차 |
+| `CHAT_MODEL` | 답변 모델 덮어쓰기(비우면 `src/lib/server/ai.ts` 기본값) — 모델 비교용 | 2차, 선택 |
 | `PUBLIC_CHAT_ENABLED` | 빌드 플래그 — `1`이면 챗 독 노출(`.env` 또는 배포 명령 앞) | 2차 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | 레터·에러·삭제 알림 | 예 |
 | `SITE_NAME` | 메일 제목 접두어 | 예 |
