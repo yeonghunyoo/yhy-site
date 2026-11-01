@@ -19,7 +19,7 @@
 | Email Routing | `letters@{도메인}` 수신을 개인 메일로 포워딩 (선택) | 무료 | 3 |
 | Web Analytics | 쿠키 없는 방문 통계 (선택) | 무료 | 1 |
 | Vectorize | RAG 벡터 인덱스 | 월 3천만 쿼리 차원 | 6 |
-| Workers AI | 임베딩 모델 | 일 1만 뉴런 | 6 |
+| Workers AI | 챗 답변·질문 재작성·임베딩·리랭크 | 일 1만 뉴런 | 5–6 |
 
 ## 레포 골격
 

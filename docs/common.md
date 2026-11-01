@@ -4,7 +4,7 @@
 
 ## 데이터 모델 (D1)
 
-Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹는다. 마이그레이션은 Drizzle Kit, `wrangler d1 migrations apply`로 적용.
+Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(1차 2개, 2차 3개). 마이그레이션은 Drizzle Kit, `wrangler d1 migrations apply`로 적용.
 
 **Better Auth 관리**: `user`, `session`, `account`(Google 연결), `verification`(매직링크 토큰). 스키마는 라이브러리 CLI가 생성하며 손대지 않는다. `user`에 `is_blocked INTEGER DEFAULT 0`만 추가 컬럼으로 둔다.
 
@@ -14,8 +14,9 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹�
 | --- | --- | --- |
 | `letters` | `id`, `user_id`, `subject`, `body`, `reply_to`, `locale` (ko/en, 답장 메일 언어), `status` (sent/read/replied/failed), `resend_id`, `read_at`, `created_at` | `user_id` nullable(계정 삭제 시 NULL), 인덱스. 하루 3통 검사는 `created_at` 범위 count |
 | `letter_replies` | `id`, `letter_id`, `body`, `resend_id`, `status` (sent/failed), `created_at` | 답장 1회 원칙이지만 재전송 대비 1:N 구조. `letter_id` 인덱스 |
-| `chat_logs` (2차) | `id`, `user_id` nullable, `ip_hash`, `locale`, `question`, `sources` (JSON), `tokens_in`, `tokens_out`, `created_at` | 답변 본문 저장 안 함, IP는 해시만 |
-| `rag_chunks` (2차) | `id`, `slug`, `locale`, `heading`, `text`, `vector_id` | FTS5 가상 테이블 `rag_chunks_fts(text)` 동기 트리거 |
+| `chat_logs` (2차) | `id`, `user_id` nullable, `ip_hash`, `locale`, `question`, `rewritten`, `sources` (JSON), `retrieval` (JSON: 부모 id·점수), `tokens_in`, `tokens_out`, `created_at` | 답변 본문 저장 안 함, IP는 해시만 |
+| `rag_sections` (2차) | `id`(해시), `slug`, `locale`, `kind`(doc/faq), `title`, `heading`, `text`, `position` | 부모 — 모델에 넣는 단위 |
+| `rag_chunks` (2차) | `id`(해시), `section_id`, `slug`, `locale`, `kind`, `text` | 자식 — 검색 단위. FTS5 `rag_chunks_fts` 동기 트리거, id = Vectorize id. 상세는 [05-06-chat-rag.md](05-06-chat-rag.md) |
 
 **KV 키**
 
@@ -48,7 +49,6 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블 3개를 얹�
 | `MAIL_FROM` | `letters@{도메인}` | 예 |
 | `LETTER_TO` | 내 수신 메일 | 예 |
 | `ADMIN_EMAILS` | 쉼표 구분 허용목록 | 예 |
-| `ANTHROPIC_API_KEY` | Haiku | 2차 |
 | `CHAT_MONTHLY_TOKEN_CAP` | 월 상한(기본 2,000,000) | 2차 |
 | `CHAT_ENABLED` | `1`이면 `/api/chat` 열림 | 2차 |
 | `PUBLIC_CHAT_ENABLED` | 빌드 플래그 — `1`이면 챗 독 노출(`.env` 또는 배포 명령 앞) | 2차 |
