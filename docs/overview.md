@@ -25,7 +25,7 @@ MVP는 "빌더로서의 yhy를 보여주는 한/영 정적 사이트 + 로그인
 | 항목 | 결정 | 근거 |
 | --- | --- | --- |
 | 목표 | MVP | 1차는 정적 사이트 + 로그인 + 레터 + 어드민까지 |
-| 인프라 | Cloudflare 단일 (Workers) | Workers(정적 자산 + 동적)·D1·KV·Vectorize·Registrar를 한 계정에서, 월 비용 0에 가깝게. 10/28 Pages에서 전환 — Astro 어댑터가 Pages 지원 중단 |
+| 인프라 | Cloudflare 단일 (Workers) | Workers(정적 자산 + 동적)·D1·KV·Vectorize·R2·Registrar를 한 계정에서, 월 비용 0에 가깝게. 10/28 Pages에서 전환 — Astro 어댑터가 Pages 지원 중단 |
 | 프론트 | Astro | 정적 우선, 상호작용 부분만 React 아일랜드 |
 | 언어 | 한/영, /ko·/en 경로 분리 | SEO와 공유 링크에 유리 |
 | 도메인 | 브랜드/닉네임 기반, 이름은 미정 | 세계관 콘셉트와 묶어 결정 |

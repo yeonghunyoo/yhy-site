@@ -8,7 +8,7 @@
 
 ## 확정 스택
 - 프론트: Astro 7 (`output: 'static'` + 동적 경로만 `prerender = false`, `@astrojs/cloudflare`), React 아일랜드(로그인·레터·챗·3D만), Tailwind v4 + daisyUI 5(CSS 전용)
-- 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, 로컬 wrangler CLI로만 배포), D1, KV, (2차) Vectorize·Workers AI. Pages는 쓰지 않는다
+- 인프라: Cloudflare 단일 — Workers(정적 자산 + 동적, 로컬 wrangler CLI로만 배포), D1, KV, (2차) Vectorize·Workers AI·R2(RAG 원본·이미지, 로컬·운영 공용). Pages는 쓰지 않는다
 - 런타임: Node 24 (`.nvmrc`), pnpm 12 (`packageManager`). 로컬 확인은 `pnpm preview`(wrangler dev, 빌드 후 서버 재시작 필요), 타입 검사는 `pnpm check`(TypeScript 6 고정 — astro check가 7 미지원)
 - 인증: Better Auth (D1 어댑터), 이메일 매직링크 + Google OAuth, 비밀번호 없음
 - 메일: Resend / 알림: Telegram 봇

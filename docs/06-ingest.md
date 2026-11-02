@@ -1,6 +1,6 @@
 # 6단계 보강 · 문서 수집 재설계 (docreader 참고)
 
-**상태: 설계안 (11/02), 구현 전.** 승인되면 아래 "바꿀 문서"를 함께 갱신하고 구현한다.
+**상태: 설계안 (11/02), 구현 전.** R2 추가와 버킷 공용은 승인됨(11/02). 스캔 쪽 처리는 라이브러리 비교 후 결정.
 
 RAG에 넣을 원본(PDF, 나중에 docx·html 등)을 **검토할 마크다운**으로 바꾸고, 원본과 이미지는 R2에 저장해 이미지는 URL로 본문에 박는다. 그 뒤 청킹·임베딩은 지금의 `rag:build`가 이어받는다. 구조는 WeKnora `docreader`(Python gRPC 서비스)를 참고하되, 1인 사이트라 상시 서비스 대신 **로컬 CLI**로 옮긴다.
 
@@ -189,9 +189,9 @@ source: { file: about.ko.pdf, hash: 3f2a…, parser: pdf-unpdf, pages: 4 }
 
 ## 결정 필요
 
-- [ ] R2 추가 승인 — 확정 스택에 없다(D1·KV·Vectorize·Workers AI만)
-- [ ] 버킷 이름 `portfolio-rag`, 로컬·운영 공용(`remote: true`)
-- [ ] 스캔 쪽 MVP 처리: 쪽 이미지로 넣기(`@napi-rs/canvas` 추가) vs 경고만 하고 건너뛰기
+- [x] R2 추가 승인 (11/02) — CLAUDE.md·overview·common 반영
+- [x] 버킷 `portfolio-rag`, 로컬·운영 공용(`remote: true`) (11/02)
+- [ ] 스캔 쪽 처리: 쪽 그리기·OCR 라이브러리 비교 후 결정(11/02 비교 중)
 - [ ] 이미지 대체 텍스트: 자리표시(`그림 p3-1`)로 두고 검토 때 사람이 고치기(제안)
 
 ## 바꿀 문서 (승인 후)
