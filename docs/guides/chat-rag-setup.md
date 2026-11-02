@@ -54,6 +54,7 @@
 인덱스는 `wrangler vectorize create portfolio-rag --dimensions=1024 --metric=cosine`으로 만들었고, `wrangler.jsonc`에 `ai`·`vectorize` 바인딩(둘 다 `remote: true`)을 넣었다. 바인딩을 바꾸면 `pnpm cf-typegen`.
 
 - API 키가 필요 없다. 답변·재작성·임베딩·리랭크 모두 `AI` 바인딩 하나로 부른다
+- `astro build`는 원격 연결을 열지 않는다(`astro.config.mjs`의 `remoteBindings`, 11/02) — 빌드 중 정적 페이지 생성은 AI·Vectorize를 쓰지 않으므로 Cloudflare 로그인 없이도 빌드된다. 배포된 Worker의 바인딩은 그대로다
 - 로컬 `wrangler dev`(`pnpm preview`)도 AI·Vectorize는 원격을 쓴다 — 로컬 질문도 Workers AI 무료 범위에 잡히고, 로컬에서 벡터 갱신을 누르면 운영과 같은 인덱스가 바뀐다
 - 무료 한도: Workers AI 하루 1만 뉴런, Vectorize 월 3천만 쿼리 차원 — 이 규모에선 여유. 계정이 무료 플랜이면 한도를 넘는 Workers AI 호출은 실패하고, 챗은 "오늘은 쉬어요"로 끝난다
 

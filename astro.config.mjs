@@ -12,6 +12,9 @@ export default defineConfig({
   adapter: cloudflare({
     // 이미지는 빌드 시 최적화하고 런타임은 그대로 서빙 — Cloudflare Images 바인딩 불필요.
     imageService: 'compile',
+    // AI·Vectorize 바인딩은 remote: true(wrangler.jsonc)다. 빌드 때 정적 페이지를 미리 그리는 단계는 이 바인딩을 쓰지 않으므로
+    // 원격 연결을 열지 않는다 — Cloudflare 로그인 없는 환경(클라우드 세션 등)에서도 `astro build`가 통과한다.
+    remoteBindings: !process.argv.includes('build'),
   }),
   integrations: [
     react(),
