@@ -1,5 +1,5 @@
 // 이미지 인코딩 — pdf.js가 주는 원시 픽셀(1·3·4채널)을 JPEG(불투명) 또는 PNG(투명)로. 긴 변은 2,000px로 줄인다.
-import { createCanvas, ImageData } from '@napi-rs/canvas';
+import { createCanvas, ImageData, loadImage } from '@napi-rs/canvas';
 
 const MAX_SIDE = 2000;
 
@@ -28,4 +28,15 @@ export async function encodePixels({ data, width, height, channels }) {
   return opaque
     ? { data: new Uint8Array(await canvas.encode('jpeg', 85)), mime: 'image/jpeg' }
     : { data: new Uint8Array(await canvas.encode('png')), mime: 'image/png' };
+}
+
+/** 그린 쪽(PNG) → JPEG 85. 흰 바탕에 얹어 투명 영역을 없앤다. */
+export async function toJpeg(png) {
+  const image = await loadImage(png);
+  const canvas = createCanvas(image.width, image.height);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, image.width, image.height);
+  ctx.drawImage(image, 0, 0);
+  return new Uint8Array(await canvas.encode('jpeg', 85));
 }

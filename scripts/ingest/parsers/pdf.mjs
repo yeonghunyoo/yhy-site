@@ -1,8 +1,8 @@
 // PDF 파서 — 텍스트는 줄로 묶어 마크다운으로, 삽입 이미지는 픽셀로 꺼내 쪽 본문 뒤에 넣는다.
 // 설계: docs/06-ingest.md "2. PDF 파서". 쪽 분류·이미지 필터 기준은 WeKnora docreader pdf_parser.py를 따른다.
 import { createHash } from 'node:crypto';
-import { getDocumentProxy, getResolvedPDFJS } from 'unpdf';
-import { encodePixels } from '../image.mjs';
+import { getDocumentProxy, getResolvedPDFJS, renderPageAsImage } from 'unpdf';
+import { encodePixels, toJpeg } from '../image.mjs';
 
 const BULLET = /^([•·▪‣◦●○■□\-*–]|\d{1,2}[.)])\s*/;
 const PAGE_NUMBER = /^(-\s*)?\d{1,4}(\s*-)?$|^\d{1,4}\s*\/\s*\d{1,4}$|^(page|p\.)\s*\d+/i;
@@ -16,6 +16,7 @@ const IMAGE_MIN_AREA = 0.01; // 쪽 면적 1% 미만은 버린다(아이콘·장
 const IMAGE_MIN_PX = 80;
 const LOGO_PAGE_RATIO = 0.5; // 텍스트 쪽의 50% 이상에 같은 이미지가 나오면 로고·워터마크
 const IMAGE_MAX = 50;
+const SCAN_MAX_SIDE = 2000; // 스캔 쪽을 그릴 때 긴 변(px)
 
 export const MAX_PAGES = 100;
 
@@ -254,9 +255,14 @@ export const pdfParser = {
       }
     }
 
-    // 3. 스캔 쪽은 글자가 없다는 표시만 남긴다(OCR·쪽 그리기는 4단계에서 결정).
+    // 3. 스캔 쪽은 쪽 전체를 JPEG로 그려 이미지 한 줄로 넣는다(글자는 없다 — OCR은 2차).
     for (const page of pages.filter((p) => p.scanned)) {
-      figures.set(page.number, [`<!-- 스캔 쪽 p${page.number}: 글자가 없어 넣지 않았다 — OCR은 2차 -->`]);
+      const [x0, y0, x1, y1] = (await pdf.getPage(page.number)).view;
+      const scale = SCAN_MAX_SIDE / Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      const png = await renderPageAsImage(pdf, page.number, { canvasImport: () => import('@napi-rs/canvas'), scale });
+      const ref = `images/p${page.number}`;
+      images.push({ ref, data: await toJpeg(new Uint8Array(png)), mime: 'image/jpeg', kind: 'scanned_page', page: page.number });
+      figures.set(page.number, [`![p${page.number} 스캔](${ref})`]);
     }
 
     const info = (await pdf.getMetadata().catch(() => null))?.info ?? {};

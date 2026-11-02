@@ -78,7 +78,7 @@ async function importFile(file, store) {
   const chars = body.replace(/<!--[\s\S]*?-->|!\[[^\]]*\]\([^)]*\)/g, '').replace(/\s/g, '').length;
   const parts = [pageCount && `${pageCount}쪽`, `${chars}자`, `## 제목 ${headings}개${headings ? '' : ' — 제목을 못 찾았다. 직접 ## 을 넣는다'}`, `이미지 ${result.images.length}개`];
   console.log(`${file} → ${out} (${parts.filter(Boolean).join(', ')})`);
-  if (scannedPages.length) console.warn(`  스캔 쪽 ${scannedPages.join(', ')} — 글자가 없어 넣지 않았다(OCR은 2차)`);
+  if (scannedPages.length) console.warn(`  스캔 쪽 ${scannedPages.join(', ')} — 글자 없음, 쪽 이미지로만 넣었다(OCR은 2차)`);
   for (const line of body.split('\n').filter((l) => SUSPICIOUS.test(l))) console.warn(`  지시문 의심: ${line.slice(0, 80)}`);
 }
 

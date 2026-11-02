@@ -1,6 +1,6 @@
 # 6단계 보강 · 문서 수집 재설계 (docreader 참고)
 
-**상태: 1~3단계 구현 (11/02), 4단계(스캔 쪽) 결정 대기.** R2 추가와 버킷 공용은 승인됨(11/02). 구현 메모는 맨 아래.
+**상태: 1~4단계 구현 (11/02). 원격 R2 업로드 확인됨, 운영 `/media`는 배포 후 확인.** R2 추가와 버킷 공용은 승인됨(11/02). 구현 메모는 맨 아래.
 
 RAG에 넣을 원본(PDF, 나중에 docx·html 등)을 **검토할 마크다운**으로 바꾸고, 원본과 이미지는 R2에 저장해 이미지는 URL로 본문에 박는다. 그 뒤 청킹·임베딩은 지금의 `rag:build`가 이어받는다. 구조는 WeKnora `docreader`(Python gRPC 서비스)를 참고하되, 1인 사이트라 상시 서비스 대신 **로컬 CLI**로 옮긴다.
 
@@ -191,7 +191,7 @@ source: { file: about.ko.pdf, hash: 3f2a…, parser: pdf-unpdf, pages: 4 }
 
 - [x] R2 추가 승인 (11/02) — CLAUDE.md·overview·common 반영
 - [x] 버킷 `portfolio-rag`, 로컬·운영 공용(`remote: true`) (11/02)
-- [ ] 스캔 쪽 처리: 쪽 그리기·OCR 라이브러리 비교 후 결정(11/02 비교 중)
+- [x] 스캔 쪽 처리: MVP안대로 쪽 그리기 — `unpdf` `renderPageAsImage` + 이미 쓰는 `@napi-rs/canvas`라 의존성 추가 없음. OCR은 2차(11/02)
 - [x] 이미지 대체 텍스트: 자리표시(`그림 p3-1`)로 두고 검토 때 사람이 고친다(11/02 구현)
 
 ## 바꿀 문서 (11/02 반영)
@@ -211,7 +211,9 @@ source: { file: about.ko.pdf, hash: 3f2a…, parser: pdf-unpdf, pages: 4 }
 - 마크다운 입력: 상대 경로 로컬 이미지만 R2로 올린다. 외부 URL 이미지는 내려받지 않고 경고
 - `--no-upload`: R2에 올리지 않고 `.wrangler/tmp/ingest/{sources,media}/`에만 쓴다(로그인 없는 환경·미리보기). 올린 키는 `.wrangler/ingest-uploaded.json`에 캐시해 다시 올리지 않는다
 - 넣기: 쪽 표시는 주석 제거 전에 읽어 섹션 시작 쪽을 `page`에, 이미지는 청킹 동안 자리표로 두었다가 텍스트엔 대체 텍스트, URL은 `images`에. `--remote`에서 검토 전 문서가 있으면 멈춘다
-- 스캔 쪽은 아직 `<!-- 스캔 쪽 pN … -->` 표시만 남긴다(4단계 결정 대기)
+- 스캔 쪽: 쪽 전체를 긴 변 2,000px로 그려(PNG) 흰 바탕 JPEG 85로 바꿔 `![pN 스캔](/media/…)` 한 줄로 넣는다(`kind: 'scanned_page'`). 콘솔에 "글자 없음 — OCR은 2차" 경고. 글자 있는 쪽이 하나도 없는 PDF는 여전히 실패(OCR 필요). 넣기에서는 앞 섹션의 이미지로 붙는다
 - 확인(11/02, Chromium으로 만든 4쪽 한국어 PDF — 본문·그림·작은 아이콘·쪽마다 로고·반복 머리말·전면 이미지 쪽·지시문): 그림 1개만 남고 아이콘·로고 제외, 머리말 제거, 3쪽 스캔 판정, 지시문 경고, 다시 가져오면 건너뜀, `rag:build --dry`에 쪽·이미지 수 표시, 30행 표가 머리 행을 반복하며 3조각(행 누락 없음), `rag:build --remote`는 검토 전 문서로 멈춤
 - `/media`: 로컬 R2 에뮬레이션(`wrangler dev`, 원격 바인딩 끔)에서 해시 이름 200 + `immutable`·`nosniff`·ETag, 확장자 다름·대문자·`../sources/`·형식 아님은 404
-- 아직 못 한 확인: 원격 R2 실제 업로드와 운영 `/media`(이 세션은 Cloudflare 로그인이 없다) — 버킷을 만든 뒤 로컬에서
+- 운영 리소스(11/02): 버킷 `portfolio-rag` 생성, 운영 D1 마이그레이션 0005 적용(`migrations list --remote` → 남은 것 없음)
+- 원격 확인(11/02, 같은 구성의 4쪽 PDF): 그림 1개 + 3쪽 스캔 이미지 → R2 업로드 3건(원본 1·이미지 2), `wrangler r2 object get --remote`로 크기 일치. 다시 가져오기(그대로/`--force`) 모두 업로드 0건. `rag:build --dry`에 섹션별 `pN`·이미지 수, `rag:build:remote`는 검토 전 문서로 exit 1
+- 아직 못 한 확인: 운영 `/media` — 마지막 배포가 11/01이라 `/media` 경로가 아직 운영에 없다. `pnpm run deploy` 후 `https://portfolio-web.yeonghun-yoo.workers.dev/media/354c58f62131dee8f364e1dab6489ded.jpg`가 200, `…/media/b28f3640c8fb2a8289a1201e03e09dc5.pdf`가 404인지 본다. (클라우드 세션에서는 `*.workers.dev`가 막혀 있고, `wrangler dev`의 원격 R2 바인딩도 workerd가 프록시를 쓰지 않아 실패한다 — 로컬 PC에서 확인)
