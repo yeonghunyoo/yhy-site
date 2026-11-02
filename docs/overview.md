@@ -79,6 +79,7 @@ flowchart LR
 | 3 레터 | [03-letters.md](03-letters.md) |
 | 4 어드민 (MVP 완료) | [04-admin.md](04-admin.md) |
 | 5–6 챗 + RAG | [05-06-chat-rag.md](05-06-chat-rag.md) |
+| 6 보강 · 문서 수집(설계안) | [06-ingest.md](06-ingest.md) |
 | 7 3D/셰이더 | [07-3d-shader.md](07-3d-shader.md) |
 | 공통 데이터·환경변수·보안 | [common.md](common.md) |
 
