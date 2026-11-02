@@ -90,6 +90,8 @@ export const ragSections = sqliteTable(
     heading: text('heading').notNull(), // 섹션 제목(FAQ는 질문)
     text: text('text').notNull(),
     position: integer('position').notNull(), // 문서 안 순서
+    page: integer('page'), // PDF에서 온 문서면 섹션이 시작하는 쪽(<!-- page:N -->), 아니면 null
+    images: text('images', { mode: 'json' }).$type<string[]>(), // 섹션 안 이미지 URL(/media/…). 검색 텍스트에는 대체 텍스트만 넣는다
   },
   (table) => [index('rag_sections_slug_idx').on(table.slug)],
 );

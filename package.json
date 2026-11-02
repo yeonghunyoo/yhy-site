@@ -18,7 +18,7 @@
     "check": "astro check",
     "rag:build": "node scripts/rag-build.mjs",
     "rag:build:remote": "node scripts/rag-build.mjs --remote",
-    "rag:import": "node scripts/rag-import.mjs"
+    "rag:import": "node scripts/ingest/index.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",
@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@napi-rs/canvas": "^1.1.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "daisyui": "^5.7.50",

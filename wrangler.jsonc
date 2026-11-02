@@ -10,6 +10,8 @@
   // 챗·RAG(docs/05-06-chat-rag.md). AI는 로컬에서도 원격 호출(무료 범위에 잡힌다), Vectorize는 로컬 에뮬레이션이 없어 원격 인덱스를 쓴다
   "ai": { "binding": "AI", "remote": true },
   "vectorize": [{ "binding": "VEC", "index_name": "portfolio-rag", "remote": true }],
+  // RAG 원본(sources/, 비공개)과 이미지(media/, /media/*로 서빙). 로컬·운영 공용(docs/06-ingest.md)
+  "r2_buckets": [{ "binding": "R2", "bucket_name": "portfolio-rag", "remote": true }],
   // 비밀이 아닌 설정값. 비밀은 .dev.vars(로컬) / wrangler secret put(운영)
   "vars": {
     "SITE_NAME": "yhy",

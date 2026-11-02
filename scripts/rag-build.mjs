@@ -13,6 +13,11 @@ const CHUNK_MIN = 300;
 const remote = process.argv.includes('--remote');
 const dry = process.argv.includes('--dry');
 
+const PAGE_MARK = '\u0000page:';
+const IMAGE = /!\[([^\]]*)\]\(([^)\s]+)\)/g;
+// 이미지는 청킹 동안 자리표 \u0001{번호}\u0001로 두었다가, 텍스트에는 대체 텍스트만 남기고 URL은 섹션 메타로 모은다.
+const IMAGE_TOKEN = /\u0001(\d+)\u0001/g;
+
 const hash = (...parts) => createHash('sha256').update(parts.join('\u0000')).digest('hex').slice(0, 24);
 
 /** 아주 단순한 frontmatter 파서(title, summary, stack만 쓴다). frontmatter에 title이 없으면 첫 `#` 제목을 쓴다. */
@@ -25,41 +30,92 @@ function parse(source) {
       if (kv) meta[kv[1]] = kv[2].replace(/^\[|\]$/g, '').replace(/^['"]|['"]$/g, '');
     }
   }
+  // 쪽 표시(<!-- page:N -->, rag:import가 넣는다)는 줄로 남기고 나머지 주석은 지운다. 이미지는 sections()가 다룬다.
   const body = (match ? source.slice(match[0].length) : source)
+    .replace(/<!--\s*page:(\d+)\s*-->/g, `${PAGE_MARK}$1`)
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // 이미지는 대체 텍스트만
     .trim();
   meta.title ??= body.match(/^#\s+(.+)$/m)?.[1].trim();
   return { meta, body };
 }
 
-/** `##` 제목 단위로 나눈다. 첫 제목 앞 본문은 문서 제목을 섹션 제목으로 쓴다. `#`은 버리고 `###` 이하는 본문에 남긴다. */
+/**
+ * `##` 제목 단위로 나눈다. 첫 제목 앞 본문은 문서 제목을 섹션 제목으로 쓴다. `#`은 버리고 `###` 이하는 본문에 남긴다.
+ * 섹션마다 시작 쪽(쪽 표시가 있는 문서만)과 이미지 목록을 함께 돌려준다. 이미지는 본문에서 자리표로 바꿔 둔다.
+ */
 function sections(body, title) {
   const out = [];
   let heading = title;
   let buf = [];
+  let page = null;
+  let startPage = null;
+  let images = [];
   const flush = () => {
     const text = buf.join('\n').trim();
-    if (text) out.push({ heading, text });
+    if (text) out.push({ heading, text, page: startPage, images });
     buf = [];
+    images = [];
+    startPage = null;
   };
   for (const line of body.split('\n')) {
+    if (line.startsWith(PAGE_MARK)) {
+      page = Number(line.slice(PAGE_MARK.length));
+      continue;
+    }
     if (/^#\s/.test(line)) continue;
     const h = line.match(/^##\s+(.*)$/);
     if (h) {
       flush();
       heading = h[1].trim();
-    } else buf.push(line);
+      startPage = page;
+      continue;
+    }
+    if (!buf.length && startPage === null) startPage = page;
+    buf.push(
+      line.replace(IMAGE, (_, alt, url) => {
+        images.push({ alt: alt.trim(), url });
+        return `\u0001${images.length - 1}\u0001`;
+      }),
+    );
   }
   flush();
   return out;
+}
+
+/** 자리표를 대체 텍스트로 바꾸고, 그 조각에 들어 있던 이미지 URL을 모은다. */
+function resolveImages(text, images) {
+  const urls = [];
+  const clean = text.replace(IMAGE_TOKEN, (_, i) => {
+    urls.push(images[Number(i)].url);
+    return images[Number(i)].alt;
+  });
+  return { text: clean, urls };
+}
+
+/** 마크다운 표(| 로 시작하는 줄)가 max를 넘으면 행 단위로 나누고 머리 행(+구분 줄)을 조각마다 반복한다. */
+function tableUnits(lines, max) {
+  const head = /^\|?\s*:?-{3,}/.test(lines[1] ?? '') ? lines.slice(0, 2) : lines.slice(0, 1);
+  const rows = lines.slice(head.length);
+  const out = [];
+  let cur = [];
+  for (const row of rows) {
+    if (cur.length && [...head, ...cur, row].join('\n').length > max) {
+      out.push([...head, ...cur].join('\n'));
+      cur = [];
+    }
+    cur.push(row);
+  }
+  if (cur.length || !out.length) out.push([...head, ...cur].join('\n'));
+  return out.map((text) => ({ text: text.slice(0, max), paraEnd: true }));
 }
 
 /** 문단 → 문장 순으로 쪼갠 조각 */
 function units(text) {
   const out = [];
   for (const para of text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)) {
+    const lines = para.split('\n');
     if (para.length <= CHUNK_MAX) out.push({ text: para, paraEnd: true });
+    else if (lines.every((l) => l.trim().startsWith('|'))) out.push(...tableUnits(lines, CHUNK_MAX));
     else {
       const sentences = para.split(/(?<=[.!?。])\s+|\n/).map((s) => s.trim()).filter(Boolean);
       sentences.forEach((s, i) => out.push({ text: s.slice(0, CHUNK_MAX), paraEnd: i === sentences.length - 1 }));
@@ -98,6 +154,7 @@ function mdFiles(dir) {
 
 // 문서 모으기: src/content/rag/**/*.{locale}.md(faq.*는 FAQ) + 프로젝트 상세 본문 재사용
 const docs = [];
+const unreviewed = [];
 const ragDir = 'src/content/rag';
 for (const file of mdFiles(ragDir)) {
   const match = relative(ragDir, file).match(/^(.+)\.(ko|en)\.md$/);
@@ -105,7 +162,7 @@ for (const file of mdFiles(ragDir)) {
   const [, slug, locale] = match;
   const source = readFileSync(file, 'utf8');
   // rag:import로 만든 PDF 변환본은 검토 표시(주석)를 지워야 검토가 끝난 것으로 본다.
-  if (source.includes('rag-import:')) console.warn(`검토 전 문서: ${file} — 변환 결과를 확인하고 rag-import 주석을 지운다`);
+  if (source.includes('rag-import:')) unreviewed.push(file);
   const { meta, body } = parse(source);
   docs.push({ slug, locale, kind: slug === 'faq' ? 'faq' : 'doc', title: meta.title ?? slug, body });
 }
@@ -120,15 +177,23 @@ for (const file of mdFiles(projectDir)) {
   docs.push({ slug: `projects/${slug}`, locale, kind: 'doc', title, body: `${intro}\n\n${body}` });
 }
 
+// 검토 전 문서(rag-import 주석이 남은 것): 로컬은 경고만, 운영(--remote)은 넣지 않고 멈춘다.
+for (const file of unreviewed) console.warn(`검토 전 문서: ${file} — 변환 결과를 확인하고 rag-import 주석을 지운다`);
+if (unreviewed.length && remote) {
+  console.error('검토 전 문서가 있어 운영 D1에 넣지 않는다.');
+  process.exit(1);
+}
+
 const sectionRows = [];
 const chunkRows = [];
 for (const doc of docs) {
   let position = 0;
-  for (const { heading, text } of sections(doc.body, doc.title)) {
+  for (const { heading, text, page, images } of sections(doc.body, doc.title)) {
     // 1,500자를 넘는 섹션은 문단 경계로 나눠 부모를 여러 개 만든다.
     const parts = doc.kind === 'faq' ? [text] : pack(text, SECTION_MAX, SECTION_MAX);
-    parts.forEach((part, i) => {
+    parts.forEach((raw, i) => {
       const sectionHeading = parts.length > 1 ? `${heading} (${i + 1})` : heading;
+      const { text: part, urls } = resolveImages(raw, images);
       const section = {
         id: hash(doc.slug, doc.locale, sectionHeading, part),
         slug: doc.slug,
@@ -138,10 +203,12 @@ for (const doc of docs) {
         heading: sectionHeading,
         text: part,
         position: position++,
+        page,
+        images: urls.length ? urls : null,
       };
       sectionRows.push(section);
       // FAQ는 질문 문장 하나가 자식, 문서는 문단·문장 경계로 자른 조각이 자식. 앞에 `문서 제목 > 섹션 제목`을 붙인다.
-      const pieces = doc.kind === 'faq' ? [heading] : pack(part, CHUNK_MAX, CHUNK_MIN);
+      const pieces = doc.kind === 'faq' ? [heading] : pack(raw, CHUNK_MAX, CHUNK_MIN).map((p) => resolveImages(p, images).text);
       const seen = new Set();
       for (const piece of pieces) {
         const childText = `${doc.title} > ${sectionHeading}\n${piece}`;
@@ -154,7 +221,8 @@ for (const doc of docs) {
   }
 }
 
-const q = (v) => (typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
+const q = (v) =>
+  v === null || v === undefined ? 'NULL' : typeof v === 'number' ? String(v) : `'${(Array.isArray(v) ? JSON.stringify(v) : String(v)).replace(/'/g, "''")}'`;
 const insert = (table, row) => `INSERT INTO ${table} (${Object.keys(row).join(', ')}) VALUES (${Object.values(row).map(q).join(', ')});`;
 const sql = [
   'DELETE FROM rag_chunks;',
@@ -172,7 +240,10 @@ console.log(
     `(청크 ${Math.min(...lengths)}–${Math.max(...lengths)}자, ${out})`,
 );
 if (dry) {
-  for (const s of sectionRows) console.log(`  [${s.locale}] ${s.slug} · ${s.heading} (${s.text.length}자, 자식 ${chunkRows.filter((c) => c.section_id === s.id).length})`);
+  for (const s of sectionRows) {
+    const extra = [s.page && `p${s.page}`, s.images && `이미지 ${s.images.length}`].filter(Boolean).join(', ');
+    console.log(`  [${s.locale}] ${s.slug} · ${s.heading} (${s.text.length}자, 자식 ${chunkRows.filter((c) => c.section_id === s.id).length}${extra ? `, ${extra}` : ''})`);
+  }
   process.exit(0);
 }
 

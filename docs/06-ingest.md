@@ -1,10 +1,10 @@
 # 6단계 보강 · 문서 수집 재설계 (docreader 참고)
 
-**상태: 설계안 (11/02), 구현 전.** R2 추가와 버킷 공용은 승인됨(11/02). 스캔 쪽 처리는 라이브러리 비교 후 결정.
+**상태: 1~3단계 구현 (11/02), 4단계(스캔 쪽) 결정 대기.** R2 추가와 버킷 공용은 승인됨(11/02). 구현 메모는 맨 아래.
 
 RAG에 넣을 원본(PDF, 나중에 docx·html 등)을 **검토할 마크다운**으로 바꾸고, 원본과 이미지는 R2에 저장해 이미지는 URL로 본문에 박는다. 그 뒤 청킹·임베딩은 지금의 `rag:build`가 이어받는다. 구조는 WeKnora `docreader`(Python gRPC 서비스)를 참고하되, 1인 사이트라 상시 서비스 대신 **로컬 CLI**로 옮긴다.
 
-지금 `rag:import`(PDF 텍스트 → 마크다운 초안, [05-06-chat-rag.md](05-06-chat-rag.md) "PDF 가져오기")를 이 설계로 대체한다. 질문 파이프라인과 벡터 갱신은 바꾸지 않는다.
+11/01의 `rag:import`(PDF 텍스트 → 마크다운 초안, `scripts/rag-import.mjs`)를 이 설계로 대체했다(11/02). 질문 파이프라인과 벡터 갱신은 바꾸지 않는다.
 
 ## 목표와 범위
 
@@ -51,7 +51,7 @@ pnpm rag:build[:remote]                    (지금 스크립트 + 아래 "넣기
 ## 1. 파서 계약
 
 ```ts
-// scripts/ingest/types.ts
+// scripts/ingest/registry.mjs 머리 주석(스크립트가 .mjs라 타입은 주석으로 둔다)
 interface ParseResult {
   markdown: string;            // 이미지는 임시 참조 ![](images/p3-1.jpg)
   images: ImageRef[];
@@ -79,7 +79,7 @@ interface Parser {
 - 쪽 위치는 본문에 `<!-- page:3 -->` 주석으로 넣는다(쪽이 바뀌는 자리마다). docreader `SourceBlock`의 쪽 locator에 해당한다
 - 파서는 네트워크·R2를 모른다. 순수 함수라 `testdata/`의 PDF로 단위 테스트한다
 
-## 2. PDF 파서 (`parsers/pdf.ts`)
+## 2. PDF 파서 (`parsers/pdf.mjs`)
 
 텍스트 처리는 지금 `rag-import.mjs`의 로직을 옮긴다(줄 묶기, 머리말·꼬리말 제거, 글자 크기로 `##` 제목, 문단·목록, 지시문 의심 표시). 추가하는 것:
 
@@ -192,11 +192,26 @@ source: { file: about.ko.pdf, hash: 3f2a…, parser: pdf-unpdf, pages: 4 }
 - [x] R2 추가 승인 (11/02) — CLAUDE.md·overview·common 반영
 - [x] 버킷 `portfolio-rag`, 로컬·운영 공용(`remote: true`) (11/02)
 - [ ] 스캔 쪽 처리: 쪽 그리기·OCR 라이브러리 비교 후 결정(11/02 비교 중)
-- [ ] 이미지 대체 텍스트: 자리표시(`그림 p3-1`)로 두고 검토 때 사람이 고치기(제안)
+- [x] 이미지 대체 텍스트: 자리표시(`그림 p3-1`)로 두고 검토 때 사람이 고친다(11/02 구현)
 
-## 바꿀 문서 (승인 후)
+## 바꿀 문서 (11/02 반영)
 
 - `CLAUDE.md` 확정 스택: 인프라에 R2(RAG 원본·이미지)
 - `docs/overview.md` 결정 표, `docs/common.md` 바인딩 목록(`R2`)
 - `docs/05-06-chat-rag.md`: "PDF 가져오기"를 이 문서로 대체, 넣기 파이프라인에 쪽 번호·이미지 메타
 - `docs/guides/chat-rag-setup.md`: 버킷 만들기(`wrangler r2 bucket create portfolio-rag`), 가져오기 절차
+
+## 구현 메모 (11/02)
+
+- 코드: CLI `scripts/ingest/index.mjs`(`pnpm rag:import`), 레지스트리 `registry.mjs`, 파서 `parsers/pdf.mjs`·`parsers/markdown.mjs`, 이미지 인코딩 `image.mjs`(`@napi-rs/canvas`, 긴 변 2,000px, 불투명은 JPEG 85 / 투명은 PNG), 저장 `store.mjs`, 서빙 `src/pages/media/[file].ts`, 넣기 `scripts/rag-build.mjs`, 마이그레이션 `0005_rag_section_page_images`
+- 스크립트는 기존과 맞춰 `.mjs`로 썼다. 파서 계약은 `registry.mjs` 머리 주석에 있다
+- 이미지 위치: pdf.js 연산 목록을 따라가며 변환 행렬을 계산해 그려지는 면적(쪽 대비)과 위쪽 끝을 구한다. 그 면적으로 쪽 분류와 1% 필터를 한다
+- 머리말·꼬리말: 11/01 버전은 쪽 어디서든 반복되는 줄을 지워 본문의 비슷한 문장까지 지웠다 → 쪽 위·아래 10% 안의 줄만 후보로 바꿨다
+- pdf.js는 받은 버퍼를 워커로 넘겨 비운다 — 파서에는 복사본을 주고 원본 저장은 원래 버퍼로 한다
+- 마크다운 입력: 상대 경로 로컬 이미지만 R2로 올린다. 외부 URL 이미지는 내려받지 않고 경고
+- `--no-upload`: R2에 올리지 않고 `.wrangler/tmp/ingest/{sources,media}/`에만 쓴다(로그인 없는 환경·미리보기). 올린 키는 `.wrangler/ingest-uploaded.json`에 캐시해 다시 올리지 않는다
+- 넣기: 쪽 표시는 주석 제거 전에 읽어 섹션 시작 쪽을 `page`에, 이미지는 청킹 동안 자리표로 두었다가 텍스트엔 대체 텍스트, URL은 `images`에. `--remote`에서 검토 전 문서가 있으면 멈춘다
+- 스캔 쪽은 아직 `<!-- 스캔 쪽 pN … -->` 표시만 남긴다(4단계 결정 대기)
+- 확인(11/02, Chromium으로 만든 4쪽 한국어 PDF — 본문·그림·작은 아이콘·쪽마다 로고·반복 머리말·전면 이미지 쪽·지시문): 그림 1개만 남고 아이콘·로고 제외, 머리말 제거, 3쪽 스캔 판정, 지시문 경고, 다시 가져오면 건너뜀, `rag:build --dry`에 쪽·이미지 수 표시, 30행 표가 머리 행을 반복하며 3조각(행 누락 없음), `rag:build --remote`는 검토 전 문서로 멈춤
+- `/media`: 로컬 R2 에뮬레이션(`wrangler dev`, 원격 바인딩 끔)에서 해시 이름 200 + `immutable`·`nosniff`·ETag, 확장자 다름·대문자·`../sources/`·형식 아님은 404
+- 아직 못 한 확인: 원격 R2 실제 업로드와 운영 `/media`(이 세션은 Cloudflare 로그인이 없다) — 버킷을 만든 뒤 로컬에서

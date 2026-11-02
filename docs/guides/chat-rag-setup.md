@@ -10,7 +10,7 @@
 | --- | --- |
 | 챗 독 UI, SSE 스트리밍, 턴 제한(비로그인 3 / 로그인 30, KST 하루), 월 토큰 상한 | 동작 |
 | 넣기: 부모-자식 청킹, 해시 id, FAQ (`pnpm rag:build`, `--dry`로 미리보기) | 동작 — 로컬 D1에 초안 문서 24섹션/24청크 |
-| PDF 가져오기: PDF → 검토용 마크다운 (`pnpm rag:import`) | 동작 — Chrome으로 만든 한국어 PDF로 확인 |
+| 가져오기: PDF·마크다운 → 검토용 마크다운 + 이미지 R2 (`pnpm rag:import`, [06-ingest.md](../06-ingest.md)) | 동작(11/02) — R2 실제 업로드는 버킷 생성 후 확인 |
 | 질문 파이프라인: 재작성 → 병렬 검색(RRF) → 범위 판단 → 부모 섹션 top-6 → Workers AI 답변 | 동작 (로컬, Gemma 4 26B) |
 | 벡터 갱신(바뀐 것만), 검색 전용 `GET /api/admin/rag/search`, 기준 질문 평가 `/admin/chat?eval=1` | 동작 |
 | 리랭크 | 코드는 있고 꺼 둠(한국어 구분 못 함) |
@@ -38,7 +38,8 @@
 
 - [ ] 문서 소스 받기 — 형식은 마크다운·PDF(11/01 결정)
   - 마크다운: `src/content/rag/{slug}.{ko|en}.md`에 그대로 넣는다. 섹션은 `##` 기준
-  - PDF: `rag-sources/{slug}.{ko|en}.pdf`에 넣고(커밋 안 됨) `pnpm rag:import` → 생긴 `.md`를 읽고 고친다(제목 위치, 표, 줄바꿈, 연락처·주소 같은 개인정보, "지시문 의심" 줄) → 맨 위 `rag-import:` 주석을 지우고 커밋
+  - PDF: `rag-sources/{slug}.{ko|en}.pdf`에 넣고(커밋 안 됨) `pnpm rag:import` → 원본·이미지가 R2에 올라가고 `.md` 초안이 생긴다 → 읽고 고친다(제목 위치, 표, 줄바꿈, 연락처·주소 같은 개인정보, 개인정보가 담긴 이미지는 줄째 삭제, 이미지 대체 텍스트 `그림 pN-M`을 내용으로, "지시문 의심" 줄) → 맨 위 `rag-import:` 주석을 지우고 커밋. 주석이 남아 있으면 `rag:build:remote`가 멈춘다
+  - 처음 한 번: R2 버킷 `./node_modules/.bin/wrangler r2 bucket create portfolio-rag` — **버킷이 없으면 `pnpm run deploy`가 실패한다**(`wrangler.jsonc`에 R2 바인딩이 있다)
   - 스캔본 PDF는 글자가 없어 변환되지 않는다. OCR한 PDF나 마크다운으로 받는다
 - [ ] 지금 초안 `about`·`stack`의 `[확인 필요]`/`[TO CONFIRM]` 자리는 받은 문서로 대체하거나 지운다
 - [ ] 스택 경험 수준 표기 방식(예: 실무 / 개인 프로젝트 / 학습 중)
