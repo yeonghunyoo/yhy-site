@@ -99,7 +99,7 @@ export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnau
           <button type="submit" form="letter-form" className="btn btn-primary w-full" disabled={!ready || busy} aria-busy={busy}>
             {dict.letter.submit}
           </button>
-          <p className="mt-2 text-center text-xs text-muted">
+          <p className="mt-2 text-center text-xs text-muted group-data-keyboard/sheet:hidden">
             {dict.letter.notice}{' '}
             <a href={`/${locale}/privacy/`} className="underline underline-offset-2">
               {dict.auth.privacy}

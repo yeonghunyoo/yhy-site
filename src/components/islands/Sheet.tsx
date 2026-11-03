@@ -9,7 +9,8 @@ interface SheetProps {
   title: string;
   closeLabel: string;
   children: ReactNode;
-  /** 하단 고정 영역(전송 버튼 등). 키보드가 올라와도 보이도록 본문만 스크롤한다. */
+  /** 하단 고정 영역(전송 버튼 등). 키보드가 올라와도 보이도록 본문만 스크롤한다.
+   *  키보드가 떠 있을 때 숨길 부가 요소는 `group-data-keyboard/sheet:hidden`을 단다. */
   footer?: ReactNode;
 }
 
@@ -48,11 +49,13 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
     };
 
     // 키보드가 올라오면 보이는 영역에 맞춰 시트를 올리고 높이를 줄인다. 프레임마다 DOM에 바로 쓴다(viewport.ts) —
-    // 상태로 받으면 늦게 그려져 키보드를 내릴 때마다 시트가 출렁인다
-    const stopViewport = watchViewport(({ height, top }) => {
+    // 상태로 받으면 늦게 그려져 키보드를 내릴 때마다 시트가 출렁인다.
+    // 키보드가 떠 있으면 남은 높이가 좁아 보이는 영역을 꽉 채우고, data-keyboard로 손잡이·부가 문구·safe-area 여백을 뺀다
+    const stopViewport = watchViewport(({ height, top, keyboard }) => {
       if (!panel) return;
       panel.style.marginBottom = `${Math.max(0, window.innerHeight - height - top)}px`;
-      panel.style.maxHeight = `${Math.round(height * 0.92)}px`;
+      panel.style.maxHeight = `${Math.round(keyboard ? height : height * 0.92)}px`;
+      panel.toggleAttribute('data-keyboard', keyboard);
     });
     document.addEventListener('keydown', onKey);
 
@@ -93,7 +96,7 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
+        className="group/sheet relative flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
         style={{
           transform: dragY ? `translateY(${dragY}px)` : undefined,
           transition: dragStart.current === null ? 'transform 0.2s' : undefined,
@@ -106,7 +109,7 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          <div className="flex justify-center pt-2 md:hidden" aria-hidden="true">
+          <div className="flex justify-center pt-2 group-data-keyboard/sheet:hidden md:hidden" aria-hidden="true">
             <span className="h-1.5 w-10 rounded-full bg-border" />
           </div>
           <div className="flex items-center justify-between gap-2 pr-2 pl-5 md:pt-2">
@@ -118,9 +121,9 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
             </button>
           </div>
         </div>
-        <div data-scroll-allow className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
+        <div data-scroll-allow className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
         {footer && (
-          <div className="border-t border-border px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="border-t border-border px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] group-data-keyboard/sheet:pt-2 group-data-keyboard/sheet:pb-2">
             {footer}
           </div>
         )}
