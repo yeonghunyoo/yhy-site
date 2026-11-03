@@ -213,6 +213,8 @@ export default function ChatDock({ dict, locale }: Props) {
 
       <div ref={listRef} data-scroll-allow className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
         <p className="rounded-[var(--radius)] bg-bg px-3 py-2">{dict.chat.greeting}</p>
+        {/* 개인정보 고지 — 입력란 아래에서 옮겼다(11/03, 입력 영역을 좁게) */}
+        <p className="px-1 text-xs text-muted">{dict.chat.notice}</p>
         {turns.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {dict.chat.chips.map((chip) => (
@@ -282,15 +284,18 @@ export default function ChatDock({ dict, locale }: Props) {
       <form
         onSubmit={submit}
         aria-busy={busy}
-        className={`shrink-0 border-t border-border px-3 pt-3 ${frame?.keyboard ? 'pb-3' : 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'}`}
+        className={`shrink-0 border-t border-border px-3 pt-2 ${frame?.keyboard ? 'pb-2' : 'pb-[max(0.5rem,env(safe-area-inset-bottom))]'}`}
       >
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-2">
           <textarea
             data-scroll-allow
             ref={inputRef}
             rows={1}
             readOnly={busy}
-            className="field max-h-32 flex-1 resize-none"
+            // 슬림한 한 줄 입력(40px). iOS 자동 완성 막대(패스키·카드·주소)가 덜 뜨도록 자동 완성 대상이 아님을 알린다
+            className="field max-h-32 min-h-10 flex-1 resize-none py-1.5"
+            autoComplete="off"
+            enterKeyHint="send"
             placeholder={dict.chat.placeholder}
             maxLength={MAX_QUESTION}
             value={input}
@@ -307,7 +312,6 @@ export default function ChatDock({ dict, locale }: Props) {
             {dict.chat.send}
           </button>
         </div>
-        <p className="mt-2 text-xs text-muted">{dict.chat.notice}</p>
       </form>
     </section>
     </>
