@@ -1,21 +1,23 @@
 /*
  * 디자인 토큰 — 색·글꼴·모서리는 이 파일에만 둔다.
- * 11/03 테마: 글자·숫자·가는 선 중심. 밝은 = 세이지 종이, 어두운 = 나이트. 강조는 파랑 하나, 표시(태그)는 분홍.
+ * 11/03 테마: 글자·숫자·가는 선 중심. 밝은 설정 = 블루(전기 파랑 + 노랑 강조), 어두운 설정 = 나이트. 표시(태그)는 분홍.
  * 글꼴 2종: 제목 Black Han Sans, 숫자·라벨 IBM Plex Mono(자체 호스팅). 본문은 시스템 글꼴.
  */
 :root {
-  --color-bg: #dfe3db;
-  --color-surface: #e9ece6;
-  --color-fg: #161815;
-  --color-muted: #4d524b;
-  --color-quiet: #7c8178;
-  --color-ghost: #c6cbc1;
-  --color-border: #b9beb4;
-  --color-accent: #1d2be3;
-  --color-accent-fg: #ffffff;
-  --color-tag: #d6267a;
-  --color-danger: #b4232a;
-  --color-success: #2f7a3d;
+  /* 기본(밝은 설정) = 블루: 전기 파랑 바탕 + 흰 글자 + 노랑 강조(11/03, Clipo 참고) */
+  color-scheme: dark;
+  --color-bg: #1d2be3;
+  --color-surface: #2533e6;
+  --color-fg: #ffffff;
+  --color-muted: #d6daff;
+  --color-quiet: #9ea6f6;
+  --color-ghost: #3443ec;
+  --color-border: #4a57ef;
+  --color-accent: #ffd94a;
+  --color-accent-fg: #141414;
+  --color-tag: #ff5fa8;
+  --color-danger: #ffb4c0;
+  --color-success: #b6f5c8;
 
   --font-sans: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Black Han Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
