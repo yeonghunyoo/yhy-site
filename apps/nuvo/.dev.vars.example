@@ -1,0 +1,12 @@
+# 로컬 개발용 비밀값. `cp .dev.vars.example .dev.vars` 후 사용.
+# 운영 값은 `wrangler secret put <NAME>` 으로 넣는다 (docs/developer-guide.md 참고).
+# 로컬은 개발 모드 (이메일/비밀번호 로그인 허용)
+ENVIRONMENT=development
+BETTER_AUTH_SECRET=dev-only-change-me-dev-only-change-me
+BETTER_AUTH_URL=http://localhost:5173
+MEDIA_SIGNING_KEY=dev-only-media-signing-key-change-me
+# 소셜 로그인 (비워두면 버튼이 숨겨진다)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+KAKAO_CLIENT_ID=
+KAKAO_CLIENT_SECRET=
