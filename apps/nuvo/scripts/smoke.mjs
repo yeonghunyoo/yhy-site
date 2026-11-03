@@ -33,10 +33,21 @@ function client() {
   return call;
 }
 
+/** 로컬 메일 보관함에서 가장 최근 메일의 링크를 꺼낸다 (경로+쿼리만) */
+async function mailLink(email, pattern) {
+  const r = await fetch(`${BASE}/api/dev/outbox?to=${encodeURIComponent(email)}`).then((x) => x.json());
+  const mail = r.mails.filter((m) => pattern.test(m.text)).at(-1);
+  const url = mail?.text.match(/https?:\/\/\S+/)?.[0];
+  return url ? new URL(url).pathname + new URL(url).search : null;
+}
+
+/** 가입 → 인증 메일 링크 열기 (인증되면 바로 로그인된다) */
 async function signUp(call, name) {
   const email = `u${Date.now()}${Math.floor(Math.random() * 1e4)}@test.nuvo`;
-  const r = await call("/api/auth/sign-up/email", { method: "POST", json: { email, password: "password1234", name } });
-  ok(r.status === 200, `${name} 가입 (${r.status})`);
+  const r = await call("/api/auth/sign-up/email", { method: "POST", json: { email, password: "password1234", name, callbackURL: "/verified" } });
+  const link = await mailLink(email, /verify-email/);
+  const v = link ? await call(link) : { status: 0 };
+  ok(r.status === 200 && v.status === 302, `${name} 가입 + 이메일 인증 (${r.status}, ${v.status})`);
   return email;
 }
 
@@ -82,6 +93,36 @@ const b = client();
 ok((await a("/api/health")).data.ok, "health");
 ok((await a("/api/health/db")).status === 200, "DB 연결");
 ok((await a("/api/me")).status === 401, "비로그인 /me → 401");
+
+// 이메일 인증 전에는 로그인되지 않는다
+{
+  const x = client();
+  const email = `v${Date.now()}@test.nuvo`;
+  const up = await x("/api/auth/sign-up/email", { method: "POST", json: { email, password: "password1234", name: "인증전" } });
+  const me0 = await x("/api/me");
+  const si = await x("/api/auth/sign-in/email", { method: "POST", json: { email, password: "password1234" } });
+  ok(up.status === 200 && me0.status === 401 && si.status === 403 && si.data.code === "EMAIL_NOT_VERIFIED",
+    `인증 전 로그인 차단 (가입 ${up.status}, /me ${me0.status}, 로그인 ${si.status} ${si.data.code})`);
+  const link = await mailLink(email, /verify-email/);
+  await x(link);
+  ok((await x("/api/me")).status === 200, "인증 링크를 열면 로그인됨");
+
+  // 비밀번호 재설정: 메일 링크 → 새 비밀번호 → 이전 비밀번호는 거부
+  const y = client();
+  const req = await y("/api/auth/request-password-reset", { method: "POST", json: { email, redirectTo: "/reset-password" } });
+  const resetLink = await mailLink(email, /reset-password/);
+  const jump = resetLink ? await y(resetLink) : null;
+  const token = jump ? new URL(jump.res.headers.get("location"), BASE).searchParams.get("token") : null;
+  const done = await y("/api/auth/reset-password", { method: "POST", json: { newPassword: "newpassword5678", token } });
+  const oldPw = await y("/api/auth/sign-in/email", { method: "POST", json: { email, password: "password1234" } });
+  const newPw = await y("/api/auth/sign-in/email", { method: "POST", json: { email, password: "newpassword5678" } });
+  ok(req.status === 200 && token && done.status === 200 && oldPw.status === 401 && newPw.status === 200,
+    `비밀번호 재설정 (요청 ${req.status}, 토큰 ${Boolean(token)}, 변경 ${done.status}, 이전 ${oldPw.status}, 새 ${newPw.status})`);
+  ok((await x("/api/me")).status === 401, "비밀번호를 바꾸면 기존 세션은 로그아웃");
+  const unknown = await y("/api/auth/request-password-reset", { method: "POST", json: { email: `nobody${Date.now()}@test.nuvo`, redirectTo: "/reset-password" } });
+  ok(unknown.status === 200, "없는 이메일로 재설정 요청해도 같은 응답 (가입 여부 비노출)");
+  await y("/api/me", { method: "DELETE" });
+}
 
 await signUp(a, "엄마");
 const meA = (await a("/api/me")).data;

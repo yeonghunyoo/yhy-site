@@ -12,7 +12,7 @@
 |---|---|
 | 로컬 개발 환경 | ✅ 동작 (이 PC 기준) |
 | 운영 배포 (Cloudflare) | ✅ 5~9·11단계 완료 (R2, Neon 싱가포르, Hyperdrive, 비밀값, cron). 도메인(10단계) 전이라 `https://nuvo.<계정 서브도메인>.workers.dev`로 운영 중 |
-| 소셜 로그인 (Google·Kakao) | ⬜ 12~13단계 필요. **운영에서는 이메일 로그인이 꺼져 있어서, 이 단계 전에는 아무도 로그인할 수 없습니다** |
+| 로그인 | ⬜ 코드는 완료 (이메일 인증·비밀번호 재설정·Google·카카오). **도메인(10)+Resend(10-1) 또는 Google(12) 중 하나를 해야 운영에서 로그인할 수 있습니다.** 카카오(13)는 나중에 |
 | 법률 문서 | ⬜ 14단계 필요 (소셜 로그인 심사에도 필요) |
 | 실기기 검증 | ⬜ 17단계 필요 |
 
@@ -49,7 +49,7 @@ pnpm test                                             # 단위 테스트
 pnpm --filter @nuvo/web exec playwright install chromium   # 처음 한 번
 pnpm e2e                                              # 브라우저 E2E
 ```
-- 확인: smoke "모두 통과"(53개), test 12개 통과, e2e 5개 통과.
+- 확인: smoke "모두 통과"(58개), test 12개 통과, e2e 6개 통과.
 
 ---
 
@@ -91,8 +91,10 @@ DATABASE_URL="$(cat apps/web/.neon-url.local)" pnpm db:migrate
 ### 8. Hyperdrive (Worker ↔ DB 연결 풀)
 ```sh
 cd apps/web
-pnpm exec wrangler hyperdrive create nuvo-db --connection-string="$(cat .neon-url.local)"
+pnpm exec wrangler hyperdrive create nuvo-db --connection-string="$(cat .neon-url.local)" --caching-disabled
 ```
+- **`--caching-disabled`는 꼭 넣습니다.** Hyperdrive는 기본으로 읽기 결과를 60초 캐시합니다. 켜 두면 내보낸 멤버의 권한 확인이나 삭제 직후 타임라인이 최대 1분 늦게 반영됩니다.
+  이미 만들었다면: `pnpm exec wrangler hyperdrive update <id> --caching-disabled`
 - 출력된 `id`를 `apps/web/wrangler.jsonc`의 `hyperdrive[0].id`에 넣습니다. 이 id는 비밀값이 아닙니다 (이 Cloudflare 계정의 Worker만 쓸 수 있음). 저장소를 포크해서 쓰는 경우에는 자기 계정에서 만든 id로 바꿉니다.
 
 ### 9. 운영 비밀값
@@ -126,7 +128,27 @@ pnpm exec wrangler secret put BETTER_AUTH_URL      # 예: https://nuvo.example.c
   ```jsonc
   "routes": [{ "pattern": "nuvo.example.com", "custom_domain": true }]
   ```
-- 커스텀 도메인이 필요한 이유: `workers.dev` 주소에서는 Cloudflare 캐시(Cache API)가 동작하지 않아서, 사진을 매번 R2에서 읽게 됩니다.
+- 커스텀 도메인이 필요한 이유: `workers.dev` 주소에서는 Cloudflare 캐시(Cache API)가 동작하지 않아서, 사진을 매번 R2에서 읽게 됩니다. 이메일 인증 메일을 보내는 데도 도메인이 필요합니다 (10-1단계).
+- 구매: Cloudflare 대시보드 → Domain Registration → Register Domains (원가 판매, `.com` 연 $10 안팎). 대시보드에서만 살 수 있습니다.
+- 도메인을 연결한 뒤 할 일:
+  - [ ] `.prod-secrets.local`의 `BETTER_AUTH_URL`을 `https://도메인`으로 바꾸고 다시 배포 (`--secrets-file`)
+  - [ ] Google OAuth 리디렉션 URI에 새 주소 추가 (12단계)
+
+### 10-1. 메일 발송 (Resend) — 이메일 로그인에 필요
+운영에서는 **Resend 키가 있어야 이메일 가입·로그인이 켜집니다.** 없으면 화면에 이메일 입력란이 나오지 않습니다.
+1. [ ] [resend.com](https://resend.com) 가입 (무료: 월 3,000통, 하루 100통)
+2. [ ] Domains → **Add Domain**: 메일 전용 하위 도메인을 권장합니다 (예: `mail.도메인`). 리전은 Tokyo(ap-northeast-1)
+3. [ ] 화면에 나온 DNS 레코드(DKIM·SPF·MX)를 넣습니다. 도메인이 Cloudflare에 있으면 Resend의 **Auto configure(Cloudflare)** 버튼으로 자동 등록됩니다.
+   - 상태가 **Verified**가 될 때까지 기다립니다 (보통 몇 분).
+4. [ ] API Keys → **Create API Key**: 권한 `Sending access`, 도메인은 2번 도메인만
+5. [ ] 키를 화면·채팅에 남기지 않고 파일에 넣습니다 (클립보드에 복사한 뒤 프롬프트에 입력):
+   ```
+   ! sh apps/web/scripts/set-secret.sh RESEND_API_KEY
+   ```
+   보내는 주소도 같은 방법으로 넣습니다 (`nuvo <noreply@mail.도메인>`을 복사한 뒤): `! sh apps/web/scripts/set-secret.sh EMAIL_FROM`
+6. [ ] `cd apps/web && pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local`
+- 확인: `/api/auth-config`가 `"password":true`를 주고, 가입하면 인증 메일이 도착하면 완료.
+- 같은 Resend 계정과 도메인을 다른 서비스(예: portfolio-web)와 함께 써도 됩니다. 보내는 주소(`EMAIL_FROM`)와 API 키만 서비스마다 따로 둡니다.
 
 ### 11. 배포
 ```sh
@@ -142,24 +164,29 @@ pnpm deploy
 
 ## C. 로그인 연동
 
-> 운영(`ENVIRONMENT=production`)에서는 이메일/비밀번호 로그인이 꺼져 있습니다. 아래 둘 중 최소 하나가 있어야 로그인할 수 있습니다.
+> 운영 로그인 방법: **이메일**(10-1단계, 인증 메일 필수), **Google**(12단계), **카카오**(13단계, 나중에). 하나라도 설정되면 로그인할 수 있습니다.
+> 보안 설정 (코드에 들어 있음): 이메일 인증 전 로그인 불가, 비밀번호 8~128자, 비밀번호 재설정 시 모든 기기 로그아웃,
+> 로그인 5회/분·가입·메일 발송 3회/10분 제한(IP 기준, DB 저장), 세션 쿠키 캐시 끔(로그아웃 즉시 반영).
 
 ### 12. Google 로그인
-- [ ] [Google Cloud Console](https://console.cloud.google.com) → 프로젝트 생성
-- [ ] **OAuth 동의 화면**: 외부(External), 앱 이름 `nuvo`, 지원 이메일, **개인정보처리방침 URL**(14단계)
+- [ ] [Google Cloud Console](https://console.cloud.google.com) → **nuvo 전용 프로젝트** 생성
+  - 동의 화면(앱 이름·로고)은 프로젝트마다 하나라서, 다른 서비스(예: portfolio-web)와 프로젝트를 같이 쓰면 로그인 창에 다른 이름이 보입니다.
+- [ ] **Google Auth Platform → 브랜딩(OAuth 동의 화면)**: 대상 외부(External), 앱 이름 `nuvo`, 지원 이메일, **개인정보처리방침 URL**(14단계)
   - 범위(scope)는 `openid`, `email`, `profile`만 씁니다. 민감한 범위가 아니라서 무거운 심사(CASA)는 필요 없습니다.
   - 게시 상태를 "프로덕션"으로 바꿉니다. 테스트 상태로 두면 등록한 테스트 사용자만 로그인됩니다.
 - [ ] **사용자 인증 정보 → OAuth 클라이언트 ID**(웹 애플리케이션)
+  - 승인된 자바스크립트 원본: 비워 둡니다 (서버에서 처리)
   - 승인된 리디렉션 URI:
-    - `https://도메인/api/auth/callback/google`
+    - `https://nuvo.<서브도메인>.workers.dev/api/auth/callback/google` (지금 운영 주소)
+    - `https://도메인/api/auth/callback/google` (도메인 연결 후 추가)
     - `http://localhost:5173/api/auth/callback/google` (로컬 시험용)
-- [ ] 값 넣기:
-  ```sh
-  cd apps/web
-  pnpm exec wrangler secret put GOOGLE_CLIENT_ID
-  pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+- [ ] 클라이언트 ID와 보안 비밀번호를 파일에 넣습니다. 화면·채팅에 남기지 않도록 하나씩 복사해서 프롬프트에 입력:
   ```
-  로컬은 `.dev.vars`의 같은 이름에 넣습니다.
+  ! sh apps/web/scripts/set-secret.sh GOOGLE_CLIENT_ID
+  ! sh apps/web/scripts/set-secret.sh GOOGLE_CLIENT_SECRET
+  ```
+  로컬에서도 시험하려면 `apps/web/.dev.vars`의 같은 이름에 넣습니다.
+- [ ] `cd apps/web && pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local`
 - 확인: 로그인 화면에 "Google로 계속하기" 버튼이 보이고, 로그인이 되면 완료.
 
 ### 13. 카카오 로그인

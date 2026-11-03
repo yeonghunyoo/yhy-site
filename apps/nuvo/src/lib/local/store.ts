@@ -182,6 +182,7 @@ async function processEntries(folder: LocalFolder, entries: { path: string; file
   let processed = entries.length - todo.length;
   let failed = unreadable;
   let batch: LocalItem[] = [];
+  let lastFlush = Date.now();
   const flush = () => {
     if (!batch.length) return;
     const add = new Map(batch.map((b) => [b.key, b]));
@@ -220,7 +221,9 @@ async function processEntries(folder: LocalFolder, entries: { path: string; file
         console.warn("로컬 사진 처리 실패", path, e);
         failed++;
       }
-      if ((processed + failed) % 96 === 0) {
+      // 진행 표시는 96장마다 또는 0.5초마다 (적은 장수도 진행이 보이게)
+      if (batch.length >= 96 || Date.now() - lastFlush > 500) {
+        lastFlush = Date.now();
         flush();
         setScan(folder.id, { processed, failed });
       }

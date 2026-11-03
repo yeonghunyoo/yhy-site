@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { PHOTOS } from "./fixtures";
-import { newPageWithoutFolderPicker, signUp, waitUploadsDone } from "./helpers";
+import { newPageWithoutFolderPicker, outboxLink, signUp, waitUploadsDone } from "./helpers";
 
 const photo = (n: string) => join(PHOTOS, n);
 const JPGS = readdirSync(PHOTOS).filter((f) => f.endsWith(".jpg")).sort(); // 4장 (photo-1, 1-small, 2, 3)
@@ -141,4 +141,35 @@ test("Space: 초대 → 함께 업로드 → 실시간 반영 → 권한", async
   await expect(mom.getByTestId("members").locator("li")).toHaveCount(2);
   await mom.context().close();
   await kid.context().close();
+});
+
+test("이메일 가입 인증 → 비밀번호 재설정 → 새 비밀번호로 로그인", async ({ page, browser }) => {
+  const email = await signUp(page, "재설정");
+
+  const ctx = await browser.newContext();
+  const p = await ctx.newPage();
+  await p.goto("/signin");
+  await p.getByRole("button", { name: "비밀번호를 잊었어요" }).click();
+  await p.getByLabel("이메일").fill(email);
+  await p.getByRole("button", { name: "재설정 링크 받기" }).click();
+  await expect(p.getByTestId("check-email")).toContainText("재설정 링크");
+
+  await p.goto(await outboxLink(p, email, /reset-password/));
+  await expect(p).toHaveURL(/\/reset-password\?token=/);
+  await p.getByLabel("새 비밀번호").fill("newpassword5678");
+  await p.getByLabel("한 번 더").fill("newpassword5678");
+  await p.getByRole("button", { name: "비밀번호 바꾸기" }).click();
+  await expect(p.getByText("비밀번호를 바꿨어요")).toBeVisible();
+
+  await p.getByLabel("이메일").fill(email);
+  await p.getByLabel("비밀번호").fill("password1234");
+  await p.getByRole("button", { name: "로그인", exact: true }).click();
+  await expect(p.getByRole("alert")).toContainText("맞지 않아요");
+  await p.getByLabel("비밀번호").fill("newpassword5678");
+  await p.getByRole("button", { name: "로그인", exact: true }).click();
+  await expect(p).toHaveURL(/\/library/);
+
+  // 비밀번호를 바꾸면 처음 기기의 로그인은 풀린다
+  expect((await page.request.get("/api/me")).status()).toBe(401);
+  await ctx.close();
 });

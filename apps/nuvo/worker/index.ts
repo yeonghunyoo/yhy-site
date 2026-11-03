@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { enabledProviders } from "./auth";
 import { collectGarbage } from "./lib/gc";
+import { devOutbox } from "./lib/mail";
 import { withContext, withSession, type AppEnv } from "./context";
 import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
@@ -16,6 +17,11 @@ const api = new Hono<AppEnv>()
   .basePath("/api")
   .get("/health", (c) => c.json({ ok: true, service: "nuvo" }))
   .get("/auth-config", (c) => c.json(enabledProviders(c.env)))
+  /** 로컬 개발 전용: 보낸 메일 보관함 (인증·재설정 링크 확인용). 운영에서는 404 */
+  .get("/dev/outbox", (c) => {
+    if (c.env.ENVIRONMENT === "production") return c.json({ error: "not found" }, 404);
+    return c.json({ mails: devOutbox(c.req.query("to")) });
+  })
   .use(withContext)
   .on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw))
   .use(withSession)

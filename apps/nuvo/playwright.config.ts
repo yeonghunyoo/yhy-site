@@ -13,7 +13,11 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: { args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } } }],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: {
+          // WebGL(랜딩 셰이더·3D)은 소프트웨어 GPU(swiftshader)로 돌린다.
+          // 2D 캔버스(워커의 썸네일 생성)는 GPU를 쓰지 않게 해서, 소프트웨어 GPU가 막힐 때 사진 처리 전체가 멈추지 않게 한다.
+          args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--disable-accelerated-2d-canvas"],
+        } } }],
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:5173/api/health",

@@ -10,6 +10,7 @@ import { LandingPage } from "./pages/Landing";
 import { LibraryPage } from "./pages/Library";
 import { SettingsPage } from "./pages/Settings";
 import { SignInPage } from "./pages/SignIn";
+import { ResetPasswordPage, VerifiedPage } from "./pages/AuthResult";
 import { SpaceDetailPage } from "./pages/SpaceDetail";
 import { SpacesPage } from "./pages/Spaces";
 
@@ -26,6 +27,8 @@ export function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/signin" element={<SignInPage />} />
+      <Route path="/verified" element={<VerifiedPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/library" element={<AppShell><LibraryPage /></AppShell>} />
       <Route path="/library/duplicates" element={<AppShell><RequireAuth><DuplicatesPage /></RequireAuth></AppShell>} />
       <Route path="/spaces" element={<AppShell><RequireAuth><SpacesPage /></RequireAuth></AppShell>} />

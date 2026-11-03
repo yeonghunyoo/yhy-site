@@ -13,7 +13,7 @@ export type AppEnv = {
 /** 요청마다 DB·인증 인스턴스 생성, 응답 후 커넥션 정리 */
 export const withContext = createMiddleware<AppEnv>(async (c, next) => {
   const { db, close } = createDb(c.env.HYPERDRIVE.connectionString);
-  const auth = createAuth(c.env, db, new URL(c.req.url).origin);
+  const auth = createAuth(c.env, db, new URL(c.req.url).origin, (p) => c.executionCtx.waitUntil(p));
   c.set("db", db);
   c.set("auth", auth);
   c.set("user", null);

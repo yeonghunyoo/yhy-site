@@ -15,6 +15,13 @@
       "when": 1793717260753,
       "tag": "0001_r2_gc",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793720302876,
+      "tag": "0002_rate_limit",
+      "breakpoints": true
     }
   ]
 }

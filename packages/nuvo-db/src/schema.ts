@@ -77,6 +77,14 @@ export const verification = pgTable("verification", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 
+/** Better Auth 요청 수 제한 (운영에서만 사용). 로그인·가입·메일 발송 남용 방지 */
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+
 /* ───────────── nuvo 도메인 ───────────── */
 
 /** 물리 파일 1개 (내용 주소: sha256). 여러 Asset이 같은 Blob을 가리킨다. */
