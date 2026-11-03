@@ -130,6 +130,13 @@
   }
 }
 
+/* Popover API가 없는 브라우저(Safari 16.x): [popover]가 그냥 보이므로 숨기고, Header.astro가 .popover-open으로 연다 */
+@supports not selector(:popover-open) {
+  [popover]:not(.popover-open) {
+    display: none;
+  }
+}
+
 @keyframes ui-spin {
   to {
     transform: rotate(360deg);

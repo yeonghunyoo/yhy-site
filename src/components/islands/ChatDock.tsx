@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import type { Dict, Locale } from '../../i18n';
 import { visibleAnswer } from './chat-text';
+import { lockScroll } from './scroll-lock';
 
 interface Props {
   dict: Dict;
@@ -66,7 +67,8 @@ export default function ChatDock({ dict, locale }: Props) {
   useEffect(() => {
     if (!open) return;
     inputRef.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    // Esc는 맨 위 레이어만 닫는다 — 챗 위에 시트(로그인 등, aria-modal)가 떠 있으면 시트가 닫는다
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('[aria-modal="true"]') && setOpen(false);
     document.addEventListener('keydown', onKey);
     if (window.innerWidth >= 768) {
       setFrame(null);
@@ -74,32 +76,26 @@ export default function ChatDock({ dict, locale }: Props) {
     }
 
     const vv = window.visualViewport;
+    // 키보드 판정은 열린 뒤 본 가장 큰 높이와 비교한다 — Chrome Android(interactive-widget=resizes-content)는
+    // innerHeight도 같이 줄어 innerHeight와 비교하면 키보드를 못 알아챈다
+    let fullHeight = vv?.height ?? window.innerHeight;
     const fit = () => {
       if (!vv) return;
-      setFrame({ height: vv.height, top: vv.offsetTop, keyboard: vv.height < window.innerHeight - 120 });
+      fullHeight = Math.max(fullHeight, vv.height);
+      setFrame({ height: vv.height, top: vv.offsetTop, keyboard: vv.height < fullHeight - 120 });
     };
     fit();
     vv?.addEventListener('resize', fit);
     vv?.addEventListener('scroll', fit);
 
-    // 배경 스크롤 잠금 — iOS는 overflow:hidden만으로는 body가 밀려서 position:fixed로 고정하고, 닫을 때 위치를 되돌린다.
-    const { body, documentElement: html } = document;
-    const scrollY = window.scrollY;
-    const saved = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: html.style.overflow };
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.width = '100%';
-    html.style.overflow = 'hidden';
+    // 배경 스크롤 잠금(iOS는 overflow:hidden만으로는 밀린다 — scroll-lock.ts). 위에 로그인 시트가 겹쳐 열려도 횟수로 센다.
+    const unlock = lockScroll();
 
     return () => {
       vv?.removeEventListener('resize', fit);
       vv?.removeEventListener('scroll', fit);
       document.removeEventListener('keydown', onKey);
-      body.style.position = saved.position;
-      body.style.top = saved.top;
-      body.style.width = saved.width;
-      html.style.overflow = saved.overflow;
-      window.scrollTo(0, scrollY);
+      unlock();
       setFrame(null);
     };
   }, [open]);
@@ -201,7 +197,7 @@ export default function ChatDock({ dict, locale }: Props) {
     <section
       role="dialog"
       aria-label={dict.chat.title}
-      className="fixed inset-x-0 top-0 z-40 flex flex-col bg-surface md:inset-auto md:right-4 md:bottom-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px] md:rounded-[var(--radius)] md:border md:border-border md:shadow-2xl"
+      className="fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:inset-auto md:right-4 md:bottom-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px] md:rounded-[var(--radius)] md:border md:border-border md:shadow-2xl"
       style={frame ? { height: frame.height, top: frame.top } : undefined}
     >
       <header className={`flex shrink-0 items-center justify-between border-b border-border pr-2 pl-4 ${frame?.keyboard ? '' : 'pt-[env(safe-area-inset-top)]'}`}>

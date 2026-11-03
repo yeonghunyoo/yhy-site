@@ -100,7 +100,9 @@ export default function Overlay({ dict, locale }: Props) {
     const flash = takeFlashToast();
     if (flash && flash in dict.toast) setToast(dict.toast[flash as keyof Dict['toast']]);
 
-    const next = url.pathname + (params.size ? `?${params}` : '') + url.hash;
+    // URLSearchParams.size는 Safari 17+ — iOS 16에서는 undefined라 나머지 쿼리까지 지워진다. 문자열로 본다
+    const query = params.toString();
+    const next = url.pathname + (query ? `?${query}` : '') + url.hash;
     if (next !== location.pathname + location.search + location.hash) history.replaceState(null, '', next);
   }, [isPending, session, dict, open]);
 

@@ -55,7 +55,26 @@ const other = otherLocale(locale);
 <script>
   // 같은 페이지 앵커로 이동해도 팝오버는 열려 있으므로 링크를 누르면 닫는다.
   const menu = document.getElementById('mobile-nav');
+  const toggle = document.querySelector<HTMLButtonElement>('[popovertarget="mobile-nav"]');
+  const supported = 'showPopover' in HTMLElement.prototype;
+  // Safari 16.x(iOS 16)는 Popover API가 없다 — global.css가 [popover]를 숨기고, 여기서 .popover-open 클래스로 직접 연다(바깥 탭·Esc로 닫힘)
+  const setOpen = (open: boolean) => {
+    menu?.classList.toggle('popover-open', open);
+    toggle?.setAttribute('aria-expanded', String(open));
+  };
+  const close = () => (supported ? menu?.hidePopover() : setOpen(false));
   menu?.addEventListener('click', (e) => {
-    if ((e.target as Element).closest('a')) menu.hidePopover();
+    if ((e.target as Element).closest('a')) close();
   });
+  if (!supported && menu && toggle) {
+    toggle.setAttribute('aria-controls', 'mobile-nav');
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setOpen(!menu.classList.contains('popover-open'));
+    });
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target as Node)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
+  }
 </script>

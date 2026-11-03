@@ -13,6 +13,9 @@ interface Props {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// 앱 안 브라우저(카카오톡·인스타그램·페이스북·라인·네이버, Android WebView)에서는 Google이 OAuth를 막는다(403 disallowed_useragent).
+// 버튼을 끄고 이메일 링크나 외부 브라우저를 안내한다(docs/guides/browser-support.md).
+const IN_APP_BROWSER = /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|\bLine\/|NAVER\(inapp|DaumApps|; wv\)/i;
 
 // 로그인 후 같은 자리로 돌아와 하던 작업을 이어가도록 현재 경로를 싣는다.
 const callbackURL = () => `${location.pathname}?signed_in=1${location.hash}`;
@@ -24,6 +27,15 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
   // 진행 중인 동작(버튼마다 스피너). null이면 대기
   const [busy, setBusy] = useState<'link' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inApp, setInApp] = useState(false);
+
+  // Google로 갔다가 뒤로 가기로 돌아오면(bfcache, 특히 Safari) 스피너가 남는다 — 되돌린다
+  useEffect(() => {
+    setInApp(IN_APP_BROWSER.test(navigator.userAgent));
+    const onShow = (e: PageTransitionEvent) => e.persisted && setBusy(null);
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -103,9 +115,10 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
             {dict.auth.or}
             <span className="h-px flex-1 bg-border" />
           </div>
-          <button type="button" className="btn w-full" onClick={google} disabled={busy !== null} aria-busy={busy === 'google'}>
+          <button type="button" className="btn w-full" onClick={google} disabled={busy !== null || inApp} aria-busy={busy === 'google'}>
             {dict.auth.google}
           </button>
+          {inApp && <p className="mt-2 text-sm text-muted">{dict.auth.googleInApp}</p>}
           <p className="mt-5 text-xs text-muted">
             {dict.auth.notice}{' '}
             <a href={`/${locale}/privacy/`} className="underline underline-offset-2">

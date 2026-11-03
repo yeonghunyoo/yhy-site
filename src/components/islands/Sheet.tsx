@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { lockScroll } from './scroll-lock';
 
 interface SheetProps {
   open: boolean;
@@ -25,9 +26,8 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
-    const root = document.documentElement;
-    const prevOverflow = root.style.overflow;
-    root.style.overflow = 'hidden';
+    // iOS Safari는 overflow:hidden만으로는 배경이 밀린다 — body 고정(scroll-lock.ts). 챗 위에 겹쳐 열려도 횟수로 센다.
+    const unlock = lockScroll();
 
     const panel = panelRef.current;
     const first = panel?.querySelector<HTMLElement>('[data-autofocus]') ?? panel;
@@ -61,7 +61,7 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
     document.addEventListener('keydown', onKey);
 
     return () => {
-      root.style.overflow = prevOverflow;
+      unlock();
       vv?.removeEventListener('resize', onViewport);
       vv?.removeEventListener('scroll', onViewport);
       document.removeEventListener('keydown', onKey);

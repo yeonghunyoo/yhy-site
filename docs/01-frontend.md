@@ -111,6 +111,8 @@ src/
 
 **검증 방법**: Lighthouse 모바일 프로필 + 실기기(iOS Safari, Android Chrome) 각 1대.
 
+**브라우저·OS 대응**: 지원 범위(Safari·iOS 16.4+, Chrome 111+), 11/03 전수 점검 결과·고친 것·실기기 확인 목록은 [guides/browser-support.md](guides/browser-support.md). 배경 스크롤 잠금은 공용 `scroll-lock.ts`(body 고정, 잠금 횟수 계산)를 쓰고, 배포 직후 예전 HTML이 사라진 JS를 부르면 `client:demand`가 한 번 새로고침해 누르던 동작을 이어간다.
+
 ## 완료 기준
 
 - /ko, /en 모두 인트로·프로젝트·연락 섹션이 보인다

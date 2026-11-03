@@ -50,6 +50,7 @@
     "rateLimited": "Too many requests. Please try again in 10 minutes.",
     "invalidEmail": "Please check the email address.",
     "googleUnavailable": "Google sign-in isn't ready yet. Please use email instead.",
+    "googleInApp": "Google blocks sign-in inside this app's browser. Use the email link, or open this page in Safari or Chrome.",
     "blocked": "This account can't sign in.",
     "notice": "Your sign-in email and the letters you send are stored.",
     "privacy": "Privacy"

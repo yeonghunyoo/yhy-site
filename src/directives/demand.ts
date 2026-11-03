@@ -10,12 +10,49 @@ declare global {
     /** 첫 클릭으로 시작해 아직 하이드레이트 중인 아일랜드 수(로딩 표시를 언제 끌지) */
     __uiHydrating?: number;
     __sessionCheck?: Promise<boolean>;
+    __staleChunkGuard?: boolean;
+    __uiResumed?: boolean;
   }
 }
 
 const ACTIONS = new Set(['login', 'letter', 'chat']);
+const RESUME_KEY = 'uiResume';
+const RELOADED_KEY = 'uiReloadedAt';
+
+// 배포 뒤 예전 HTML(오래 열어 둔 탭, Safari의 bfcache·탭 복원)은 사라진 /_astro/*.js를 불러 하이드레이트가 404로 실패한다.
+// 모듈을 못 불러온 하이드레이트 오류면 한 번만 새로고침해 새 HTML을 받고, 누르던 동작을 이어간다(docs/guides/browser-support.md).
+// 오류 문구: Chrome "Failed to fetch dynamically imported module", Safari "Importing a module script failed", Firefox "error loading dynamically imported module"
+const STALE_CHUNK = /dynamically imported module|Importing a module script failed/i;
+if (typeof window !== 'undefined' && !window.__staleChunkGuard) {
+  window.__staleChunkGuard = true;
+  document.addEventListener('astro:hydration-error', (e) => {
+    const error = (e as CustomEvent<{ error: unknown }>).detail?.error;
+    if (!STALE_CHUNK.test(String((error as Error)?.message ?? error))) return;
+    try {
+      const last = Number(sessionStorage.getItem(RELOADED_KEY) ?? 0);
+      if (Date.now() - last < 60_000) return; // 방금 새로고침했는데도 실패 — 반복하지 않는다
+      sessionStorage.setItem(RELOADED_KEY, String(Date.now()));
+      if (window.__uiPending) sessionStorage.setItem(RESUME_KEY, window.__uiPending);
+    } catch {
+      return; // 저장소를 못 쓰면(사파리 사설 모드 일부) 반복 방지를 못 하므로 새로고침하지 않는다
+    }
+    location.reload();
+  });
+}
 
 function hasPendingState(): boolean {
+  // 오래된 파일 때문에 새로고침했다면 누르던 동작(로그인·레터·챗)을 이어간다
+  // (아일랜드마다 불리므로 처음 읽은 결과를 window에 남겨 모두가 바로 하이드레이트한다)
+  if (window.__uiResumed) return true;
+  try {
+    const resume = sessionStorage.getItem(RESUME_KEY);
+    if (resume && ACTIONS.has(resume)) {
+      sessionStorage.removeItem(RESUME_KEY);
+      window.__uiPending = resume;
+      window.__uiResumed = true;
+      return true;
+    }
+  } catch {}
   const params = new URLSearchParams(location.search);
   if (params.has('signed_in') || params.has('auth_error')) return true;
   try {

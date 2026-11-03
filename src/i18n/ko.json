@@ -50,6 +50,7 @@
     "rateLimited": "요청이 너무 많아요. 10분 뒤에 다시 시도해 주세요.",
     "invalidEmail": "이메일 주소를 확인해 주세요.",
     "googleUnavailable": "Google 로그인은 아직 준비 중이에요. 이메일로 로그인해 주세요.",
+    "googleInApp": "이 앱 안의 브라우저에서는 Google이 로그인을 막아요. 이메일 링크로 로그인하거나 Safari·Chrome에서 열어 주세요.",
     "blocked": "로그인할 수 없는 계정이에요.",
     "notice": "로그인 이메일과 보낸 레터가 저장돼요.",
     "privacy": "개인정보처리방침"
