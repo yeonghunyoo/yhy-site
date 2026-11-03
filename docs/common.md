@@ -61,7 +61,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `CF_ANALYTICS_TOKEN` · `CF_ACCOUNT_ID` | `/admin/usage`의 Cloudflare 통계(분석 읽기 전용 토큰) | 11/03 |
 | `CHAT_ENABLED` | `1`이면 `/api/chat` 열림 | 2차 |
 | `CHAT_MODEL` | 답변 모델 덮어쓰기(비우면 `src/lib/server/ai.ts` 기본값) — 모델 비교용 | 2차, 선택 |
-| `PUBLIC_CHAT_ENABLED` | 빌드 플래그 — `1`이면 챗 독 노출(`.env` 또는 배포 명령 앞) | 2차 |
+| `PUBLIC_CHAT_ENABLED` | 빌드 플래그 — `1`이면 챗 독 노출(`.env` 또는 배포 명령 앞). `pnpm run deploy`는 기본 `1`, 끄려면 `0` | 2차 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | 레터·에러·삭제 알림 | 예 |
 | `SITE_NAME` | 메일 제목 접두어 | 예 |
 

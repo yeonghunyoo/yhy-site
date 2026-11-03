@@ -13,5 +13,9 @@ if [ -f .prod.vars ]; then
   set -- --secrets-file .prod.vars
 fi
 
+# 챗은 운영에서 켜져 있다(docs/guides/chat-rag-setup.md) — .env가 없는 곳에서 배포해도 독이 빠지지 않게 기본값 1.
+# 끄려면 PUBLIC_CHAT_ENABLED=0 pnpm run deploy
+export PUBLIC_CHAT_ENABLED="${PUBLIC_CHAT_ENABLED:-1}"
+
 astro build
 wrangler deploy "$@"

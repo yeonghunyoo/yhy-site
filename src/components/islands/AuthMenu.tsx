@@ -27,6 +27,10 @@ export default function AuthMenu({ dict }: Props) {
       alive = false;
     };
   }, [sessionEmail]);
+  // 헤더(정적 HTML)의 관리자 링크는 <html data-admin>일 때만 보인다(Header.astro). 링크만 숨기는 것이고 /admin은 서버가 404로 막는다
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-admin', admin);
+  }, [admin]);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -30,7 +30,7 @@
 4. 추천 칩 문구·인사말 다듬기
 5. 운영에 켜기 (아래 2-2) — 요청이 있을 때만
 
-> **주의 — 로컬 `.env`의 `PUBLIC_CHAT_ENABLED=1`**: `pnpm run deploy`는 `astro build`가 `.env`를 읽으므로, 이 줄이 남아 있으면 챗을 켜기 전 배포에서도 운영 화면에 독 버튼이 나온다(API는 `CHAT_ENABLED`가 없어 실패). 챗을 켜기 전에 배포한다면 `.env`에서 이 줄을 빼 둔다.
+> **`PUBLIC_CHAT_ENABLED` 기본값(11/03)**: 챗이 운영에 켜진 뒤로 `scripts/deploy.sh`가 이 값을 기본 `1`로 둔다 — `.env`가 없는 곳(클라우드 세션 등)에서 배포했다가 독이 사라진 일이 있었다. 독을 빼고 배포하려면 `PUBLIC_CHAT_ENABLED=0 pnpm run deploy`.
 
 ## 1. 문서 (사람이 제공)
 
