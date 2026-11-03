@@ -61,7 +61,7 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
     evaluation && (
       <section class="mt-8">
         <h2 class="font-semibold">
-          기준 질문 평가 — 재현율 {pct(evaluation.recall)} · 범위 밖 거절 {pct(evaluation.refusal)}
+          기준 질문 평가 — 경로 정확도 {pct(evaluation.routeAccuracy)} · 재현율 {pct(evaluation.recall)} · 무관 작업 거절 {pct(evaluation.refusal)}
         </h2>
         <ul class="mt-4 space-y-2">
           {evaluation.rows.map((r) => (
@@ -70,7 +70,8 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
                 <span class={r.pass ? 'text-success' : 'text-danger'}>{r.pass ? '통과' : '실패'}</span> · {r.q}
               </p>
               <p class="mt-1 text-xs break-words text-muted">
-                기대 {r.expect.length ? r.expect.join(', ') : '거절'} → 결과 {r.got.length ? r.got.join(', ') : '거절'} · 최고 벡터{' '}
+                경로 {r.route} → {r.gotRoute}
+                {r.route === 'portfolio' && <> · 기대 {r.expect.length ? r.expect.join(', ') : '없음'} → 결과 {r.got.length ? r.got.join(', ') : '거절'}</>} · 최고 벡터{' '}
                 {r.maxVector === null ? '없음' : r.maxVector.toFixed(3)}
               </p>
             </li>
@@ -115,9 +116,12 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
             <span>{l.locale}</span>
             <span>{l.userId ? '로그인' : '비로그인'}</span>
             <span class="tabular-nums">in {l.tokensIn} / out {l.tokensOut}</span>
+            {l.route && <span>{l.route}</span>}
             {l.flag && <span class="text-danger">{l.flag}</span>}
             <span>{l.sources.length ? l.sources.join(', ') : '출처 없음'}</span>
-            <span class="tabular-nums">{l.retrieval.length ? l.retrieval.map((r) => `${r.slug} ${r.score}`).join(' · ') : '검색 결과 없음(거절)'}</span>
+            {(!l.route || l.route === 'portfolio') && (
+              <span class="tabular-nums">{l.retrieval.length ? l.retrieval.map((r) => `${r.slug} ${r.score}`).join(' · ') : '검색 결과 없음(거절)'}</span>
+            )}
           </p>
         </li>
       ))

@@ -132,6 +132,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       locale,
       question,
       rewritten: prepared?.rewritten ?? null,
+      route: prepared?.route ?? null,
       sources: citedSources(answer, prepared?.sections ?? []),
       retrieval: prepared?.retrieval ?? [],
       flag: flag && prepared?.category ? `${flag}:${prepared.category}` : flag,

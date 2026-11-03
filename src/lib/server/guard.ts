@@ -3,7 +3,7 @@ import type { Locale } from '../../i18n';
 
 // 챗 가드레일(docs/05-06-chat-rag.md "보안·가드레일"). 모델 앞뒤에서 결정적으로 막을 수 있는 것은 여기서 막는다.
 
-export type GuardFlag = 'injection' | 'unsafe' | 'self_harm' | 'out_of_scope' | 'output_blocked';
+export type GuardFlag = 'injection' | 'unsafe' | 'self_harm' | 'off_task' | 'out_of_scope' | 'output_blocked';
 
 /** 지시를 바꾸거나 숨은 설정을 꺼내려는 노골적인 요청. 오탐을 줄이려고 "무엇을 + 어떻게" 짝으로만 잡는다. */
 const INJECTION = [

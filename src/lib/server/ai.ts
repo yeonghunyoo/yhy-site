@@ -70,10 +70,11 @@ type Completion = {
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 };
 
-/** 스트리밍 없이 한 번에 받는다(질문 재작성용). */
-export async function complete(messages: ChatMessage[], maxTokens: number): Promise<{ text: string; usage: Usage }> {
+/** 스트리밍 없이 한 번에 받는다(슈퍼바이저·공격 점검용). schema를 주면 JSON 모드(response_format json_schema)로 받는다. */
+export async function complete(messages: ChatMessage[], maxTokens: number, schema?: object): Promise<{ text: string; usage: Usage }> {
   const { model, input } = chatInput(messages, maxTokens, false);
-  const result = (await ai()!.run(model, input)) as Completion;
+  const body = schema ? { ...input, response_format: { type: 'json_schema', json_schema: schema } } : input;
+  const result = (await ai()!.run(model, body)) as Completion;
   const text = result.choices?.[0]?.message?.content ?? result.response ?? '';
   return {
     text: stripThink(text).trim(),

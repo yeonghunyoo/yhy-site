@@ -43,6 +43,13 @@
       "when": 1793619183953,
       "tag": "0005_rag_section_page_images",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793696854229,
+      "tag": "0006_chat_route",
+      "breakpoints": true
     }
   ]
 }

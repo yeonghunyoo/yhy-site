@@ -3,35 +3,52 @@ import evalSet from '../../content/rag/eval.json';
 import redteamSet from '../../content/rag/redteam.json';
 import { complete } from './ai';
 import { CHAT_LIMITS } from './chat';
-import { prepare, verifiedHistory } from './chat-pipeline';
+import type { Route } from './agents/supervisor';
+import { decide, prepare, verifiedHistory } from './chat-pipeline';
 import { outputBlocked, type GuardFlag } from './guard';
 import { retrieve } from './rag';
 
-// 기준 질문 세트로 검색 품질을 잰다(docs/05-06-chat-rag.md 평가). 모델 답변은 부르지 않는다.
+// 기준 질문 세트로 경로와 검색 품질을 잰다(docs/05-06-chat-rag.md 평가). 질문마다 슈퍼바이저 1회 + (포트폴리오면) 임베딩 1회.
+// 답변 모델은 부르지 않는다.
 export interface EvalRow {
   q: string;
   locale: Locale;
+  /** 기대 경로 */
+  route: Route;
   expect: string[];
+  gotRoute: Route;
   got: string[];
   inScope: boolean;
   maxVector: number | null;
   pass: boolean;
 }
 
-export async function runEval(): Promise<{ rows: EvalRow[]; recall: number; refusal: number }> {
+export async function runEval(): Promise<{ rows: EvalRow[]; routeAccuracy: number; recall: number; refusal: number }> {
   const rows: EvalRow[] = [];
-  for (const item of evalSet.questions as { q: string; locale: Locale; expect: string[] }[]) {
-    const { trace } = await retrieve(item.q, item.locale);
-    const got = [...new Set(trace.sections.map((s) => s.slug))];
-    // 범위 안 질문: 기대 slug 중 하나라도 상위 섹션에 있으면 통과. 범위 밖 질문: 섹션이 없어야(거절) 통과.
-    const pass = item.expect.length ? item.expect.some((slug) => got.includes(slug)) : got.length === 0;
-    rows.push({ ...item, got, inScope: trace.inScope, maxVector: trace.maxVector, pass });
+  for (const item of evalSet.questions as { q: string; locale: Locale; route: Route; expect?: string[] }[]) {
+    const expect = item.expect ?? [];
+    const decision = await decide(item.q, [], item.locale, { tokensIn: 0, tokensOut: 0 });
+    let got: string[] = [];
+    let inScope = false;
+    let maxVector: number | null = null;
+    if (decision.route === 'portfolio') {
+      const { trace } = await retrieve(decision.query ?? item.q, item.locale);
+      got = [...new Set(trace.sections.map((s) => s.slug))];
+      inScope = trace.inScope;
+      maxVector = trace.maxVector;
+    }
+    // 경로가 맞아야 통과. 포트폴리오 질문은 기대 slug 중 하나라도 상위 섹션에 있어야 한다.
+    const routeOk = decision.route === item.route;
+    const pass = routeOk && (item.route !== 'portfolio' || !expect.length || expect.some((slug) => got.includes(slug)));
+    rows.push({ q: item.q, locale: item.locale, route: item.route, expect, gotRoute: decision.route, got, inScope, maxVector, pass });
   }
-  const rate = (list: EvalRow[]) => (list.length ? list.filter((r) => r.pass).length / list.length : 1);
+  const rate = (list: EvalRow[], ok: (r: EvalRow) => boolean) => (list.length ? list.filter(ok).length / list.length : 1);
   return {
     rows,
-    recall: rate(rows.filter((r) => r.expect.length)),
-    refusal: rate(rows.filter((r) => !r.expect.length)),
+    routeAccuracy: rate(rows, (r) => r.gotRoute === r.route),
+    recall: rate(rows.filter((r) => r.route === 'portfolio' && r.expect.length), (r) => r.pass),
+    // 무관 작업 요청이 모델 답변 없이 끝난 비율
+    refusal: rate(rows.filter((r) => r.route === 'off_task'), (r) => r.gotRoute === 'off_task' || (r.gotRoute === 'portfolio' && !r.got.length)),
   };
 }
 
