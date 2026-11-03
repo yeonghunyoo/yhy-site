@@ -25,6 +25,9 @@
 - `/admin`과 `/api/admin/*`는 관리자 이메일 허용목록(`ADMIN_EMAILS`) 검증, 비관리자는 404
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
 - 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. 푸시 전 로컬 `pnpm build`가 통과해야 한다
+- 비용(docs/guides/cost-guard.md): 새로 부르는 유료·한도 자원(Workers AI·메일·R2 쓰기 등)은 `src/lib/server/budget.ts`의 일일 상한을 거친다. 상한에 닿으면 기능을 끄는 쪽(고정 문구·429·503)으로 실패한다
+- KV 쓰기(무료 하루 1천 회)는 요청마다 하지 않는다. 사이트 전체 집계는 D1 로그에서 센다
+- `/api/*`·`/auth/*`·`/media/*`는 미들웨어의 요청 방어(`request-guard.ts`)를 거친다. 새 API는 `usage-math.ts`의 `allowedMethods`에 메서드를 등록한다
 - 배포: GitHub 푸시로는 배포되지 않는다. 운영 배포는 로컬 `pnpm run deploy`(`pnpm deploy` 아님)로만 하고, 사용자가 요청할 때만 실행한다
 
 ## 단계 순서

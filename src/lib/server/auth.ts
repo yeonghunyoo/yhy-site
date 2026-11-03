@@ -11,6 +11,7 @@ import { sendMail } from './mail';
 import { magicLinkEmail } from './templates';
 import { clientIp, hit } from './ratelimit';
 import { kstDate } from './dates';
+import { killed } from './budget';
 import { maskEmail, notify } from './notify';
 
 /** 매직링크 URL의 callbackURL(`/en/...`)에서 메일 언어를 고른다. */
@@ -83,9 +84,13 @@ function createAuth() {
       magicLink({
         expiresIn: 60 * 15,
         sendMagicLink: async ({ email, url }) => {
+          // 긴급 스위치(KILL_LOGIN_MAIL=1)면 메일을 만들지도 않는다 — 시트에는 "요청이 많아요"(docs/guides/cost-guard.md)
+          if (killed('KILL_LOGIN_MAIL')) throw new APIError('TOO_MANY_REQUESTS', { message: 'rate_limited' });
           // 같은 메일에 6자리 코드를 함께 넣는다 — 링크가 인앱 브라우저·다른 기기에서 열려도 요청한 브라우저에서 코드로 로그인
           const otp = await getAuth().api.createVerificationOTP({ body: { email, type: 'sign-in' } });
           const result = await sendMail({ to: email, ...magicLinkEmail(localeFromMagicLink(url), url, otp) });
+          // 사이트 전체 메일 상한에 닿았다 — Resend 실패가 아니므로 알림 없이 "요청이 많아요"
+          if (!result.ok && result.error === 'mail_budget') throw new APIError('TOO_MANY_REQUESTS', { message: 'rate_limited' });
           if (!result.ok) {
             // 발송 실패(도메인 미인증·키 오류 등)는 Resend 사유를 로그 + Telegram으로 남기고, 같은 이메일 카운터는
             // 돌려줘 바로 다시 시도할 수 있게 한다(IP 카운터는 그대로 — 남용 방지).
