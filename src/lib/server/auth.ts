@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { magicLink } from 'better-auth/plugins';
+import { emailOTP, magicLink } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
 import { isLocale, type Locale } from '../../i18n';
 import { getDb } from './db';
@@ -61,9 +61,18 @@ function createAuth() {
       },
     },
     hooks: {
-      // 매직링크 요청: IP당 10분 3회, 같은 이메일 10분 1회
       before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path !== '/sign-in/magic-link' || !ctx.request) return;
+        // emailOTP 플러그인은 코드 입력(/sign-in/email-otp)만 쓴다. 코드 단독 발송·확인·이메일 변경 등은 막아
+        // 코드 메일이 매직링크 요청(레이트리밋 적용) 한 경로로만 나가게 한다(docs/02-auth.md).
+        if (ctx.path.includes('email-otp') && ctx.path !== '/sign-in/email-otp') throw new APIError('NOT_FOUND');
+        if (!ctx.request) return;
+        // 인증 코드 입력: 코드마다 3번(allowedAttempts)과 별개로 IP당 10분 10회 — 6자리 대입 방지
+        if (ctx.path === '/sign-in/email-otp') {
+          if (!(await hit(`otp:ip:${clientIp(ctx.request)}`, 10, 600))) throw new APIError('TOO_MANY_REQUESTS', { message: 'rate_limited' });
+          return;
+        }
+        // 매직링크 요청: IP당 10분 3회, 같은 이메일 10분 1회
+        if (ctx.path !== '/sign-in/magic-link') return;
         const email = String(ctx.body?.email ?? '').trim().toLowerCase();
         const allowed =
           (await hit(`ml:ip:${clientIp(ctx.request)}`, 3, 600)) && (await hit(`ml:email:${email}`, 1, 600));
@@ -74,7 +83,9 @@ function createAuth() {
       magicLink({
         expiresIn: 60 * 15,
         sendMagicLink: async ({ email, url }) => {
-          const result = await sendMail({ to: email, ...magicLinkEmail(localeFromMagicLink(url), url) });
+          // 같은 메일에 6자리 코드를 함께 넣는다 — 링크가 인앱 브라우저·다른 기기에서 열려도 요청한 브라우저에서 코드로 로그인
+          const otp = await getAuth().api.createVerificationOTP({ body: { email, type: 'sign-in' } });
+          const result = await sendMail({ to: email, ...magicLinkEmail(localeFromMagicLink(url), url, otp) });
           if (!result.ok) {
             // 발송 실패(도메인 미인증·키 오류 등)는 Resend 사유를 로그 + Telegram으로 남기고, 같은 이메일 카운터는
             // 돌려줘 바로 다시 시도할 수 있게 한다(IP 카운터는 그대로 — 남용 방지).
@@ -83,6 +94,16 @@ function createAuth() {
             await env.KV.delete(`ml:email:${email.trim().toLowerCase()}`);
             throw new APIError('INTERNAL_SERVER_ERROR', { message: 'mail_failed' });
           }
+        },
+      }),
+      emailOTP({
+        otpLength: 6,
+        expiresIn: 60 * 15,
+        allowedAttempts: 3,
+        storeOTP: 'hashed',
+        // 코드는 sendMagicLink가 링크 메일에 함께 넣는다. 단독 발송 엔드포인트는 hooks.before가 막으므로 여기는 오지 않는다.
+        sendVerificationOTP: async () => {
+          throw new APIError('NOT_FOUND');
         },
       }),
     ],

@@ -25,7 +25,11 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   // 진행 중인 동작(버튼마다 스피너). null이면 대기
-  const [busy, setBusy] = useState<'link' | 'google' | null>(null);
+  const [busy, setBusy] = useState<'link' | 'google' | 'code' | null>(null);
+  // 메일의 6자리 인증 코드 — 링크가 인앱 브라우저·다른 기기에서 열려도 여기서 로그인(docs/02-auth.md)
+  const [code, setCode] = useState('');
+  // 만료·3회 초과면 코드 입력 대신 다시 보내기를 권한다
+  const [codeDead, setCodeDead] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inApp, setInApp] = useState(false);
 
@@ -41,6 +45,8 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
     if (!open) return;
     setSent(false);
     setBusy(null);
+    setCode('');
+    setCodeDead(false);
     setError(notice);
   }, [open, notice]);
 
@@ -55,8 +61,35 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
       errorCallbackURL: errorCallbackURL(),
     });
     setBusy(null);
-    if (!error) return setSent(true);
+    if (!error) {
+      setCode('');
+      setCodeDead(false);
+      return setSent(true);
+    }
     setError(error.status === 429 ? dict.auth.rateLimited : dict.ui.error);
+  }
+
+  async function verifyCode(e: SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const otp = code.replace(/\D/g, '');
+    if (otp.length !== 6) return setError(dict.auth.codeInvalid);
+    setBusy('code');
+    setError(null);
+    const { error } = await authClient.$fetch('/sign-in/email-otp', { method: 'POST', body: { email: email.trim(), otp } });
+    if (!error) {
+      // 세션 쿠키가 생겼다 — 링크로 로그인했을 때와 같은 주소로 다시 불러 복귀·재개 흐름(pendingAction·토스트)을 탄다
+      location.assign(callbackURL());
+      return;
+    }
+    setBusy(null);
+    const reason = (error as { code?: string }).code;
+    if (error.status === 429) return setError(dict.auth.rateLimited);
+    if (reason === 'OTP_EXPIRED' || reason === 'TOO_MANY_ATTEMPTS') {
+      setCodeDead(true);
+      return setError(reason === 'OTP_EXPIRED' ? dict.auth.codeExpired : dict.auth.codeTooMany);
+    }
+    if (reason === 'INVALID_OTP') return setError(dict.auth.codeWrong);
+    setError(reason === 'FAILED_TO_CREATE_SESSION' ? dict.auth.blocked : dict.ui.error);
   }
 
   async function google() {
@@ -75,11 +108,43 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
   return (
     <Sheet open={open} onClose={onClose} title={dict.auth.title} closeLabel={dict.ui.close}>
       {sent ? (
-        <div className="py-2" role="status">
-          <p className="font-semibold">{dict.auth.sentTitle}</p>
-          <p className="mt-2 text-muted">{dict.auth.sentBody.replace('{email}', email.trim())}</p>
-          <button type="button" className="btn mt-6 w-full" onClick={() => setSent(false)}>
-            {dict.auth.resend}
+        <div className="py-2">
+          <div role="status">
+            <p className="font-semibold">{dict.auth.sentTitle}</p>
+            <p className="mt-2 text-muted">{dict.auth.sentBody.replace('{email}', email.trim())}</p>
+          </div>
+          <form className="mt-5" onSubmit={verifyCode} noValidate>
+            <label className="block text-sm font-semibold" htmlFor="login-code">
+              {dict.auth.codeLabel}
+            </label>
+            <p className="mt-1 text-sm text-muted">{dict.auth.codeHint}</p>
+            {error && (
+              <p className="mt-3 rounded-[var(--radius)] border border-danger/40 px-3 py-2 text-sm text-danger" role="alert">
+                {error}
+              </p>
+            )}
+            {!codeDead && (
+              <>
+                <input
+                  id="login-code"
+                  className="field mt-3 text-center font-mono text-2xl tracking-[0.4em]"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                />
+                <button type="submit" className="btn btn-primary mt-4 w-full" disabled={busy !== null || code.length !== 6} aria-busy={busy === 'code'}>
+                  {dict.auth.codeSubmit}
+                </button>
+              </>
+            )}
+          </form>
+          <button type="button" className="btn mt-3 w-full" onClick={() => { setSent(false); setError(null); }} disabled={busy !== null}>
+            {codeDead ? dict.auth.sendAgain : dict.auth.resend}
           </button>
         </div>
       ) : (

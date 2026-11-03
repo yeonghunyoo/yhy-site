@@ -37,14 +37,14 @@
   },
   "auth": {
     "title": "Sign in",
-    "desc": "We'll email you a link that signs you in. No password needed.",
+    "desc": "Tap the link we email you, or enter the code. No password needed.",
     "email": "Email",
     "emailPlaceholder": "you@example.com",
     "sendLink": "Email me a sign-in link",
     "or": "or",
     "google": "Continue with Google",
     "sentTitle": "Check your inbox",
-    "sentBody": "We sent a sign-in link to {email}. It works once and expires in 15 minutes.",
+    "sentBody": "We sent a sign-in link and a 6-digit code to {email}. They work once and expire in 15 minutes.",
     "resend": "Use a different email",
     "expired": "That link expired or was already used. Send a new one?",
     "rateLimited": "Too many requests. Please try again in 10 minutes.",
@@ -53,7 +53,15 @@
     "googleInApp": "Google blocks sign-in inside this app's browser. Use the email link, or open this page in Safari or Chrome.",
     "blocked": "This account can't sign in.",
     "notice": "Your sign-in email and the letters you send are stored.",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "codeLabel": "Sign-in code",
+    "codeHint": "If the email link opens inside another app, enter the code here.",
+    "codeSubmit": "Sign in with code",
+    "codeInvalid": "Enter the 6-digit code.",
+    "codeWrong": "That code doesn't match. Please check it.",
+    "codeExpired": "The code has expired. Request a new email.",
+    "codeTooMany": "Too many wrong tries, so this code no longer works. Request a new email.",
+    "sendAgain": "Send a new email"
   },
   "menu": {
     "label": "Account menu",

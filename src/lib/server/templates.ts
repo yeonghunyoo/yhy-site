@@ -27,19 +27,25 @@ function button(href: string, label: string): string {
 
 const prefix = () => `[${env.SITE_NAME}]`;
 
-export function magicLinkEmail(locale: Locale, url: string) {
+export function magicLinkEmail(locale: Locale, url: string, code: string) {
   const ko = locale === 'ko';
-  const subject = ko ? `${prefix()} 로그인 링크` : `${prefix()} Your sign-in link`;
+  const subject = ko ? `${prefix()} 로그인 코드 ${code}` : `${prefix()} Your sign-in code ${code}`;
   const lines = ko
-    ? ['아래 버튼을 누르면 로그인돼요.', '링크는 15분 동안 한 번만 쓸 수 있어요.', '요청한 적이 없다면 이 메일은 무시해도 괜찮아요.']
-    : ['Tap the button below to sign in.', 'The link works once and expires in 15 minutes.', "If you didn't ask for this, you can ignore this email."];
+    ? ['아래 버튼을 누르거나, 로그인 창에 코드를 입력하면 로그인돼요.', '링크와 코드는 15분 동안 한 번만 쓸 수 있어요.', '요청한 적이 없다면 이 메일은 무시해도 괜찮아요.']
+    : ['Tap the button below, or enter the code in the sign-in window.', 'The link and code work once and expire in 15 minutes.', "If you didn't ask for this, you can ignore this email."];
+  const codeLabel = ko ? '인증 코드' : 'Sign-in code';
+  const codeHint = ko ? '메일 링크가 다른 앱 안에서 열린다면, 로그인을 요청한 화면에 이 코드를 입력하세요.' : 'If the link opens inside another app, enter this code where you asked to sign in.';
   const label = ko ? '로그인' : 'Sign in';
   const fallback = ko ? '버튼이 안 되면 이 주소를 브라우저에 붙여넣으세요:' : "If the button doesn't work, paste this into your browser:";
   return {
     subject,
-    text: `${lines.join('\n')}\n\n${url}`,
+    text: `${lines.join('\n')}\n\n${codeLabel}: ${code}\n${codeHint}\n\n${url}`,
     html: layout(
-      `<p>${lines.map(escapeHtml).join('<br>')}</p>${button(url, label)}<p style="color:#52525b;font-size:14px">${escapeHtml(fallback)}<br>${escapeHtml(url)}</p>`,
+      `<p>${lines.map(escapeHtml).join('<br>')}</p>` +
+        `<p style="margin:24px 0 4px;color:#52525b;font-size:14px">${escapeHtml(codeLabel)}</p>` +
+        `<p style="margin:0;font-size:32px;font-weight:700;letter-spacing:6px;font-family:ui-monospace,Menlo,monospace">${escapeHtml(code)}</p>` +
+        `<p style="margin:4px 0 0;color:#52525b;font-size:14px">${escapeHtml(codeHint)}</p>` +
+        `${button(url, label)}<p style="color:#52525b;font-size:14px">${escapeHtml(fallback)}<br>${escapeHtml(url)}</p>`,
     ),
   };
 }
