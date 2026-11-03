@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import NavProgress from '../components/ui/NavProgress.astro';
 
 interface Props {
   title: string;
@@ -104,5 +105,6 @@ const flash = FLASH[Astro.url.searchParams.get('flash') ?? ''];
         for (const form of document.querySelectorAll<HTMLFormElement>('form[data-busy]')) delete form.dataset.busy;
       });
     </script>
+    <NavProgress />
   </body>
 </html>

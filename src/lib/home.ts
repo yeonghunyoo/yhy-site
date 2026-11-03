@@ -325,7 +325,9 @@ function setupFlow(root: HTMLElement) {
   const local = (x: number, y: number) => { const r = box.getBoundingClientRect(); return { x: x - r.left, y: y - r.top }; };
   let inside = false, hideT = 0;
   const open = async (p: { x: number; y: number }) => {
-    try { await enable(); } catch { return; } // 라이브러리를 못 받으면 평범한 문단으로 둔다
+    // 첫 호버에 라이브러리를 아직 받는 중이면 진행 커서를 보인다
+    if (!ready) box.classList.add('loading');
+    try { await enable(); } catch { return; } finally { box.classList.remove('loading'); } // 못 받으면 평범한 문단으로 둔다
     if (inside) ready?.(p);
   };
   box.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; inside = true; open(local(e.clientX, e.clientY)); });

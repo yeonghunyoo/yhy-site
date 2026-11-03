@@ -145,6 +145,31 @@
   }
 }
 
+
+/* 페이지 이동 로딩 막대(NavProgress.astro) */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 70;
+  pointer-events: none;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+}
+html.navigating .nav-progress {
+  opacity: 1;
+  animation: nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+@keyframes nav-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(0.92); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.navigating .nav-progress { animation: none; transform: scaleX(0.6); }
+}
+
 @keyframes ui-spin {
   to {
     transform: rotate(360deg);

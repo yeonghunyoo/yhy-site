@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import NavProgress from '../components/ui/NavProgress.astro';
 import Header from '../components/ui/Header.astro';
 import Footer from '../components/ui/Footer.astro';
 import AuthMenu from '../components/islands/AuthMenu';
@@ -46,5 +47,6 @@ const path = Astro.url.pathname;
     <Overlay client:demand dict={dict} locale={locale} />
     {/* 2차 챗: 빌드 때 PUBLIC_CHAT_ENABLED=1일 때만 독을 넣는다(서버는 CHAT_ENABLED로 따로 잠금) */}
     {import.meta.env.PUBLIC_CHAT_ENABLED === '1' && <ChatDock client:demand dict={dict} locale={locale} />}
+    <NavProgress />
   </body>
 </html>
