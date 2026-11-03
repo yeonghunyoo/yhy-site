@@ -7,7 +7,8 @@
     "contact": "Contact",
     "language": "한국어",
     "menu": "Menu",
-    "skip": "Skip to content"
+    "skip": "Skip to content",
+    "career": "Career"
   },
   "intro": {
     "name": "yhy",
@@ -135,5 +136,28 @@
       "hint": "Pinch to zoom · double-tap to fit",
       "fit": "Fit to screen"
     }
+  },
+  "home": {
+    "role": "Yeonghun Yoo · Software Engineer · iOS · Builder",
+    "phrase": [
+      "I learn by making,",
+      "and let the work do the talking."
+    ],
+    "about": "I've mostly built native iOS apps, but I don't box myself into one platform or role. When a problem keeps coming back at work, I build a tool to solve it. Tools take the repetition; I focus on making the service better.",
+    "experience": "Experience",
+    "now": "Now",
+    "nowAt": "Tripaid · iOS",
+    "github": "github.com/yeonghunyoo",
+    "projects": "(Projects)",
+    "career": "(Career)",
+    "total": "Total",
+    "current": "now",
+    "tagBuilder": "[builder]",
+    "tagTap": "[tap to open]",
+    "tagLogin": "[after sign-in]",
+    "letter": "Letter →",
+    "letterNote": "Questions, or something we could build together? Sign in to send one; replies come by email.",
+    "lines": "lines",
+    "more": "Read more →"
   }
 }

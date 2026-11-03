@@ -2,7 +2,10 @@
 title: This portfolio
 summary: A portfolio that shows what I built, why, and how it turned out — instead of a list of tools. Building it is the first project.
 stack: [Astro, React, Tailwind CSS, Cloudflare Workers, D1, KV, Better Auth, Resend]
-order: 1
+order: 3
+short: Building it is the content
+metric: { value: 7, label: phases of design docs, in progress }
+period: 2026.10 ~
 changelog:
   - date: '2026-10-28'
     text: Phase 1 — Korean/English pages, mobile-first layout

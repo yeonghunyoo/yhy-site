@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 @import './tokens.css';
+/* 글꼴 자체 호스팅(CSP font-src 'self'). Black Han Sans는 글자 범위별로 쪼개져 있어 쓰는 조각만 받는다. Plex Mono는 라틴만 */
+@import '@fontsource/black-han-sans/400.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
 /* 컴포넌트는 daisyUI(CSS 전용). 내장 테마는 끄고 tokens.css의 변수를 쓴다 */
 @plugin 'daisyui' {
   themes: false;
@@ -13,6 +17,10 @@
   --color-border: var(--color-border);
   --color-accent: var(--color-accent);
   --color-accent-fg: var(--color-accent-fg);
+  --color-quiet: var(--color-quiet);
+  --color-ghost: var(--color-ghost);
+  --color-tag: var(--color-tag);
+  --font-display: var(--font-display);
   --color-danger: var(--color-danger);
   --color-success: var(--color-success);
   --font-sans: var(--font-sans);

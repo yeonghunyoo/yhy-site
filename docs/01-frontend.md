@@ -10,9 +10,10 @@
 
 **섹션 (1차)**
 
-1. 인트로 — 이름 + 한 줄. 나중에 3D 아일랜드가 배경으로 들어갈 자리. 챗 독(2차)도 이 화면 우하단에 접힌 상태로 위치
-2. 프로젝트 — "이 포트폴리오" 상세: 문제 / 접근 / 결과 / 기술 스택 / 변경 이력(빌드 로그 형식, 최신순)
-3. 연락 — 로그인 버튼 + 레터 보내기 (비로그인 시 로그인 유도)
+1. 소개 — 글자로 그린 이름 + 캐치프레이즈 + 짧은 소개 문단 + 경력·지금·GitHub (11/03, 아래 "홈")
+2. 프로젝트 — 큰 숫자 + 이름 덩어리 3개를 엇갈려 배치, 누르면 한 줄 설명과 상세 링크. 상세 페이지: 문제 / 접근 / 결과 / 기술 스택 / 변경 이력
+3. 경력 — 기간만 이어 붙인 막대 하나(합계 = 총 경력). 날짜 축 없음 — 회사 사이 공백은 보여 주지 않는다
+4. 연락 — 큰 "레터 →" (비로그인 시 로그인 유도)
 
 **디렉터리 구조**
 
@@ -51,6 +52,20 @@ src/
 **보안 헤더(CSP)**: Astro `security.csp`로 페이지마다 `<meta>` CSP를 넣고, Astro가 인라인 스크립트·스타일을 해시로 허용한다. 그래서 HTML의 `style=""` 속성은 쓰지 않는다(Tailwind 클래스로). React의 `style` prop은 DOM API라 괜찮다. Shiki 코드 하이라이트는 인라인 style을 써서 꺼 두었다.
 
 **스타일**: Tailwind v4. 디자인 토큰은 `src/styles/tokens.css`의 CSS 변수로 두고, 세계관 콘셉트가 정해지면 이 파일만 교체한다. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI 5(`global.css`의 `@plugin 'daisyui' { themes: false; }`). 내장 테마는 끄고, daisyUI 테마 변수(`--color-base-*`, `--color-primary`, `--radius-field`, `--size-field` 등)를 `tokens.css`에서 기존 토큰으로 연결한다 — 세계관이 정해지면 이 파일만 바꾼다. 버튼은 daisyUI(`btn`, `btn-primary`, `btn-error`, `btn-outline`), 높이는 `--size-field`로 44px. 입력칸은 iOS 확대 방지(16px)를 위해 자체 `.field`를 유지한다(daisyUI `input`은 기본 14px).
+
+## 홈 (11/03)
+
+레퍼런스는 Mobbin의 Clipo(자유 배치, 큰 글자, 괄호 라벨, 선택 핸들, 커서 태그). 시안은 claude.ai 아티팩트 "yhy 홈 시안". 문서 같은 줄·표를 버리고 캔버스(모바일 6칸 / 820px 이상 12칸 그리드) 위에 덩어리를 비대칭으로 놓는다. 구현은 `src/pages/[locale]/index.astro`(마크업·스타일) + `src/lib/home.ts`(연출, React 없음).
+
+- 테마: `tokens.css` — 밝은 세이지(#dfe3db) / 어두운 나이트(#17191c, 시스템 설정 따름). 강조 `--color-accent` 파랑, 커서 태그 `--color-tag` 분홍, 큰 괄호 라벨 `--color-ghost`
+- 이름: 글꼴 모양을 캔버스에 그려 칸마다 채움 정도를 `. : - = + * # % @` 중 하나로 바꾼 글자 그림(모바일 44칸, 넓으면 72칸). 처음엔 무작위 글자가 왼쪽부터 제자리를 찾는다. 포인터 둘레 보이지 않는 원 안의 글자는 원 바깥 띠로 밀려난다(거리 d → d < R: R + 0.35d, R ≤ d < 2R: d + 0.35(2R − d)). 상자는 5:3 비율로 미리 잡아 둬 레이아웃이 밀리지 않는다. 스크립트가 없으면 큰 글자 그대로
+- 소개 문단: Pretext(`@chenglou/pretext`)의 `layoutNextLineRange`로 줄마다 폭을 바꿔 배치해, 포인터 자리에 원을 내고 글이 둘레로 흐른다. 원 안에 지금 줄 수. 라이브러리(gzip 약 39KB)는 문단이 보이면 쉬는 시간에 미리 받는다 — 초기 JS에 넣지 않는다. 못 받으면 평범한 문단
+- 터치: "누른 채로 드래그"(`src/lib/hold-drag.ts`) — 0.18초 누르고 있으면 손가락에 붙고 그동안 스크롤을 막는다. 바로 쓸면 스크롤. 마우스는 올리기만 해도 된다
+- 숫자: 화면에 들어올 때 0부터 해당 값까지 올라간다(경력은 개월 단위로 "1년 11개월"). 밑줄·경력 막대는 왼쪽부터 찬다. 서버가 최종 값을 그려 두고 스크립트가 0으로 되돌린 뒤 올린다. `prefers-reduced-motion`이면 연출 없이 값만
+- 프로젝트: content collection에 `short`·`metric { value, unit, label }`·`period`(선택)를 둔다. 누르면 선택 핸들 + 설명(`aria-expanded`). 경력은 `src/data/career.ts`(개월 수만, 지금 회사는 빌드한 달까지)
+- CSP: HTML `style=""` 금지라 비율 막대는 SVG 속성, 실행 중 위치는 스크립트(CSSOM)로 쓴다
+- 클래스 이름: daisyUI 컴포넌트(`hero`·`label`·`timeline` 등)와 겹치면 레이아웃이 깨진다 — 홈은 `intro`·`big-label`·`career-line`
+- 초기 JS: 홈 스크립트 gzip 3.7KB(11/03 측정)
 
 ## 반응형·모바일 UX
 
@@ -91,7 +106,7 @@ src/
 **타이포·가독성**
 
 - 본문 16px 이상, 줄 간격 1.6, 한글은 `word-break: keep-all`
-- 지금은 시스템 글꼴 스택만 쓴다(웹폰트 0KB). 한/영 폰트 페어링은 세계관 논의에서 결정하되, 웹폰트는 `font-display: swap` + 서브셋(한글은 Pretendard 가변 서브셋 권장)
+- 글꼴 2종(11/03): 제목 Black Han Sans, 숫자·라벨 IBM Plex Mono(라틴 400·500). 본문은 시스템 글꼴. `@fontsource`로 자체 호스팅(CSP `font-src 'self'`), Black Han Sans는 글자 범위별 조각이라 페이지에 쓰인 조각만 받는다. 작은 조각이 `data:`로 인라인되면 CSP에 막히므로 `astro.config.mjs`에서 글꼴 파일은 인라인하지 않는다
 
 **성능 예산 (모바일 4G 기준)**
 

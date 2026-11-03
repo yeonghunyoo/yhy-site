@@ -7,7 +7,8 @@
     "contact": "연락",
     "language": "English",
     "menu": "메뉴",
-    "skip": "본문으로 건너뛰기"
+    "skip": "본문으로 건너뛰기",
+    "career": "경력"
   },
   "intro": {
     "name": "yhy",
@@ -135,5 +136,28 @@
       "hint": "두 손가락으로 확대 · 두 번 탭하면 맞춤",
       "fit": "화면에 맞추기"
     }
+  },
+  "home": {
+    "role": "유영훈 · Software Engineer · iOS · Builder",
+    "phrase": [
+      "만들면서 배우고,",
+      "만든 것으로 이야기합니다."
+    ],
+    "about": "iOS 네이티브 앱 개발을 주로 맡아왔지만, 특정 플랫폼이나 직무에 저를 가두지 않습니다. 일하다 반복되는 문제를 만나면 도구를 직접 만들어 해결합니다. 반복은 도구에 맡기고, 서비스를 좋게 만드는 데 집중합니다.",
+    "experience": "경력",
+    "now": "지금",
+    "nowAt": "트립에이드 · iOS",
+    "github": "github.com/yeonghunyoo",
+    "projects": "(프로젝트)",
+    "career": "(경력)",
+    "total": "총",
+    "current": "현재",
+    "tagBuilder": "[builder]",
+    "tagTap": "[눌러서 보기]",
+    "tagLogin": "[로그인 후]",
+    "letter": "레터 →",
+    "letterNote": "궁금한 점이나 함께하고 싶은 일이 있다면. 로그인한 뒤 보낼 수 있고, 답장은 메일로 갑니다.",
+    "lines": "줄",
+    "more": "자세히 →"
   }
 }

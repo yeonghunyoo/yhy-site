@@ -9,8 +9,8 @@ const { locale } = Astro.props;
 const dict = t(locale);
 ---
 
-<footer class="border-t border-border pb-[env(safe-area-inset-bottom)]">
-  <div class="container-page flex min-h-16 flex-wrap items-center justify-between gap-2 py-4 text-sm text-muted">
+<footer class="pb-[env(safe-area-inset-bottom)]">
+  <div class="container-page flex min-h-16 flex-wrap items-center justify-between gap-2 py-4 font-mono text-xs text-quiet">
     <span>© {new Date().getFullYear()} {dict.intro.name}</span>
     <a href={`/${locale}/privacy/`} class="flex min-h-11 items-center underline-offset-4 hover:underline"
       >{dict.footer.privacy}</a

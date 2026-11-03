@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { locales, t, type Locale } from '../../i18n';
 import { getProjects } from '../../lib/projects';
+import { career, formatMonths } from '../../data/career';
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -9,46 +10,232 @@ export function getStaticPaths() {
 
 const locale = Astro.params.locale as Locale;
 const dict = t(locale);
+const h = dict.home;
 const projects = await getProjects(locale);
+const { jobs, total } = career(locale);
+let acc = 0;
+const segments = jobs.map((j) => {
+  const seg = { ...j, x: acc };
+  acc += j.months;
+  return seg;
+});
 ---
 
 <BaseLayout locale={locale}>
-  <section
-    id="intro"
-    class="relative grid min-h-[calc(100dvh-var(--header-h)-env(safe-area-inset-top))] place-items-center overflow-hidden"
-  >
-    <!-- 3D 배경 아일랜드 자리 (7단계, 옵션) -->
-    <div class="container-page py-16">
-      <h1 class="text-[clamp(2.5rem,12vw,6rem)] leading-none font-bold tracking-tight">{dict.intro.name}</h1>
-      <p class="mt-6 max-w-[32ch] text-[clamp(1.125rem,4.5vw,1.5rem)] text-muted">{dict.intro.tagline}</p>
-    </div>
-  </section>
+  <div class="home container-page" data-locale={locale}>
+    <!-- 소개: 글자로 그린 이름 + 짧은 소개 (docs/01-frontend.md "홈") -->
+    <section id="intro" class="canvas intro" aria-labelledby="intro-name">
+      <div class="role">{h.role}</div>
+      <div class="name-box">
+        <h1 id="intro-name" class="name">{dict.intro.name}</h1>
+        <pre class="ascii" aria-hidden="true"></pre>
+      </div>
+      <p class="phrase">{h.phrase[0]}<span>{h.phrase[1]}</span></p>
+      <p class="about" data-flow>{h.about}</p>
+      <div class="facts">
+        <span>{h.experience} <b class="num" data-months={total}>{formatMonths(total, locale)}</b></span>
+        <span>{h.now} → <b>{h.nowAt}</b></span>
+        <a href="https://github.com/yeonghunyoo" rel="noopener">{h.github} ↗</a>
+      </div>
+      <span class="tag tag-hero" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-8L21 10z"></path></svg><b>{h.tagBuilder}</b></span>
+    </section>
 
-  <section id="project" class="container-page py-16 md:py-24" aria-labelledby="project-heading">
-    <h2 id="project-heading" class="text-2xl font-bold md:text-3xl">{dict.project.heading}</h2>
-    <ul class="mt-8 grid gap-4 md:grid-cols-2">
+    <!-- 프로젝트: 큰 숫자 + 이름 덩어리를 엇갈려 놓는다 -->
+    <section id="project" class="canvas work" aria-labelledby="project-heading">
+      <h2 id="project-heading" class="big-label">{h.projects}<small class="num" data-to={projects.length}>{projects.length}</small></h2>
       {
-        projects.map((project) => (
-          <li class="flex flex-col rounded-[var(--radius)] border border-border bg-surface p-5 md:p-6">
-            <h3 class="text-xl font-bold">{project.data.title}</h3>
-            <p class="mt-3 text-muted">{project.data.summary}</p>
-            <ul class="mt-4 flex flex-wrap gap-2" aria-label={dict.project.stack}>
-              {project.data.stack.map((s) => (
-                <li class="rounded-full border border-border px-3 py-1 text-sm">{s}</li>
-              ))}
-            </ul>
-            <a href={`/${locale}/projects/${project.slug}/`} class="btn mt-6 self-start">
-              {dict.project.more}
-            </a>
-          </li>
+        projects.map((p, i) => (
+          <div class:list={['obj', `p${(i % 3) + 1}`, { flip: i % 3 === 1 }]}>
+            <button type="button" class="obj-head" aria-expanded="false" aria-controls={`more-${p.slug}`}>
+              {p.data.metric && (
+                <span class="big num">
+                  <span data-to={p.data.metric.value}>{p.data.metric.value}</span>
+                  {p.data.metric.unit && <small>{p.data.metric.unit}</small>}
+                </span>
+              )}
+              <span class="meta">
+                <span class="t ul">{p.data.title}</span>
+                <span class="unit">{p.data.metric?.label ?? p.data.short}</span>
+              </span>
+            </button>
+            <div class="more" id={`more-${p.slug}`} hidden>
+              <p>{p.data.summary}</p>
+              <p class="more-row">
+                {p.data.period && <span>{p.data.period}</span>}
+                <a href={`/${locale}/projects/${p.slug}/`}>{h.more}</a>
+              </p>
+            </div>
+          </div>
         ))
       }
-    </ul>
-  </section>
+      <span class="tag tag-work" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-8L21 10z"></path></svg><b>{h.tagTap}</b></span>
+    </section>
 
-  <section id="contact" class="container-page py-16 md:py-24" aria-labelledby="contact-heading">
-    <h2 id="contact-heading" class="text-2xl font-bold md:text-3xl">{dict.contact.heading}</h2>
-    <p class="prose-body mt-4 text-muted">{dict.contact.body}</p>
-    <button type="button" class="btn btn-primary mt-8" data-action="letter">{dict.contact.letter}</button>
-  </section>
+    <!-- 경력: 날짜 축 없이 기간만 이어 붙인 막대 하나(합계 = 총 경력) -->
+    <section id="career" class="canvas career" aria-labelledby="career-heading">
+      <h2 id="career-heading" class="big-label">{h.career}<small class="num">{h.total} <span data-months={total}>{formatMonths(total, locale)}</span></small></h2>
+      <div class="career-line">
+        <ol class="jobs">
+          {
+            segments.map((j, i) => (
+              <li class:list={['job', { current: j.current, last: i === segments.length - 1, low: i !== 1 }]} data-x={j.x / total} data-w={j.months / total}>
+                <span class="n">{j.name}</span>
+                <span class="len num">
+                  <span data-months={j.months}>{formatMonths(j.months, locale)}</span>
+                  {j.current && ` · ${h.current}`}
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+        <svg class="bar" viewBox={`0 0 ${total} 4`} preserveAspectRatio="none" aria-hidden="true">
+          <rect class="track" x="0" y="1.5" width={total} height="1"></rect>
+          {segments.map((j) => <rect class:list={['seg', { current: j.current }]} x={j.x + (j.x ? 0.25 : 0)} y="0" width={j.months - (j.x ? 0.25 : 0)} height="4"></rect>)}
+        </svg>
+        <div class="sum num">= <span data-months={total}>{formatMonths(total, locale)}</span></div>
+      </div>
+    </section>
+
+    <section id="contact" class="canvas contact" aria-labelledby="contact-heading">
+      <h2 id="contact-heading" class="sr-only">{dict.contact.heading}</h2>
+      <p class="note">{h.letterNote}</p>
+      <button type="button" class="letter" data-action="letter">
+        <span class="tag tag-letter" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-8L21 10z"></path></svg><b>{h.tagLogin}</b></span>
+        <span class="ul">{h.letter}</span>
+      </button>
+    </section>
+  </div>
 </BaseLayout>
+
+<style is:global>
+  /* 홈(11/03): 문서 같은 줄·표 대신 캔버스 위 자유 배치. 글자·숫자·가는 선·사각 핸들만. 색은 tokens.css만 */
+  .home { --canvas-cols: 6; padding-bottom: 2rem; }
+  .home .canvas { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: 0.75rem; }
+  .home .num { font-variant-numeric: tabular-nums; }
+  .home .tag { position: absolute; display: inline-flex; align-items: flex-start; gap: 2px; font-family: var(--font-mono); font-size: 11px; white-space: nowrap; pointer-events: none; }
+  .home .tag svg { width: 15px; height: 15px; flex: none; fill: var(--color-tag); }
+  .home .tag b { font-weight: 500; background: var(--color-tag); color: #fff; padding: 1px 6px; margin-top: 10px; }
+
+  /* 소개 */
+  .home .intro { padding-block: clamp(1.5rem, 5vw, 4rem) clamp(2.5rem, 8vw, 6rem); row-gap: 0.75rem; align-items: end; }
+  .home .role { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 12px; color: var(--color-quiet); }
+  .home .name-box { grid-column: 1 / -1; position: relative; aspect-ratio: 5 / 3; container-type: inline-size; overflow: hidden; margin-top: clamp(0.5rem, 2vw, 1.5rem); }
+  .home .name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 46cqw; line-height: 1; letter-spacing: -0.03em; }
+  .home .ascii { display: none; position: absolute; inset: 0; margin: 0; font-family: var(--font-mono); font-size: calc(100cqw / 26.4); line-height: 1; letter-spacing: 0; color: var(--color-fg); white-space: pre; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  @container (min-width: 500px) { .home .ascii { font-size: calc(100cqw / 43.2); } }
+  .home .ascii .hot { color: var(--color-accent); }
+  .ascii-on .home .name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .ascii-on .home .ascii { display: block; }
+  .home .phrase { grid-column: 2 / -1; margin: 1rem 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.25rem, 2.6vw, 1.75rem); line-height: 1.25; }
+  .home .phrase span { display: block; color: var(--color-quiet); padding-left: 1.6em; }
+  .home .about { grid-column: 1 / -1; width: 100%; margin: 1.25rem 0 0; position: relative; font-size: 16px; line-height: 26px; color: var(--color-muted); max-width: 34em; }
+  .home .about.flow { cursor: crosshair; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .home .about .ln { position: absolute; left: 0; top: 0; white-space: pre; }
+  .home .about .hole { position: absolute; left: 0; top: 0; border: 1px solid var(--color-accent); border-radius: 50%; pointer-events: none; display: grid; place-items: center; text-align: center; font-family: var(--font-mono); font-size: 11px; line-height: 1.2; color: var(--color-accent); opacity: 0; transition: opacity 0.2s; }
+  .home .about .hole.on { opacity: 1; }
+  .home .about .hole b { display: block; font-weight: 500; font-size: 18px; }
+  .home .facts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; margin-top: 1.25rem; font-size: 14px; color: var(--color-muted); }
+  .home .facts b { font-family: var(--font-mono); font-weight: 500; color: var(--color-fg); }
+  .home .facts a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; }
+  .home .tag-hero { right: 4%; top: 40%; }
+
+  /* 큰 괄호 라벨 */
+  .home .big-label { grid-column: 1 / -1; margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.75rem, 9vw, 7rem); line-height: 0.9; letter-spacing: -0.02em; color: var(--color-ghost); }
+  .home .big-label small { margin-left: 6px; font-family: var(--font-mono); font-size: 14px; letter-spacing: 0; vertical-align: top; color: var(--color-quiet); }
+
+  /* 프로젝트 */
+  .home .work { padding-block: clamp(2rem, 6vw, 4.5rem); row-gap: clamp(2.25rem, 7vw, 4.5rem); }
+  .home .obj { position: relative; grid-column: 1 / -1; }
+  .home .obj.p3 { margin-left: 10%; }
+  .home .obj-head { display: grid; grid-template-columns: auto 1fr; align-items: end; column-gap: 0.875rem; width: 100%; padding: 0; text-align: left; background: none; border: 0; color: inherit; cursor: pointer; }
+  .home .obj .big { font-family: var(--font-display); font-size: clamp(4rem, 12vw, 9.25rem); line-height: 0.8; letter-spacing: -0.03em; color: var(--color-accent); }
+  .home .obj .big small { font-size: 0.38em; letter-spacing: 0; }
+  .home .obj .meta { display: grid; gap: 4px; align-content: end; }
+  .home .obj .t { justify-self: start; font-family: var(--font-display); font-size: clamp(1.625rem, 3.6vw, 2.5rem); line-height: 1.05; }
+  .home .obj .unit { font-family: var(--font-mono); font-size: 12px; color: var(--color-quiet); }
+  .home .obj.flip .obj-head { grid-template-columns: 1fr auto; text-align: right; }
+  .home .obj.flip .big { grid-column: 2; grid-row: 1; }
+  .home .obj.flip .meta { grid-column: 1; grid-row: 1; justify-items: end; }
+  .home .obj.flip .t { justify-self: end; }
+  .home .obj .more { margin-top: 0.875rem; font-size: 14px; color: var(--color-muted); max-width: 38em; }
+  .home .obj.flip .more { margin-left: auto; text-align: right; }
+  .home .obj .more p { margin: 0; }
+  .home .obj .more-row { display: flex; flex-wrap: wrap; gap: 0 1rem; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--color-quiet); }
+  .home .obj.flip .more-row { justify-content: flex-end; }
+  .home .obj .more a { display: inline-flex; align-items: center; min-height: 44px; color: var(--color-accent); text-underline-offset: 4px; }
+  /* 선택 핸들 */
+  .home .obj::after { content: ''; position: absolute; inset: -8px -10px; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+    background:
+      linear-gradient(var(--color-accent) 0 0) left top / 8px 8px no-repeat,
+      linear-gradient(var(--color-accent) 0 0) right top / 8px 8px no-repeat,
+      linear-gradient(var(--color-accent) 0 0) left bottom / 8px 8px no-repeat,
+      linear-gradient(var(--color-accent) 0 0) right bottom / 8px 8px no-repeat;
+    outline: 1px solid var(--color-accent); outline-offset: -4px; }
+  .home .obj.on::after { opacity: 1; }
+  .home .tag-work { right: 6%; top: 30%; display: none; }
+
+  /* 경력 */
+  .home .career { padding-block: clamp(2rem, 6vw, 4.5rem); row-gap: 1.5rem; }
+  .home .career .big-label { justify-self: end; text-align: right; }
+  .home .career-line { grid-column: 1 / -1; position: relative; padding-top: 0.5rem; }
+  .home .jobs { list-style: none; margin: 0; padding: 0; position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 0.5rem; min-height: 9.5rem; }
+  .home .job { display: grid; gap: 2px; padding-bottom: 0.75rem; }
+  .home .job.low { padding-bottom: 0.75rem; }
+  .home .job:not(.low) { align-self: flex-start; }
+  .home .job .n { font-family: var(--font-display); font-size: clamp(1.25rem, 2.6vw, 1.875rem); line-height: 1; white-space: nowrap; }
+  .home .job .len { font-family: var(--font-mono); font-size: 13px; }
+  .home .job.current .n, .home .job.current .len { color: var(--color-accent); }
+  .home .job.last { text-align: right; }
+  .placed .home .jobs { display: block; min-height: 10.5rem; }
+  .placed .home .job { position: absolute; bottom: 0; }
+  .placed .home .job:not(.low) { bottom: auto; top: 0; }
+  .placed .home .job::before { content: ''; position: absolute; left: 0; bottom: 0; width: 1px; height: var(--lead, 0); background: var(--color-fg); opacity: 0.45; transform: translateY(100%); }
+  .placed .home .job.last::before { left: auto; right: 0; }
+  .home .bar { display: block; width: 100%; height: 8px; }
+  .home .bar .track { fill: var(--color-border); }
+  .home .bar .seg { fill: var(--color-fg); }
+  .home .bar .seg.current { fill: var(--color-accent); }
+  .home .sum { margin-top: 0.5rem; text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--color-muted); }
+
+  /* 연락 */
+  .home .contact { padding-block: clamp(1.5rem, 5vw, 3.5rem) clamp(3rem, 8vw, 6rem); align-items: end; row-gap: 1.5rem; }
+  .home .contact .note { grid-column: 1 / 5; margin: 0; font-size: 14px; color: var(--color-muted); max-width: 24ch; }
+  .home .letter { grid-column: 2 / -1; justify-self: end; position: relative; padding: 0; border: 0; background: none; cursor: pointer; font-family: var(--font-display); font-size: clamp(3.5rem, 12vw, 9.25rem); line-height: 1; color: var(--color-accent); text-align: right; }
+  .home .tag-letter { left: 6%; top: -26px; }
+
+  /* 움직임: 숫자는 0부터, 밑줄·막대는 왼쪽부터. 화면에 들어올 때 한 번 */
+  .home .ul { background: linear-gradient(currentColor, currentColor) 0 100% / 100% var(--ul-h, 3px) no-repeat; padding-bottom: var(--ul-pad, 4px); }
+  .home .letter .ul { --ul-h: 6px; --ul-pad: 10px; }
+  .motion .home .ul { background-size: 0 var(--ul-h, 3px); transition: background-size 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s; }
+  .motion .home .ul.in { background-size: 100% var(--ul-h, 3px); }
+  .motion .home .bar .seg { transform: scaleX(0); transform-box: fill-box; transform-origin: left; transition: transform 1s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .motion .home .bar .seg:nth-of-type(3) { transition-delay: 0.35s; }
+  .motion .home .bar .seg:nth-of-type(4) { transition-delay: 0.7s; }
+  .motion .home .bar.in .seg { transform: scaleX(1); }
+
+  @media (min-width: 820px) {
+    .home .canvas { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 1.25rem; }
+    .home .role { grid-column: 1 / 6; }
+    .home .name-box { grid-column: 1 / 8; grid-row: 2 / 6; }
+    .home .phrase { grid-column: 8 / 13; grid-row: 2; align-self: end; margin: 0 0 0.5rem; }
+    .home .about { grid-column: 8 / 13; grid-row: 3; margin-top: 0.875rem; }
+    .home .facts { grid-column: 8 / 13; grid-row: 4; align-self: start; flex-direction: column; gap: 0; margin-top: 1rem; }
+    .home .tag-hero { right: auto; left: 40%; top: 6%; }
+    .home .work .big-label { grid-column: 1 / 8; }
+    .home .obj.p1 { grid-column: 2 / 8; }
+    .home .obj.p2 { grid-column: 6 / 13; margin-top: -1.5rem; }
+    .home .obj.p3 { grid-column: 3 / 9; margin-left: 0; }
+    .home .tag-work { display: inline-flex; }
+    .home .career .big-label { grid-column: 6 / 13; }
+    .home .contact .note { align-self: end; margin-bottom: 1.125rem; }
+    .home .letter { grid-column: 5 / 13; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home .obj::after, .home .about .hole { transition: none; }
+  }
+</style>
+
+<script>
+  import { initHome } from '../../lib/home';
+  initHome();
+</script>

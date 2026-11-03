@@ -15,6 +15,10 @@ const projects = defineCollection({
     summary: z.string(),
     stack: z.array(z.string()),
     order: z.number().default(0),
+    // 홈 목록용(11/03): 한 줄 설명, 대표 수치 하나, 기간
+    short: z.string().optional(),
+    metric: z.object({ value: z.number(), unit: z.string().default(''), label: z.string() }).optional(),
+    period: z.string().optional(),
     changelog: z.array(z.object({ date: z.string(), text: z.string() })).default([]),
   }),
 });
