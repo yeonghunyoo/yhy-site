@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm db:migrate:remote)",
+      "Bash(pnpm run deploy)",
+      "Bash(PUBLIC_CHAT_ENABLED=1 pnpm run deploy)"
+    ]
+  }
+}
