@@ -4,6 +4,8 @@ import type { Locale } from '../i18n';
 
 interface Job {
   name: Record<Locale, string>;
+  /** 이름 아래 작은 글씨(파견·고객사 등) */
+  note?: Record<Locale, string>;
   months?: number;
   since?: [number, number];
 }
@@ -11,13 +13,15 @@ interface Job {
 const JOBS: Job[] = [
   { name: { ko: '알파이글루', en: 'AlphaIgloo' }, months: 17 },
   { name: { ko: '홀리츠', en: 'holich' }, months: 23 },
-  { name: { ko: '트립에이드', en: 'Tripaid' }, since: [2025, 10] },
+  { name: { ko: '트립에이드', en: 'Tripaid' }, months: 11 }, // 2025.10 ~ 2026.09(9월은 아래로 센다)
+  // 소속은 클러쉬(주), 고객사는 이름 대신 '반도체사'로 쓴다(관례: 소속 회사 + 고객사)
+  { name: { ko: '클러쉬(주)', en: 'Clush' }, note: { ko: '반도체사 파견', en: 'at a semiconductor company' }, since: [2026, 9] }, // 2026.09.14 ~
 ];
 
 export function career(locale: Locale, now = new Date()) {
   const jobs = JOBS.map((j) => {
     const months = j.months ?? now.getFullYear() * 12 + (now.getMonth() + 1) - (j.since![0] * 12 + j.since![1]) + 1;
-    return { name: j.name[locale], months, current: Boolean(j.since) };
+    return { name: j.name[locale], note: j.note?.[locale], months, current: Boolean(j.since) };
   });
   return { jobs, total: jobs.reduce((t, j) => t + j.months, 0) };
 }

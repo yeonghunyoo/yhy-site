@@ -84,9 +84,18 @@ function setupCareer(root: HTMLElement) {
   if (!list) return;
   const place = () => {
     html.classList.add('placed');
+    const W = list.clientWidth;
     for (const li of list.querySelectorAll<HTMLElement>('.job')) {
-      if (li.classList.contains('last')) li.style.right = '0';
-      else li.style.left = `${Number(li.dataset.x) * 100}%`;
+      li.style.removeProperty('--lx');
+      if (li.classList.contains('last')) { li.style.right = '0'; continue; }
+      const x = Number(li.dataset.x) * W;
+      li.style.left = `${x}px`;
+      // 오른쪽 끝을 넘으면 안쪽으로 당기고, 지시선은 자기 구간 시작점을 계속 가리킨다
+      if (x + li.offsetWidth > W) {
+        const left = Math.max(0, W - li.offsetWidth);
+        li.style.left = `${left}px`;
+        li.style.setProperty('--lx', `${x - left}px`);
+      }
     }
     for (const li of list.querySelectorAll<HTMLElement>('.job')) {
       li.style.setProperty('--lead', `${Math.max(0, list.clientHeight - (li.offsetTop + li.offsetHeight))}px`);

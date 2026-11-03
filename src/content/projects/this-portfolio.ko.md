@@ -2,7 +2,7 @@
 title: 이 포트폴리오
 summary: 기술 스택 나열 대신 "무엇을 왜 만들었고 결과가 어땠는지"를 보여주는 포트폴리오. 만드는 과정 자체가 첫 번째 프로젝트다.
 stack: [Astro, React, Tailwind CSS, Cloudflare Workers, D1, KV, Better Auth, Resend]
-order: 3
+order: 4
 short: 만드는 과정 자체가 콘텐츠
 metric: { value: 7, label: 단계 설계 문서로 만드는 중 }
 period: 2026.10 ~

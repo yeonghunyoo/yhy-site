@@ -55,7 +55,27 @@ Forest (사운드 믹싱 집중 & 명상 앱 · 2026.09 ~)는 파도 · 비 · �
 
 ![Forest 재생 화면 — 저녁 물결 믹스 재생 중](/media/80877856fbc56a0ee61b9235b702ea0d.jpg)
 
-## 경력: 트립에이드 (Tripaid) · iOS Native, 2025.10 ~ 현재
+<!-- 11/03 직접 추가: 원본 PDF에는 없다. 출처는 nuvo 레포의 README·docs/mvp.md -->
+
+## 만든 것: nuvo
+
+nuvo (프라이빗 사진 서비스 · 2026.11 ~)는 흩어진 사진을 한곳에 모아 보고, 가족·친구와 함께 쌓아가는 프라이빗 사진 서비스입니다. 서비스 https://nuvo.yeonghun-yoo.workers.dev · 코드 github.com/yeonghunyoo/nuvo
+
+- 이 PC 폴더를 업로드 없이 바로 보기(로그인 없이도 사용) + nuvo 저장소 업로드 — 같은 사진은 한 칸으로 합친 통합 타임라인
+- Space: 초대 링크로 가족·친구와 함께 올리기, 역할 · 내보내기 · 소유권 이전, 실시간 피드(WebSocket)
+- 사진 처리는 브라우저 Web Worker에서 — SHA-256 · EXIF · 썸네일 · 유사 중복 정리(dHash) · HEIC 디코딩
+- Cloudflare Worker 1개(Hono API · R2 · Durable Object) + Hyperdrive → Postgres, Drizzle ORM
+- 랜딩 셰이더와 3D 시간 터널(React Three Fiber), 다크 · 라이트 테마
+
+<!-- 11/03 직접 추가: 원본 PDF에는 없다. 상세는 나중에 채운다 -->
+
+## 경력: 클러쉬(주) · 반도체사 파견, 2026.09 ~ 현재
+
+프로젝트: 반도체사 사내 에이전트 및 RAG 파이프라인 구축
+
+2026년 9월 14일부터 클러쉬(주) 소속으로 반도체사(고객사)에 파견되어 사내 에이전트와 RAG 파이프라인을 구축하고 있습니다.
+
+## 경력: 트립에이드 (Tripaid) · iOS Native, 2025.10 ~ 2026.09
 
 헬미닥 AI 채팅 건강상담 서비스(App Store) — iOS 네이티브 앱 개발 및 아키텍처/DX 고도화
 
