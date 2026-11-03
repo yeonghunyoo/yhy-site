@@ -1,0 +1,169 @@
+---
+import { env } from 'cloudflare:workers';
+import { gte } from 'drizzle-orm';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import UsageBar from '../../components/admin/UsageBar.astro';
+import { chatLogs } from '../../db/schema';
+import { caps, chatMonthTokens, chatToday, lettersToday, mailCounts } from '../../lib/server/budget';
+import { cloudflareUsage } from '../../lib/server/cf-analytics';
+import { getDb } from '../../lib/server/db';
+import { formatKst, kstDate, kstDayStart, lastKstDays } from '../../lib/server/dates';
+import { FREE_LIMITS } from '../../lib/usage-math';
+
+// 사용량 대시보드(docs/guides/cost-guard.md "4"). 관리자만(미들웨어가 404로 숨긴다).
+export const prerender = false;
+
+const fresh = Astro.url.searchParams.get('refresh') === '1';
+const c = caps();
+const [today, monthTokens, letters, mail, cf] = await Promise.all([
+  chatToday(fresh),
+  chatMonthTokens(fresh),
+  lettersToday(fresh),
+  mailCounts(),
+  cloudflareUsage(fresh),
+]);
+const loginsToday = Number((await env.KV.get(`stats:login:${kstDate(new Date())}`)) ?? 0);
+
+// 챗 경로별 턴(최근 7일, KST) — 로그에 있는 경로를 그대로 센다(경로가 늘어도 코드 수정 없음)
+// 표는 최근 날짜부터(휴대폰에서 오늘이 먼저 보이게)
+const days = lastKstDays(7);
+const daysNewest = [...days].reverse();
+const recent = await getDb()
+  .select({ route: chatLogs.route, createdAt: chatLogs.createdAt })
+  .from(chatLogs)
+  .where(gte(chatLogs.createdAt, kstDayStart(days[0])));
+const routes = [...new Set(recent.map((r) => r.route ?? '(경로 없음)'))].sort();
+const routeCount = (route: string, day: string) => recent.filter((r) => (r.route ?? '(경로 없음)') === route && kstDate(r.createdAt) === day).length;
+
+const switches = [
+  { name: 'CHAT_ENABLED', on: env.CHAT_ENABLED === '1', label: '챗 열림' },
+  { name: 'KILL_LOGIN_MAIL', on: (env as unknown as Record<string, string>).KILL_LOGIN_MAIL === '1', label: '로그인 메일 중지' },
+  { name: 'KILL_LETTERS', on: (env as unknown as Record<string, string>).KILL_LETTERS === '1', label: '레터 중지' },
+];
+const tripped = today.neurons >= c.aiNeuronsDay || today.turns >= c.chatTurnsDay || monthTokens >= c.chatTokensMonth;
+const sum = (m: Record<string, number>, keys: string[]) => keys.reduce((s, k) => s + (m[k] ?? 0), 0);
+const short = (d: string) => d.slice(5);
+---
+
+<AdminLayout title="사용량">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">사용량</h1>
+    <a href="/admin/usage?refresh=1" class="btn btn-outline" data-busy-link>새로고침</a>
+  </div>
+  <p class="mt-2 text-sm text-muted">
+    우리 카운터는 KST, Cloudflare는 UTC 기준(무료 한도가 UTC 자정에 다시 찬다). 상한·장치는 docs/guides/cost-guard.md.
+  </p>
+
+  <section class="mt-6 rounded-[var(--radius)] border border-border bg-surface p-4">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="font-semibold">차단기 (오늘 KST {today.day})</h2>
+      <span class:list={['text-sm font-semibold', tripped ? 'text-danger' : 'text-success']}>{tripped ? '챗 차단 중' : '정상'}</span>
+    </div>
+    <UsageBar label="Workers AI 추정 뉴런" used={today.neurons} limit={c.aiNeuronsDay} note={`무료 ${FREE_LIMITS.aiNeuronsDay.toLocaleString()} 아래에서 멈춘다. 로그 토큰 × 단가 + 턴당 10`} />
+    <UsageBar label="챗 턴 (사이트 전체)" used={today.turns} limit={c.chatTurnsDay} />
+    <UsageBar label="챗 토큰 (이번 달)" used={monthTokens} limit={c.chatTokensMonth} />
+    <UsageBar label="메일 (오늘)" used={mail.day} limit={c.mailDay} note={`Resend 무료 하루 ${FREE_LIMITS.resendDay}통`} />
+    <UsageBar label="메일 (이번 달)" used={mail.month} limit={c.mailMonth} note={`Resend 무료 월 ${FREE_LIMITS.resendMonth.toLocaleString()}통`} />
+    <UsageBar label="레터 (사이트 전체, 오늘)" used={letters} limit={c.lettersDay} />
+    <p class="mt-2 text-sm text-muted">로그인 오늘 {loginsToday}회</p>
+    <ul class="mt-3 flex flex-wrap gap-2 text-sm">
+      {
+        switches.map((s) => (
+          <li class:list={['rounded-[var(--radius)] border px-2 py-1', s.on ? 'border-fg font-semibold' : 'border-border text-muted']}>
+            {s.label} · {s.on ? '켜짐' : '꺼짐'}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-6 rounded-[var(--radius)] border border-border bg-surface p-4">
+    <h2 class="font-semibold">챗 경로별 턴 (최근 7일, KST)</h2>
+    {
+      routes.length === 0 ? (
+        <p class="mt-3 text-sm text-muted">아직 기록이 없어요.</p>
+      ) : (
+        <div class="mt-3 overflow-x-auto" data-scroll-allow>
+          <table class="w-full min-w-[480px] text-sm tabular-nums">
+            <thead>
+              <tr class="text-muted">
+                <th class="py-1 pr-3 text-left font-normal">경로</th>
+                {daysNewest.map((d) => <th class="whitespace-nowrap px-1 py-1 text-right font-normal">{short(d)}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {routes.map((route) => (
+                <tr class="border-t border-border">
+                  <td class="whitespace-nowrap py-1 pr-3">{route}</td>
+                  {daysNewest.map((d) => <td class="px-1 py-1 text-right">{routeCount(route, d) || ''}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </section>
+
+  <section class="mt-6 rounded-[var(--radius)] border border-border bg-surface p-4">
+    <h2 class="font-semibold">Cloudflare</h2>
+    {
+      !cf.ok ? (
+        <p class="mt-3 text-sm text-muted">
+          {cf.reason === 'no_token'
+            ? 'Cloudflare 통계 토큰 없음 — CF_ANALYTICS_TOKEN(분석 읽기 전용)과 CF_ACCOUNT_ID를 넣으면 보인다(docs/guides/cost-guard.md 5-1).'
+            : `Cloudflare 통계를 불러오지 못했어요: ${cf.message ?? ''}`}
+        </p>
+      ) : (
+        <>
+          <p class="mt-1 text-xs text-muted">
+            오늘 UTC {cf.usage.today} · 불러온 시각 {formatKst(new Date(cf.usage.fetchedAt))} KST (5분 캐시)
+          </p>
+          <h3 class="mt-4 text-sm font-semibold">오늘 (하루 한도)</h3>
+          <UsageBar label="Workers 요청" used={cf.usage.workersRequests[cf.usage.today] ?? 0} limit={FREE_LIMITS.workersRequestsDay} note={`오류 ${cf.usage.workersErrors[cf.usage.today] ?? 0}`} />
+          <UsageBar label="Workers AI 뉴런 (실측)" used={cf.usage.aiNeurons[cf.usage.today] ?? 0} limit={FREE_LIMITS.aiNeuronsDay} note={cf.usage.aiByModelToday.map((m) => `${m.model.split('/').pop()} ${Math.round(m.neurons)}`).join(' · ') || undefined} />
+          <UsageBar label="D1 읽은 행" used={cf.usage.d1RowsRead[cf.usage.today] ?? 0} limit={FREE_LIMITS.d1RowsReadDay} />
+          <UsageBar label="D1 쓴 행" used={cf.usage.d1RowsWritten[cf.usage.today] ?? 0} limit={FREE_LIMITS.d1RowsWrittenDay} />
+          <UsageBar label="KV 읽기" used={cf.usage.kvReads[cf.usage.today] ?? 0} limit={FREE_LIMITS.kvReadsDay} />
+          <UsageBar label="KV 쓰기 (가장 빠듯함)" used={cf.usage.kvWrites[cf.usage.today] ?? 0} limit={FREE_LIMITS.kvWritesDay} />
+
+          <h3 class="mt-4 text-sm font-semibold">이번 달 ({cf.usage.month})</h3>
+          <UsageBar label="R2 A급 작업 (쓰기·목록)" used={cf.usage.r2ClassAMonth} limit={FREE_LIMITS.r2ClassAMonth} />
+          <UsageBar label="R2 B급 작업 (읽기)" used={cf.usage.r2ClassBMonth} limit={FREE_LIMITS.r2ClassBMonth} />
+          <UsageBar label="R2 저장 용량" used={cf.usage.r2StorageBytes} limit={FREE_LIMITS.r2StorageBytes} format="bytes" note={`객체 ${cf.usage.r2Objects}개`} />
+          <UsageBar label="Vectorize 조회 차원" used={cf.usage.vectorizeQueriedMonth} limit={FREE_LIMITS.vectorizeQueriedDimsMonth} />
+          <UsageBar label="Vectorize 저장 차원" used={cf.usage.vectorizeStoredDims} limit={FREE_LIMITS.vectorizeStoredDims} note={`벡터 ${cf.usage.vectorizeVectors}개`} />
+
+          <h3 class="mt-4 text-sm font-semibold">최근 7일 (UTC)</h3>
+          <div class="mt-2 overflow-x-auto" data-scroll-allow>
+            <table class="w-full min-w-[520px] text-sm tabular-nums">
+              <thead>
+                <tr class="text-muted">
+                  <th class="py-1 pr-3 text-left font-normal">항목</th>
+                  {[...cf.usage.days].reverse().map((d) => <th class="whitespace-nowrap px-1 py-1 text-right font-normal">{short(d)}</th>)}
+                  <th class="py-1 pl-2 text-right font-normal">합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['Workers 요청', cf.usage.workersRequests],
+                  ['AI 뉴런', cf.usage.aiNeurons],
+                  ['D1 읽은 행', cf.usage.d1RowsRead],
+                  ['D1 쓴 행', cf.usage.d1RowsWritten],
+                  ['KV 읽기', cf.usage.kvReads],
+                  ['KV 쓰기', cf.usage.kvWrites],
+                ].map(([label, map]) => (
+                  <tr class="border-t border-border">
+                    <td class="whitespace-nowrap py-1 pr-3">{label as string}</td>
+                    {[...cf.usage.days].reverse().map((d) => <td class="px-1 py-1 text-right">{Math.round((map as Record<string, number>)[d] ?? 0) || ''}</td>)}
+                    <td class="py-1 pl-2 text-right font-semibold">{Math.round(sum(map as Record<string, number>, cf.usage.days)).toLocaleString('ko-KR')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )
+    }
+  </section>
+</AdminLayout>

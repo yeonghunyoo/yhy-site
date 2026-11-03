@@ -27,7 +27,10 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `stats:login:{YYYY-MM-DD}` (KST) | 그날 로그인(세션 생성) 수 | 31일 |
 | `notify:5xx:{YYYY-MM-DDTHH:MM}` | 5xx 알림 중복 억제 | 2분 |
 | `chat:{userId 또는 ip}:{YYYY-MM-DD}` (2차) | 턴 수 | 1일 |
-| `chat:month:{YYYY-MM}` (2차) | 누적 토큰 | 31일 |
+| ~~`chat:month:{YYYY-MM}`~~ | (11/03 폐지 — 월 토큰은 D1 `chat_logs` 합계, [guides/cost-guard.md](guides/cost-guard.md)) | — |
+| `budget:mail:{YYYY-MM-DD}` / `budget:mail:{YYYY-MM}` (KST) | 보낸 메일 수(일·월 상한) | 26시간 / 32일 |
+| `budget:alert:{날짜}:{종류}:{단계}` | 사용량 80%·100% 알림을 하루 1번만 | 26시간 |
+| `block:{IP 해시}` | 요청 폭주 IP 10분 차단 | 10분 |
 | `notify:chat-guard:{YYYY-MM-DDTHH}` (2차) | 챗 가드 알림 중복 억제(UTC 시간 단위) | 2시간 |
 | `rag:vector-ids` (2차) | Vectorize에 넣은 청크 id 목록(JSON) | 없음 |
 | `rag:vector-synced` (2차) | 마지막 벡터 갱신 시각·추가·삭제 수 | 없음 |
@@ -53,6 +56,9 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `LETTER_TO` | 내 수신 메일 | 예 |
 | `ADMIN_EMAILS` | 쉼표 구분 허용목록 | 예 |
 | `CHAT_MONTHLY_TOKEN_CAP` | 월 상한(기본 2,000,000) | 2차 |
+| `AI_DAILY_NEURON_CAP` · `CHAT_DAILY_TURN_CAP` · `MAIL_DAILY_CAP` · `MAIL_MONTHLY_CAP` · `LETTER_DAILY_CAP` | 사이트 전체 일일·월 상한(비우면 기본값, [guides/cost-guard.md](guides/cost-guard.md)) | 11/03 |
+| `KILL_LOGIN_MAIL` · `KILL_LETTERS` | 긴급 차단 스위치(1이면 중지) | 11/03 |
+| `CF_ANALYTICS_TOKEN` · `CF_ACCOUNT_ID` | `/admin/usage`의 Cloudflare 통계(분석 읽기 전용 토큰) | 11/03 |
 | `CHAT_ENABLED` | `1`이면 `/api/chat` 열림 | 2차 |
 | `CHAT_MODEL` | 답변 모델 덮어쓰기(비우면 `src/lib/server/ai.ts` 기본값) — 모델 비교용 | 2차, 선택 |
 | `PUBLIC_CHAT_ENABLED` | 빌드 플래그 — `1`이면 챗 독 노출(`.env` 또는 배포 명령 앞) | 2차 |

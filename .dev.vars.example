@@ -14,3 +14,15 @@ TELEGRAM_CHAT_ID=
 # 2차: 챗 + RAG. CHAT_ENABLED=1일 때만 /api/chat이 열린다. 모델은 Workers AI(`AI` 바인딩)라 키가 없다.
 CHAT_ENABLED=
 CHAT_MONTHLY_TOKEN_CAP=
+# 과금 폭탄 차단기(docs/guides/cost-guard.md). 비우면 기본값: 뉴런 8000, 챗 500턴, 메일 80/2800통, 레터 50통
+AI_DAILY_NEURON_CAP=
+CHAT_DAILY_TURN_CAP=
+MAIL_DAILY_CAP=
+MAIL_MONTHLY_CAP=
+LETTER_DAILY_CAP=
+# 긴급 차단 스위치(1이면 켜짐): 로그인 메일 중지, 레터 접수 중지
+KILL_LOGIN_MAIL=
+KILL_LETTERS=
+# /admin/usage의 Cloudflare 통계 — 분석 읽기 전용 토큰(배포 토큰 금지)과 계정 ID
+CF_ANALYTICS_TOKEN=
+CF_ACCOUNT_ID=

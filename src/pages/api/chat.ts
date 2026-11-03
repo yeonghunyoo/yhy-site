@@ -9,6 +9,7 @@ import { prepare, runDiagram, verifiedHistory, type Prepared } from '../../lib/s
 import { getDb } from '../../lib/server/db';
 import { kstDate } from '../../lib/server/dates';
 import { GUARD_REPLY, outputBlocked, signTurn, type GuardFlag } from '../../lib/server/guard';
+import { chatGate } from '../../lib/server/budget';
 import { notify } from '../../lib/server/notify';
 import { clientIp } from '../../lib/server/ratelimit';
 
@@ -46,6 +47,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const locale: Locale = isLocale(input?.locale) ? input.locale : 'ko';
   if (!question || question.length > CHAT_LIMITS.questionMax) return Response.json({ error: 'invalid' }, { status: 400 });
 
+  // 사이트 전체 일일 상한(추정 뉴런·턴)과 월 토큰 상한 — D1 로그 합계로 센다(docs/guides/cost-guard.md). 넘으면 AI를 부르지 않고 KV에도 쓰지 않는다
+  if (!(await chatGate()).ok) return fixedReply(CAPPED[locale]);
+
   // 턴 제한: 비로그인 3턴 / 로그인 30턴 (하루, KST)
   const me = locals.user;
   const ipHash = await hashIp(clientIp(request), env.BETTER_AUTH_SECRET);
@@ -56,18 +60,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (used >= limit) return Response.json({ error: 'limit', signedIn: Boolean(me) }, { status: 429 });
   await env.KV.put(dayKey, String(used + 1), { expirationTtl: 60 * 60 * 26 });
 
-  // 월 토큰 상한
-  const monthKey = `chat:month:${kstDate(new Date()).slice(0, 7)}`;
-  const cap = Number(env.CHAT_MONTHLY_TOKEN_CAP) || CHAT_LIMITS.defaultMonthlyTokenCap;
-  const monthUsed = Number((await env.KV.get(monthKey)) ?? 0);
-  if (monthUsed >= cap) {
-    const flag = `${monthKey}:notified`;
-    if (!(await env.KV.get(flag))) {
-      await env.KV.put(flag, '1', { expirationTtl: 60 * 60 * 24 * 32 });
-      notify('💸 챗 상한 도달');
-    }
-    return fixedReply(CAPPED[locale]);
-  }
 
   const history = await verifiedHistory(input?.history);
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
@@ -145,10 +137,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
       tokensOut: usage.tokensOut,
     });
     await db.delete(chatLogs).where(lt(chatLogs.createdAt, new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)));
-    if (usage.tokensIn + usage.tokensOut > 0) {
-      const current = Number((await env.KV.get(monthKey)) ?? 0);
-      await env.KV.put(monthKey, String(current + usage.tokensIn + usage.tokensOut), { expirationTtl: 60 * 60 * 24 * 32 });
-    }
     // 유해·자해·출력 차단은 알린다. 같은 시간대에는 한 번만(연속 공격에 알림이 쏟아지지 않게).
     if (flag === 'unsafe' || flag === 'self_harm' || flag === 'output_blocked') {
       const notifyKey = `notify:chat-guard:${new Date().toISOString().slice(0, 13)}`;

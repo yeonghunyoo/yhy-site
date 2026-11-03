@@ -6,6 +6,7 @@ import { account, letters, user } from '../../db/schema';
 import { getDb } from '../../lib/server/db';
 import { sendMail } from '../../lib/server/mail';
 import { maskEmail, notify } from '../../lib/server/notify';
+import { killed, lettersAllowed } from '../../lib/server/budget';
 import { letterEmail } from '../../lib/server/templates';
 import { EMAIL_RE, LETTER_LIMITS, linksOk, type LetterError } from '../../lib/letters';
 
@@ -14,6 +15,8 @@ export const prerender = false;
 const fail = (error: LetterError | 'unauthorized', status: number) => Response.json({ error }, { status });
 
 export const POST: APIRoute = async ({ request, locals }) => {
+  // 긴급 스위치(KILL_LETTERS=1) — docs/guides/cost-guard.md
+  if (killed('KILL_LETTERS')) return Response.json({ error: 'unavailable' }, { status: 503 });
   const me = locals.user;
   if (!me) return fail('unauthorized', 401);
 
@@ -44,6 +47,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     .from(letters)
     .where(and(eq(letters.userId, me.id), gte(letters.createdAt, since)));
   if (sentToday >= LETTER_LIMITS.perDay) return fail('limit', 429);
+  // 사이트 전체 하루 상한(계정 여러 개로 몰아 보내기 방지)
+  if (!(await lettersAllowed())) return fail('limit', 429);
 
   const last = await db
     .select({ body: letters.body })

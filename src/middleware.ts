@@ -1,6 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { getAuth, isAdmin } from './lib/server/auth';
 import { report5xx } from './lib/server/errors';
+import { guarded, guardRequest } from './lib/server/request-guard';
 
 const isAdminPath = (p: string) => p === '/admin' || p.startsWith('/admin/') || p.startsWith('/api/admin/');
 
@@ -13,6 +14,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.session = null;
 
   try {
+    // 비정상 요청 방어(docs/guides/cost-guard.md): 차단 목록·순간 제한·메서드·크기·출처. 막히면 세션·AI·D1을 쓰지 않는다
+    if (guarded(pathname)) {
+      const blocked = await guardRequest(context.request, context.url);
+      if (blocked) return blocked;
+    }
+
     if (isAdminPath(pathname) || pathname.startsWith('/api/')) {
       const result = await getAuth().api.getSession({ headers: context.request.headers });
       context.locals.user = result?.user ?? null;
