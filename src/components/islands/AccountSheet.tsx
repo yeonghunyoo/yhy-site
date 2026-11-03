@@ -64,10 +64,10 @@ export function AccountSheet({ dict, locale, open, onClose }: Props) {
           onChange={(e) => setConfirm(e.target.value)}
         />
         <div className="mt-5 flex gap-2">
-          <button type="button" className="btn flex-1" onClick={onClose}>
+          <button type="button" className="btn flex-1" onClick={onClose} disabled={busy}>
             {dict.ui.cancel}
           </button>
-          <button type="submit" className="btn btn-error flex-1" disabled={!matches || busy}>
+          <button type="submit" className="btn btn-error flex-1" disabled={!matches || busy} aria-busy={busy}>
             {dict.account.submit}
           </button>
         </div>

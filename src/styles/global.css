@@ -48,6 +48,36 @@
   .btn {
     --fontsize: 1rem;
   }
+  /* 비동기 버튼(docs/01-frontend.md "로딩 상태"): aria-busy="true" 동안 글자·아이콘을 숨겨 폭을 유지하고 가운데에 스피너.
+     하이드레이트 전 첫 클릭(client:demand)은 <html data-ui-pending="동작">으로 같은 모양을 낸다. */
+  :is(.btn, [role='menuitem'])[aria-busy='true'],
+  html[data-ui-pending='login'] [data-action='login'],
+  html[data-ui-pending='letter'] [data-action='letter'],
+  html[data-ui-pending='chat'] [data-action='chat'] {
+    position: relative;
+    cursor: progress;
+    pointer-events: none;
+    -webkit-text-fill-color: transparent;
+  }
+  :is(.btn, [role='menuitem'])[aria-busy='true'] > svg,
+  html[data-ui-pending] [data-action] > svg {
+    visibility: hidden;
+  }
+  :is(.btn, [role='menuitem'])[aria-busy='true']::after,
+  html[data-ui-pending='login'] [data-action='login']::after,
+  html[data-ui-pending='letter'] [data-action='letter']::after,
+  html[data-ui-pending='chat'] [data-action='chat']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 9999px;
+    animation: ui-spin 0.7s linear infinite;
+  }
   .container-page {
     width: 100%;
     max-width: 1200px;
@@ -97,5 +127,22 @@
   .prose-body code {
     font-family: var(--font-mono);
     font-size: 0.9em;
+  }
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 움직임 줄이기: 스피너는 멈추지 않고(진행 중이라는 뜻이 사라지므로) 느리게만 */
+@media (prefers-reduced-motion: reduce) {
+  :is(.btn, [role='menuitem'])[aria-busy='true']::after,
+  html[data-ui-pending] [data-action]::after {
+    animation-duration: 2.4s;
+  }
+  .loading {
+    animation-duration: 2.4s;
   }
 }

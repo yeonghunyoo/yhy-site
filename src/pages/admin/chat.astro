@@ -53,8 +53,8 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
         </form>
       )
     }
-    <a href="/admin/chat?eval=1" class="btn btn-outline">기준 질문 평가</a>
-    <a href="/admin/chat?redteam=1" class="btn btn-outline">공격 질문 점검</a>
+    <a data-busy-link href="/admin/chat?eval=1" class="btn btn-outline">기준 질문 평가</a>
+    <a data-busy-link href="/admin/chat?redteam=1" class="btn btn-outline">공격 질문 점검</a>
   </div>
 
   {

@@ -65,5 +65,43 @@ const flash = FLASH[Astro.url.searchParams.get('flash') ?? ''];
       {flash && <p class="mb-6 rounded-[var(--radius)] border border-border bg-surface px-4 py-3 text-sm" role="status">{flash}</p>}
       <slot />
     </main>
+    <script>
+      // 로딩 상태(docs/01-frontend.md): 폼을 보내면 누른 버튼에 aria-busy(global.css가 스피너로 그린다)를 걸고
+      // 두 번 보내지 못하게 막는다. 오래 걸리는 링크(data-busy-link — 기준 질문 평가 등)도 같은 모양.
+      // 뒤로 가기(bfcache)로 돌아오면 원래대로 되돌린다.
+      const BUSY = 'aria-busy';
+      document.addEventListener('submit', (e) => {
+        const form = e.target as HTMLFormElement;
+        if (form.dataset.busy) {
+          e.preventDefault();
+          return;
+        }
+        form.dataset.busy = '1';
+        const button = (e.submitter ?? form.querySelector('button')) as HTMLButtonElement | null;
+        if (!button) return;
+        button.setAttribute(BUSY, 'true');
+        // 바로 disabled를 걸면 일부 브라우저에서 전송이 취소된다 — 다음 틱에
+        setTimeout(() => (button.disabled = true));
+      });
+      document.addEventListener('click', (e) => {
+        const link = (e.target as Element | null)?.closest<HTMLAnchorElement>('a[data-busy-link]');
+        if (!link || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (link.getAttribute(BUSY) === 'true') {
+          e.preventDefault();
+          return;
+        }
+        link.setAttribute(BUSY, 'true');
+        link.setAttribute('aria-disabled', 'true');
+      });
+      window.addEventListener('pageshow', (e) => {
+        if (!e.persisted) return;
+        for (const el of document.querySelectorAll(`[${BUSY}="true"]`)) {
+          el.removeAttribute(BUSY);
+          el.removeAttribute('aria-disabled');
+          if (el instanceof HTMLButtonElement) el.disabled = false;
+        }
+        for (const form of document.querySelectorAll<HTMLFormElement>('form[data-busy]')) delete form.dataset.busy;
+      });
+    </script>
   </body>
 </html>

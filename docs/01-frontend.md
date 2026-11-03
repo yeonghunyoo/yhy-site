@@ -76,8 +76,17 @@ src/
 
 - 모바일: 하단 시트(bottom sheet), 데스크톱: 중앙 모달
 - 키보드가 올라오면 입력창은 하단 고정, 메시지·본문 영역만 스크롤 (`visualViewport` API로 높이 보정)
+  - 챗 독(11/03): 모바일 풀스크린 패널을 `visualViewport`의 높이와 `offsetTop`에 맞춘다(iOS Safari는 키보드가 떠도 레이아웃 뷰포트를 줄이지 않고 화면을 밀어 올린다 — 높이만 맞추면 패널 아래가 비어 보인다). 열려 있는 동안 `body`를 `position: fixed`로 고정해 배경이 스크롤되지 않게 하고 닫을 때 위치를 되돌린다. 키보드가 떠 있으면 아래쪽 safe-area 여백을 뺀다. 뷰포트 메타에 `interactive-widget=resizes-content`(Chrome Android가 키보드만큼 레이아웃을 줄이게)
 - 시트 열릴 때 배경 스크롤 잠금, 드래그 다운으로 닫기
 - 폼 입력은 `inputmode`·`autocomplete` 지정 (이메일: `inputmode="email" autocomplete="email"`)
+
+**로딩 상태 (11/03)**
+
+- 비동기 동작을 시작하는 버튼은 진행 중에 `disabled` + `aria-busy="true"`. `global.css`가 글자를 숨겨 폭을 유지하고 가운데에 스피너를 그린다(버튼·메뉴 항목 공통). 실패하면 둘 다 풀어 다시 누를 수 있게 한다
+- 하이드레이트 전 첫 클릭(`client:demand`)은 아일랜드 DOM을 건드리지 않고 `<html data-ui-pending="동작">`으로 같은 스피너를 낸다(React 받는 동안)
+- 어드민의 일반 폼·오래 걸리는 링크(`data-busy-link`)는 `AdminLayout`의 스크립트가 같은 `aria-busy`를 건다. 두 번 전송을 막고, 뒤로 가기(bfcache)로 돌아오면 되돌린다
+- 챗 답변 대기는 말풍선 안에 daisyUI `loading-dots` + "답을 찾는 중", 그동안 입력칸은 읽기 전용, 보내기 버튼은 스피너
+- 움직임 줄이기(`prefers-reduced-motion`)에서는 스피너를 멈추지 않고 느리게만 돌린다
 
 **타이포·가독성**
 

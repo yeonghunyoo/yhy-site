@@ -21,41 +21,42 @@ const errorCallbackURL = () => `${location.pathname}?auth_error=1`;
 export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState(false);
+  // 진행 중인 동작(버튼마다 스피너). null이면 대기
+  const [busy, setBusy] = useState<'link' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setSent(false);
-    setBusy(false);
+    setBusy(null);
     setError(notice);
   }, [open, notice]);
 
   async function sendLink(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!EMAIL_RE.test(email.trim())) return setError(dict.auth.invalidEmail);
-    setBusy(true);
+    setBusy('link');
     setError(null);
     const { error } = await authClient.signIn.magicLink({
       email: email.trim(),
       callbackURL: callbackURL(),
       errorCallbackURL: errorCallbackURL(),
     });
-    setBusy(false);
+    setBusy(null);
     if (!error) return setSent(true);
     setError(error.status === 429 ? dict.auth.rateLimited : dict.ui.error);
   }
 
   async function google() {
-    setBusy(true);
+    setBusy('google');
     setError(null);
     const { error } = await authClient.signIn.social({
       provider: 'google',
       callbackURL: callbackURL(),
       errorCallbackURL: errorCallbackURL(),
     });
-    if (!error) return; // Google로 이동
-    setBusy(false);
+    if (!error) return; // Google로 이동(이동할 때까지 스피너 유지)
+    setBusy(null);
     setError(error.status === 404 ? dict.auth.googleUnavailable : dict.ui.error);
   }
 
@@ -94,15 +95,15 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <button type="submit" className="btn btn-primary mt-4 w-full" disabled={busy || !email.trim()}>
-            {busy ? dict.ui.sending : dict.auth.sendLink}
+          <button type="submit" className="btn btn-primary mt-4 w-full" disabled={busy !== null || !email.trim()} aria-busy={busy === 'link'}>
+            {dict.auth.sendLink}
           </button>
           <div className="my-5 flex items-center gap-3 text-sm text-muted" aria-hidden="true">
             <span className="h-px flex-1 bg-border" />
             {dict.auth.or}
             <span className="h-px flex-1 bg-border" />
           </div>
-          <button type="button" className="btn w-full" onClick={google} disabled={busy}>
+          <button type="button" className="btn w-full" onClick={google} disabled={busy !== null} aria-busy={busy === 'google'}>
             {dict.auth.google}
           </button>
           <p className="mt-5 text-xs text-muted">

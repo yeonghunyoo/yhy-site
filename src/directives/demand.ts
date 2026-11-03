@@ -7,6 +7,8 @@ import type { ClientDirective } from 'astro';
 declare global {
   interface Window {
     __uiPending?: string;
+    /** 첫 클릭으로 시작해 아직 하이드레이트 중인 아일랜드 수(로딩 표시를 언제 끌지) */
+    __uiHydrating?: number;
     __sessionCheck?: Promise<boolean>;
   }
 }
@@ -30,8 +32,15 @@ const demand: ClientDirective = (load) => {
     if (started) return;
     started = true;
     document.removeEventListener('click', onClick, true);
-    const hydrate = await load();
-    await hydrate();
+    window.__uiHydrating = (window.__uiHydrating ?? 0) + 1;
+    try {
+      const hydrate = await load();
+      await hydrate();
+    } finally {
+      // 누른 버튼의 로딩 표시(global.css의 html[data-ui-pending]) — 같은 클릭으로 시작한 아일랜드가 모두 끝나면 끈다
+      window.__uiHydrating -= 1;
+      if (window.__uiHydrating === 0) delete document.documentElement.dataset.uiPending;
+    }
   };
 
   function onClick(e: MouseEvent) {
@@ -39,6 +48,8 @@ const demand: ClientDirective = (load) => {
     if (!action || !ACTIONS.has(action)) return;
     e.preventDefault();
     window.__uiPending = action;
+    // React를 받는 동안(느린 회선에서는 수 초) 누른 버튼에 스피너. 아일랜드의 DOM은 건드리지 않는다(하이드레이션 불일치 방지)
+    document.documentElement.dataset.uiPending = action;
     void start();
   }
 

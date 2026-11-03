@@ -11,6 +11,7 @@ interface Props {
 export default function AuthMenu({ dict }: Props) {
   const { data } = authClient.useSession();
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,9 +41,14 @@ export default function AuthMenu({ dict }: Props) {
   const { email, name } = data.user;
   const initial = (name?.trim() || email).charAt(0).toUpperCase();
 
+  // 로그아웃이 끝날 때까지 메뉴를 열어 둔 채 항목에 스피너. 실패하면 다시 누를 수 있게 되돌린다.
   async function signOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    const { error } = await authClient.signOut().catch(() => ({ error: true }));
+    setSigningOut(false);
+    if (error) return showToast(dict.ui.error);
     setOpen(false);
-    await authClient.signOut();
     showToast(dict.toast.signedOut);
   }
 
@@ -80,6 +86,8 @@ export default function AuthMenu({ dict }: Props) {
             role="menuitem"
             className="flex min-h-11 w-full items-center rounded-[calc(var(--radius)-4px)] px-3 text-left hover:bg-bg"
             onClick={signOut}
+            disabled={signingOut}
+            aria-busy={signingOut}
           >
             {dict.menu.signOut}
           </button>

@@ -108,10 +108,14 @@
     "letter": "Send a letter",
     "login": "Sign in",
     "sources": {
+      "label": "Sources",
+      "resume": "Resume",
+      "faq": "FAQ",
       "about": "About",
       "stack": "Stack",
       "project": "Project"
     },
+    "thinking": "Thinking",
     "notice": "An AI answers from this site's documents. Questions are logged; answers are not stored."
   }
 }

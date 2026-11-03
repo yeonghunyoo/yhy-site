@@ -96,8 +96,8 @@ export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnau
       closeLabel={dict.ui.close}
       footer={
         <>
-          <button type="submit" form="letter-form" className="btn btn-primary w-full" disabled={!ready || busy}>
-            {busy ? dict.ui.sending : dict.letter.submit}
+          <button type="submit" form="letter-form" className="btn btn-primary w-full" disabled={!ready || busy} aria-busy={busy}>
+            {dict.letter.submit}
           </button>
           <p className="mt-2 text-center text-xs text-muted">
             {dict.letter.notice}{' '}
