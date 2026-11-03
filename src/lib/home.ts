@@ -1,6 +1,6 @@
 // 홈 연출(docs/01-frontend.md "홈"): 숫자 0부터 올리기, 밑줄·막대 채우기, 프로젝트 펼치기, 경력 라벨 배치,
 // 글자로 그린 이름(포인터 둘레 밀어내기), 소개 문단 흐르기(Pretext, 지연 로드). React 없이 이 파일 하나.
-import { holdDrag } from './hold-drag';
+import { tapPeek } from './tap-peek';
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const html = document.documentElement;
@@ -215,7 +215,7 @@ function setupAscii(root: HTMLElement) {
   const off = () => { pushTo.r = 0; kick(); };
   pre.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') at(e.clientX, e.clientY); });
   pre.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') off(); });
-  holdDrag(pre, { start: at, move: at, end: off });
+  tapPeek(pre, { start: at, end: off });
 
   build();
   let width = box.clientWidth, timer = 0;
@@ -331,9 +331,8 @@ function setupFlow(root: HTMLElement) {
   box.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; inside = true; open(local(e.clientX, e.clientY)); });
   box.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') mover?.(local(e.clientX, e.clientY)); });
   box.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'mouse') return; inside = false; closer?.(); });
-  holdDrag(box, {
+  tapPeek(box, {
     start: (x, y) => { clearTimeout(hideT); inside = true; open(local(x, y)); },
-    move: (x, y) => mover?.(local(x, y)),
     end: () => { clearTimeout(hideT); hideT = window.setTimeout(() => { inside = false; closer?.(); }, 500); },
   });
 }
