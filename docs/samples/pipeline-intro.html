@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 소개용 정적 샘플(예시 수치). 설계: docs/05-06-chat-rag.md "과정 보기". 사이트 빌드에 포함되지 않는다 -->
+<title>RAG 블록 놀이터</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 글자와 숫자만. 질문 하나가 단계별로 내려가며 숫자가 채워지는 기록. 잉크 + 파랑(진행) + 분홍(멈춤). 한 가지 룩으로 고정 */
+:root {
+  --paper: #f4f4f1;
+  --ink: #141414;
+  --soft: #55554f;
+  --quiet: #9a9a94;
+  --rule: #d9d9d3;
+  --blue: #1d2be3;
+  --pink: #e8338a;
+  --display: "Black Han Sans", "Apple SD Gothic Neo", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--paper); color: var(--ink); }
+body { margin: 0; font-family: var(--body); font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+.page { max-width: 1040px; margin: 0 auto; padding-block: clamp(32px, 7vw, 80px) 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: clamp(44px, 7vw, 72px); }
+.mono { font-family: var(--mono); font-size: 12px; color: var(--quiet); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* 머리 */
+.top { display: grid; gap: 22px; }
+@media (min-width: 820px) { .top { grid-template-columns: minmax(0, 1fr) auto; align-items: end; } }
+h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(36px, 7vw, 76px); line-height: 1.02; text-wrap: balance; }
+h1 .q { color: var(--quiet); }
+.total { text-align: left; }
+@media (min-width: 820px) { .total { text-align: right; } }
+.total b { display: block; font-family: var(--mono); font-weight: 500; font-size: clamp(52px, 10vw, 104px); line-height: .95; letter-spacing: -0.04em; color: var(--blue); }
+.total span { font-family: var(--mono); font-size: 12px; color: var(--quiet); }
+
+/* 질문 고르기 */
+.asks { display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.ask { font: inherit; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 12px 0; min-height: 52px; color: var(--quiet); cursor: pointer; font-size: clamp(17px, 2.2vw, 20px); }
+.ask .i { font-family: var(--mono); font-size: 12px; }
+.ask .route { font-family: var(--mono); font-size: 12px; }
+.ask[aria-pressed="true"] { color: var(--ink); }
+.ask[aria-pressed="true"] .i, .ask[aria-pressed="true"] .route { color: var(--blue); }
+.ask:focus-visible, .replay:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.replay { justify-self: start; font-family: var(--mono); font-size: 13px; background: none; border: 0; padding: 10px 0; min-height: 44px; color: var(--blue); cursor: pointer; text-decoration: underline; text-underline-offset: 5px; }
+.replay:disabled { color: var(--quiet); }
+
+/* 단계 기록 */
+.steps { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 6px 14px; padding: 16px 0 18px; border-bottom: 1px solid var(--rule); transition: opacity .25s; }
+@media (min-width: 820px) { .step { grid-template-columns: 44px 180px minmax(0, 1fr) 140px; align-items: baseline; } }
+.step .n { font-family: var(--mono); font-size: 12px; color: var(--quiet); padding-top: 4px; }
+.step .name { font-family: var(--display); font-size: 24px; line-height: 1.15; }
+.step .name small { display: block; font-family: var(--mono); font-size: 11px; color: var(--quiet); font-weight: 400; margin-top: 4px; }
+.step .what { grid-column: 2; color: var(--soft); font-size: 15px; min-width: 0; }
+.step .what .facts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+.step .what .facts i { font-style: normal; color: var(--quiet); }
+.step .what .facts .cfg::after { content: "설정"; margin-left: 4px; font-size: 10px; color: var(--quiet); vertical-align: 2px; }
+.step .t { grid-column: 2; font-family: var(--mono); font-size: 22px; color: var(--quiet); font-variant-numeric: tabular-nums; }
+@media (min-width: 820px) { .step .what, .step .t { grid-column: auto; } .step .t { text-align: right; } }
+.step.wait { opacity: .28; }
+.step.now .name, .step.now .t { color: var(--blue); }
+.step.done .t { color: var(--ink); }
+.step.skip .name { color: var(--quiet); text-decoration: line-through; text-decoration-thickness: 2px; }
+.step.skip .t { color: var(--quiet); }
+.step.stop .name, .step.stop .t { color: var(--pink); }
+.bar { display: block; height: 2px; background: var(--rule); margin-top: 10px; position: relative; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); width: 0; transition: width .5s ease-out; }
+.bar u { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ink); }
+.bar u::after { content: attr(data-l); position: absolute; top: 10px; left: -14px; font-family: var(--mono); font-size: 10px; color: var(--quiet); text-decoration: none; white-space: nowrap; }
+.step.stop .bar i { background: var(--pink); }
+
+/* 답 */
+.answer-wrap { display: grid; gap: 14px; }
+@media (min-width: 820px) { .answer-wrap { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 56px; } }
+.answer { font-size: clamp(20px, 2.6vw, 26px); line-height: 1.5; min-height: 4.5em; white-space: pre-wrap; }
+.answer.empty { color: var(--quiet); }
+.sums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; align-content: start; }
+.sum b { display: block; font-family: var(--mono); font-weight: 500; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sum span { font-family: var(--mono); font-size: 11px; color: var(--quiet); }
+.src { margin-top: 12px; font-family: var(--mono); font-size: 12px; color: var(--quiet); }
+
+/* 한도 */
+.limits h2, .answer-wrap h2 { margin: 0 0 14px; font-family: var(--mono); font-weight: 500; font-size: 13px; }
+.lim { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 22px 18px; border-top: 1px solid var(--rule); padding-top: 18px; }
+.lim b { display: block; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 4.4vw, 42px); line-height: 1; }
+.lim span { display: block; margin-top: 6px; font-size: 13px; color: var(--soft); }
+.foot { margin: 0; max-width: 70ch; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+</style>
+
+<main class="page">
+  <section class="top">
+    <div>
+      <div class="mono">이 사이트 챗의 실제 파이프라인 · 시뮬레이션</div>
+      <h1>질문 하나가<br><span class="q">답이 되기까지</span></h1>
+    </div>
+    <div class="total"><b id="total" class="num">0.00s</b><span id="totalNote">질문을 고르면 단계별로 재생합니다</span></div>
+  </section>
+
+  <section>
+    <div class="asks" id="asks"></div>
+    <button class="replay" id="replay" type="button">다시 재생 ↻</button>
+  </section>
+
+  <ol class="steps" id="steps"></ol>
+
+  <section class="answer-wrap">
+    <div>
+      <h2>답</h2>
+      <div class="answer empty" id="answer">재생이 끝나면 여기에 답이 써집니다.</div>
+      <div class="src" id="src"></div>
+    </div>
+    <div>
+      <h2>이번 질문</h2>
+      <div class="sums" id="sums"></div>
+    </div>
+  </section>
+
+  <section class="limits">
+    <h2>한도 · 설정값</h2>
+    <ul class="lim">
+      <li><b class="num">3</b><span>비로그인 하루 질문</span></li>
+      <li><b class="num">30</b><span>로그인 하루 질문</span></li>
+      <li><b class="num">500</b><span>사이트 전체 하루 턴</span></li>
+      <li><b class="num">8,000</b><span>Workers AI 하루 뉴런</span></li>
+      <li><b class="num">2M</b><span>한 달 토큰 상한</span></li>
+      <li><b class="num">500</b><span>질문 최대 글자</span></li>
+    </ul>
+  </section>
+
+  <p class="mono foot">“설정” 표시와 아래 한도는 레포의 실제 값입니다(chat.ts · rag.ts · usage-math.ts · agents/*). 소요 시간, 점수, 토큰 수는 한 번 돌렸을 때의 예시이고 실제 API는 부르지 않습니다.</p>
+</main>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sleep = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const fmt = n => n.toLocaleString('en-US');
+
+  /* 질문별 실행 기록(예시). cfg: 레포 설정값 */
+  const RUNS = [
+    {
+      q: '이 사이트 챗은 어떻게 동작해?', route: 'diagram',
+      steps: [
+        { key: 'judge', ms: 620, facts: [['경로', 'diagram'], ['후보 경로', '5', 1], ['출력 상한', '160 tok', 1]], what: '슈퍼바이저가 구조를 묻는 질문으로 보고 흐름도 경로를 고릅니다.' },
+        { key: 'embed', ms: 90, facts: [['모델', 'bge-m3'], ['질문', '18자']], what: '질문을 벡터로 바꿉니다.' },
+        { key: 'search', ms: 240, score: .58, facts: [['키워드 후보', '24', 1], ['벡터 후보', '24', 1], ['RRF k', '60', 1], ['남긴 섹션', '6', 1]], what: '키워드와 벡터 두 갈래로 찾고 순위를 합칩니다.' },
+        { key: 'diagram', ms: 540, facts: [['노드', '6 / 14'], ['연결', '5 / 20'], ['출력 상한', '900 tok', 1]], what: '문서에 적힌 순서대로 흐름도를 그립니다.' },
+        { key: 'gen', ms: 1580, facts: [['모델', 'gemma-4-26b'], ['입력', '2,140 tok'], ['출력', '186 / 400 tok']], what: '근거 섹션만 보고 답을 씁니다.' },
+      ],
+      answer: '질문이 들어오면 슈퍼바이저가 경로를 고르고, 키워드·벡터 검색으로 사이트 문서에서 근거를 모은 뒤 Workers AI가 답을 씁니다. 구조를 묻는 질문이면 흐름도를 함께 그립니다.',
+      sources: ['site-architecture', 'stack'], tokens: 2326,
+    },
+    {
+      q: '배포는 어떻게 해?', route: 'portfolio',
+      steps: [
+        { key: 'judge', ms: 580, facts: [['경로', 'portfolio'], ['후보 경로', '5', 1], ['출력 상한', '160 tok', 1]], what: '포트폴리오 질문으로 보고 검색 질문을 만듭니다.' },
+        { key: 'embed', ms: 80, facts: [['모델', 'bge-m3'], ['질문', '11자']], what: '질문을 벡터로 바꿉니다.' },
+        { key: 'search', ms: 210, score: .55, facts: [['키워드 후보', '24', 1], ['벡터 후보', '24', 1], ['RRF k', '60', 1], ['남긴 섹션', '6', 1]], what: '“배포”가 그대로 적힌 섹션이 키워드에서 1위로 올라옵니다.' },
+        { key: 'diagram', skip: '구조 질문이 아니라 건너뜀' },
+        { key: 'gen', ms: 1120, facts: [['모델', 'gemma-4-26b'], ['입력', '1,860 tok'], ['출력', '64 / 400 tok']], what: '사실 하나라 1~2문장으로 짧게 씁니다.' },
+      ],
+      answer: 'GitHub에 푸시해도 배포되지 않습니다. 로컬에서 pnpm run deploy로만 운영에 올립니다.',
+      sources: ['site-architecture'], tokens: 1924,
+    },
+    {
+      q: '연봉은 얼마였어?', route: 'portfolio',
+      steps: [
+        { key: 'judge', ms: 600, facts: [['경로', 'portfolio'], ['후보 경로', '5', 1], ['출력 상한', '160 tok', 1]], what: '포트폴리오 질문처럼 보여 검색으로 보냅니다.' },
+        { key: 'embed', ms: 85, facts: [['모델', 'bge-m3'], ['질문', '9자']], what: '질문을 벡터로 바꿉니다.' },
+        { key: 'search', ms: 190, score: .36, stop: true, facts: [['키워드 후보', '0'], ['벡터 최고점', '0.36'], ['통과선', '0.42', 1]], what: '가장 가까운 문서도 통과선 아래라 범위 밖으로 판정합니다.' },
+        { key: 'diagram', skip: '멈춤' },
+        { key: 'gen', skip: '모델을 부르지 않음 — 토큰 0' },
+      ],
+      answer: '문서에 없는 내용이라 답할 수 없습니다. 궁금한 점은 레터로 직접 물어봐 주세요.',
+      sources: [], tokens: 0,
+    },
+  ];
+  const META = {
+    judge: ['판단', '슈퍼바이저 · Workers AI'],
+    embed: ['임베딩', 'Workers AI'],
+    search: ['검색', 'D1 키워드 + Vectorize'],
+    diagram: ['흐름도', '흐름도 에이전트'],
+    gen: ['생성', 'Workers AI'],
+  };
+
+  const asksEl = document.getElementById('asks'), stepsEl = document.getElementById('steps');
+  const totalEl = document.getElementById('total'), totalNote = document.getElementById('totalNote');
+  const answerEl = document.getElementById('answer'), srcEl = document.getElementById('src'), sumsEl = document.getElementById('sums');
+  const replayBtn = document.getElementById('replay');
+  let current = RUNS[0], token = 0;
+
+  RUNS.forEach((r, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ask';
+    b.innerHTML = `<span class="i">0${i + 1}</span><span>${r.q}</span><span class="route">${r.route}</span>`;
+    b.onclick = () => { current = r; mark(); play(); };
+    asksEl.append(b);
+  });
+  const mark = () => asksEl.querySelectorAll('.ask').forEach((b, i) => b.setAttribute('aria-pressed', String(RUNS[i] === current)));
+
+  function build(run) {
+    stepsEl.innerHTML = '';
+    run.steps.forEach((s, i) => {
+      const [name, by] = META[s.key];
+      const li = document.createElement('li'); li.className = 'step wait'; li.dataset.i = i;
+      const facts = (s.facts || []).map(([k, v, cfg]) => `<span><i>${k}</i> <span class="${cfg ? 'cfg' : ''}">${v}</span></span>`).join('');
+      const bar = s.score != null ? `<span class="bar"><i></i><u data-l="0.42" style="left:${0.42 * 100}%"></u></span>` : '';
+      li.innerHTML = `<span class="n">0${i + 1}</span><span class="name">${name}<small>${by}</small></span>`
+        + `<span class="what">${s.skip ? s.skip : s.what}${s.skip ? '' : `<span class="facts">${facts}</span>`}${bar}</span>`
+        + `<span class="t num">${s.skip ? '—' : '0.00s'}</span>`;
+      stepsEl.append(li);
+    });
+  }
+
+  async function count(el, to, ms, suffix = 's', digits = 2, my) {
+    const t0 = performance.now();
+    while (true) {
+      if (my !== token) return;
+      const p = reduce ? 1 : Math.min(1, (performance.now() - t0) / ms);
+      el.textContent = (to * p).toFixed(digits) + suffix;
+      if (p >= 1) return;
+      await new Promise(r => requestAnimationFrame(r));
+    }
+  }
+
+  async function typeOut(text, my) {
+    answerEl.classList.remove('empty'); answerEl.textContent = '';
+    for (const ch of text) { if (my !== token) return; answerEl.textContent += ch; await sleep(14); }
+  }
+
+  function sums(run, total) {
+    const docs = run.steps.find(s => s.key === 'search');
+    const items = [
+      [total.toFixed(2) + 's', '전체 시간'],
+      [fmt(run.tokens), '토큰'],
+      [String(run.sources.length), '출처 문서'],
+      [docs?.score != null ? docs.score.toFixed(2) : '—', '벡터 최고점 (통과 0.42)'],
+    ];
+    sumsEl.innerHTML = items.map(([b, s]) => `<div class="sum"><b>${b}</b><span>${s}</span></div>`).join('');
+  }
+
+  async function play() {
+    const my = ++token, run = current;
+    replayBtn.disabled = true;
+    build(run);
+    answerEl.textContent = '…'; answerEl.classList.add('empty'); srcEl.textContent = ''; sumsEl.innerHTML = '';
+    totalEl.textContent = '0.00s'; totalNote.textContent = `“${run.q}”`;
+    let total = 0, stopped = false;
+    for (const [i, s] of run.steps.entries()) {
+      if (my !== token) return;
+      const li = stepsEl.children[i];
+      li.classList.remove('wait');
+      if (stopped || s.skip) { li.classList.add('skip'); await sleep(160); continue; }
+      li.classList.add('now');
+      const bar = li.querySelector('.bar i');
+      if (bar) requestAnimationFrame(() => { bar.style.width = (s.score * 100) + '%'; });
+      const tEl = li.querySelector('.t');
+      const start = total;
+      await Promise.all([
+        count(tEl, s.ms / 1000, Math.min(900, s.ms), 's', 2, my),
+        (async () => { const t0 = performance.now(); while (my === token) { const p = reduce ? 1 : Math.min(1, (performance.now() - t0) / Math.min(900, s.ms)); totalEl.textContent = (start + s.ms / 1000 * p).toFixed(2) + 's'; if (p >= 1) break; await new Promise(r => requestAnimationFrame(r)); } })(),
+      ]);
+      if (my !== token) return;
+      total += s.ms / 1000;
+      li.classList.remove('now'); li.classList.add(s.stop ? 'stop' : 'done');
+      if (s.stop) stopped = true;
+      await sleep(120);
+    }
+    totalNote.textContent = stopped ? '범위 밖 — 모델을 부르지 않고 끝남' : `“${run.q}”`;
+    sums(run, total);
+    await typeOut(run.answer, my);
+    if (my !== token) return;
+    srcEl.textContent = run.sources.length ? '출처  ' + run.sources.join(' · ') : '출처 없음 · 레터 안내로 대신함';
+    replayBtn.disabled = false;
+  }
+
+  replayBtn.onclick = play;
+  mark();
+  build(current);
+  play();
+})();
+</script>
+</head></html>
