@@ -12,21 +12,32 @@ interface LockState {
 /**
  * 잠긴 동안의 터치 스크롤 막기. iOS는 body를 고정해도 키보드가 떠 있으면 보이는 영역(visualViewport)을 손가락으로
  * 밀 수 있어, 챗·시트 아래로 뒤 페이지가 드러난다. `data-scroll-allow` 안에서 실제로 스크롤할 수 있는 방향만 허용하고
- * 나머지 touchmove는 막는다(docs/guides/browser-support.md).
+ * (겹쳐 있으면 바깥 허용 영역까지 본다) 나머지 touchmove는 막는다(docs/guides/browser-support.md).
  */
+let startX = 0;
 let startY = 0;
 const onTouchStart = (e: TouchEvent) => {
+  startX = e.touches[0]?.clientX ?? 0;
   startY = e.touches[0]?.clientY ?? 0;
 };
+/** 끄는 방향으로 실제로 더 스크롤할 수 있는지(dx·dy 양수 = 오른쪽·아래로 끌기 = 왼쪽·위로 스크롤) */
+function canScroll(box: HTMLElement, dx: number, dy: number): boolean {
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (box.scrollWidth <= box.clientWidth) return false;
+    return dx > 0 ? box.scrollLeft > 0 : box.scrollLeft + box.clientWidth < box.scrollWidth - 1;
+  }
+  if (box.scrollHeight <= box.clientHeight) return false;
+  return dy > 0 ? box.scrollTop > 0 : box.scrollTop + box.clientHeight < box.scrollHeight - 1;
+}
 const onTouchMove = (e: TouchEvent) => {
   if (e.touches.length > 1) return; // 핀치 확대는 그대로
-  const box = (e.target as Element | null)?.closest?.<HTMLElement>('[data-scroll-allow]');
-  if (box) {
-    const dy = (e.touches[0]?.clientY ?? 0) - startY; // 양수 = 아래로 끌기(위로 스크롤)
-    const atTop = box.scrollTop <= 0;
-    const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 1;
-    const scrollable = box.scrollHeight > box.clientHeight;
-    if (scrollable && !(dy > 0 && atTop) && !(dy < 0 && atBottom)) return;
+  const dx = (e.touches[0]?.clientX ?? 0) - startX;
+  const dy = (e.touches[0]?.clientY ?? 0) - startY;
+  // 허용 영역이 겹쳐 있으면(목록 안의 가로 스크롤 상자 등) 바깥으로 올라가며 그 방향으로 스크롤할 수 있는 곳을 찾는다
+  let box = (e.target as Element | null)?.closest?.<HTMLElement>('[data-scroll-allow]');
+  while (box) {
+    if (canScroll(box, dx, dy)) return;
+    box = box.parentElement?.closest<HTMLElement>('[data-scroll-allow]');
   }
   if (e.cancelable) e.preventDefault();
 };

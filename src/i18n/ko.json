@@ -131,7 +131,9 @@
       "title": "흐름도",
       "expand": "크게 보기",
       "close": "닫기",
-      "connections": "연결 목록"
+      "connections": "연결 목록",
+      "hint": "두 손가락으로 확대 · 두 번 탭하면 맞춤",
+      "fit": "화면에 맞추기"
     }
   }
 }

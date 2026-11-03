@@ -1,4 +1,5 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { Diagram } from '../../../lib/diagram';
 import { layout, type Layout } from './layout';
 
@@ -7,7 +8,7 @@ import { layout, type Layout } from './layout';
 
 interface Props {
   diagram: Diagram;
-  labels: { title: string; expand: string; close: string; connections: string };
+  labels: { title: string; expand: string; close: string; connections: string; hint: string; fit: string };
 }
 
 const GROUP_STYLES = [
@@ -17,7 +18,9 @@ const GROUP_STYLES = [
   'fill-accent/10 stroke-accent stroke-2',
 ];
 
-const MIN_SCALE = 0.7; // 글자가 약 9px 아래로 작아지지 않게. 더 넓으면 가로 스크롤(가운데에서 시작) + 크게 보기
+// 미리보기는 칸 폭과 이 높이 안에 전체가 들어가게 줄인다(스크롤 없음 — 목록 스크롤을 가로채지 않게). 자세히는 크게 보기에서 확대
+const PREVIEW_MAX_H = 320;
+const MAX_ZOOM = 4; // 크게 보기: 원래 크기의 4배까지
 
 function Svg({ data, groups, width, label }: { data: Layout; groups: Map<string, number>; width: number; label: string }) {
   const marker = `arrow-${useId().replace(/:/g, '')}`;
@@ -82,7 +85,7 @@ export default function DiagramView({ diagram, labels }: Props) {
   const connections = diagram.edges.map((e) => `${names.get(e.from)} → ${names.get(e.to)}${e.label ? ` (${e.label})` : ''}`);
   const label = `${labels.title}: ${connections.join(', ') || diagram.nodes.map((n) => n.label).join(', ')}`;
 
-  // 칸 폭(테두리 안쪽 여백 8px 제외)에 맞춘다. 70%보다 작아져야 하면 70%로 두고 자기 상자 안에서 가로로 스크롤한다
+  // 칸 폭(테두리 안쪽 여백 8px 제외)과 최대 높이 안에 전체가 들어가게 맞춘다. 원래 크기보다 키우지는 않는다
   const boxRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState(0);
   useLayoutEffect(() => {
@@ -94,12 +97,7 @@ export default function DiagramView({ diagram, labels }: Props) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const width = box ? Math.max(data.width * MIN_SCALE, Math.min(data.width, box)) : data.width;
-  // 넓어서 스크롤이 생기면 가운데에서 시작한다 — 흐름도는 가운데 정렬이라 줄기와 갈래 가운데가 먼저 보인다
-  useLayoutEffect(() => {
-    const el = boxRef.current;
-    if (el && el.scrollWidth > el.clientWidth) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-  }, [width]);
+  const width = Math.min(data.width, box || data.width, (PREVIEW_MAX_H * data.width) / data.height);
   const [zoom, setZoom] = useState(false);
   // 크게 보기는 Esc로 닫는다(챗 독은 aria-modal이 떠 있으면 Esc로 닫히지 않는다)
   useEffect(() => {
@@ -111,8 +109,11 @@ export default function DiagramView({ diagram, labels }: Props) {
 
   return (
     <figure className="mt-2">
-      <div ref={boxRef} data-scroll-allow className="overflow-x-auto overscroll-contain rounded-[var(--radius)] border border-border bg-bg p-1">
-        <Svg data={data} groups={groups} width={width} label={label} />
+      {/* 눌러도 크게 보기가 열린다. 스크롤 상자가 아니라 세로로 끌면 챗 목록이 스크롤된다 */}
+      <div ref={boxRef} className="rounded-[var(--radius)] border border-border bg-bg p-1">
+        <button type="button" className="flex w-full cursor-zoom-in justify-center" aria-label={`${labels.expand}: ${labels.title}`} onClick={() => setZoom(true)}>
+          <Svg data={data} groups={groups} width={width} label={label} />
+        </button>
       </div>
       <figcaption className="mt-1 flex items-center justify-between gap-2 text-xs text-muted">
         <span>{labels.title}</span>
@@ -125,19 +126,176 @@ export default function DiagramView({ diagram, labels }: Props) {
           <li key={c}>{c}</li>
         ))}
       </ul>
-      {zoom && (
-        <div role="dialog" aria-modal="true" aria-label={labels.title} className="fixed inset-0 z-[60] flex flex-col bg-surface">
-          <div className="flex shrink-0 items-center justify-between border-b border-border pt-[env(safe-area-inset-top)] pr-2 pl-4">
-            <span className="font-semibold">{labels.title}</span>
-            <button type="button" className="grid size-11 place-items-center text-xl" aria-label={labels.close} onClick={() => setZoom(false)}>
-              ×
-            </button>
-          </div>
-          <div data-scroll-allow className="min-h-0 flex-1 overflow-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <Svg data={data} groups={groups} width={data.width} label={label} />
-          </div>
-        </div>
-      )}
+      {zoom &&
+        // 챗 패널은 transform으로 움직여 fixed가 패널 안에 갇힌다 — body로 꺼내 화면 전체를 쓴다
+        createPortal(
+          <div role="dialog" aria-modal="true" aria-label={labels.title} className="fixed inset-0 z-[60] flex h-dvh flex-col bg-surface">
+            <div className="flex shrink-0 items-center justify-between border-b border-border pt-[env(safe-area-inset-top)] pr-2 pl-4">
+              <span className="font-semibold">{labels.title}</span>
+              <button type="button" autoFocus className="grid size-11 place-items-center text-xl" aria-label={labels.close} onClick={() => setZoom(false)}>
+                ×
+              </button>
+            </div>
+            <PanZoom data={data} fitLabel={labels.fit}>
+              <Svg data={data} groups={groups} width={data.width} label={label} />
+            </PanZoom>
+            <p className="shrink-0 border-t border-border px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-xs text-muted">{labels.hint}</p>
+          </div>,
+          document.body,
+        )}
     </figure>
+  );
+}
+
+/**
+ * 크게 보기의 확대·이동. 처음엔 화면에 전체가 들어가게 맞추고, 두 손가락 핀치·한 손가락 끌기·두 번 탭(맞춤 ↔ 2.5배)·
+ * 휠(데스크톱)·+/−/0 키로 움직인다. 확대는 CSS scale이 아니라 SVG 크기를 바꿔 글자가 흐려지지 않게 하고,
+ * 값은 프레임마다 DOM에 바로 쓴다(상태로 받으면 손가락을 늦게 따라간다). 브라우저 확대는 touch-none으로 막는다.
+ */
+function PanZoom({ data, fitLabel, children }: { data: Layout; fitLabel: string; children: ReactNode }) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const view = useRef({ s: 1, x: 0, y: 0, fit: 1 });
+  const fitRef = useRef<() => void>(() => {});
+
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const inner = innerRef.current;
+    const svg = inner?.querySelector('svg');
+    if (!box || !inner || !svg) return;
+    const v = view.current;
+    const size = () => ({ w: box.clientWidth, h: box.clientHeight });
+
+    const clamp = () => {
+      const { w, h } = size();
+      const cw = data.width * v.s;
+      const ch = data.height * v.s;
+      v.x = cw <= w ? (w - cw) / 2 : Math.min(0, Math.max(w - cw, v.x));
+      v.y = ch <= h ? (h - ch) / 2 : Math.min(0, Math.max(h - ch, v.y));
+    };
+    const apply = () => {
+      clamp();
+      svg.setAttribute('width', String(data.width * v.s));
+      svg.setAttribute('height', String(data.height * v.s));
+      inner.style.transform = `translate3d(${v.x}px, ${v.y}px, 0)`;
+    };
+    const minS = () => Math.min(v.fit, 1);
+    const maxS = () => Math.max(v.fit, MAX_ZOOM);
+    /** (px, py) 지점을 고정한 채로 배율을 s로 */
+    const zoomAt = (s: number, px: number, py: number) => {
+      const ns = Math.min(maxS(), Math.max(minS(), s));
+      v.x = px - ((px - v.x) * ns) / v.s;
+      v.y = py - ((py - v.y) * ns) / v.s;
+      v.s = ns;
+      apply();
+    };
+    const fit = () => {
+      const { w, h } = size();
+      v.fit = Math.min((w - 16) / data.width, (h - 16) / data.height, 2);
+      v.s = v.fit;
+      apply();
+    };
+    fitRef.current = fit;
+    fit();
+
+    // 포인터 추적: 1개 = 이동, 2개 = 핀치(두 손가락 가운데를 고정한 채 배율 변경)
+    const pts = new Map<number, { x: number; y: number }>();
+    let pinch: { d: number; s: number; mx: number; my: number; x: number; y: number } | null = null;
+    let tap: { t: number; x: number; y: number } | null = null;
+    let moved = false;
+    const local = (e: PointerEvent) => {
+      const r = box.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+    const startPinch = () => {
+      const [a, b] = [...pts.values()];
+      pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: v.s, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: v.x, y: v.y };
+    };
+    const down = (e: PointerEvent) => {
+      if ((e.target as Element).closest('button')) return; // 맞추기 버튼
+      box.setPointerCapture(e.pointerId);
+      pts.set(e.pointerId, local(e));
+      if (pts.size === 1) moved = false;
+      if (pts.size === 2) startPinch();
+    };
+    const move = (e: PointerEvent) => {
+      const prev = pts.get(e.pointerId);
+      if (!prev) return;
+      const p = local(e);
+      pts.set(e.pointerId, p);
+      if (pts.size >= 2 && pinch) {
+        moved = true;
+        const [a, b] = [...pts.values()];
+        const ns = Math.min(maxS(), Math.max(minS(), (pinch.s * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d));
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        v.x = mx - ((pinch.mx - pinch.x) * ns) / pinch.s;
+        v.y = my - ((pinch.my - pinch.y) * ns) / pinch.s;
+        v.s = ns;
+        apply();
+      } else if (pts.size === 1) {
+        moved ||= Math.hypot(p.x - prev.x, p.y - prev.y) > 2;
+        v.x += p.x - prev.x;
+        v.y += p.y - prev.y;
+        apply();
+      }
+    };
+    const up = (e: PointerEvent) => {
+      const p = pts.get(e.pointerId);
+      pts.delete(e.pointerId);
+      if (pts.size === 2) startPinch();
+      else pinch = null;
+      if (!p || moved || pts.size > 0) return;
+      // 두 번 탭: 맞춤 상태면 그 지점을 2.5배로, 확대 상태면 다시 맞춤
+      const now = performance.now();
+      if (tap && now - tap.t < 300 && Math.hypot(p.x - tap.x, p.y - tap.y) < 30) {
+        tap = null;
+        if (v.s > v.fit * 1.05) fit();
+        else zoomAt(v.fit * 2.5, p.x, p.y);
+      } else tap = { t: now, ...p };
+    };
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = box.getBoundingClientRect();
+      zoomAt(v.s * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)), e.clientX - r.left, e.clientY - r.top);
+    };
+    const key = (e: KeyboardEvent) => {
+      const { w, h } = size();
+      if (e.key === '+' || e.key === '=') zoomAt(v.s * 1.25, w / 2, h / 2);
+      else if (e.key === '-') zoomAt(v.s / 1.25, w / 2, h / 2);
+      else if (e.key === '0') fit();
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(box);
+    box.addEventListener('pointerdown', down);
+    box.addEventListener('pointermove', move);
+    box.addEventListener('pointerup', up);
+    box.addEventListener('pointercancel', up);
+    box.addEventListener('wheel', wheel, { passive: false });
+    document.addEventListener('keydown', key);
+    return () => {
+      ro.disconnect();
+      box.removeEventListener('pointerdown', down);
+      box.removeEventListener('pointermove', move);
+      box.removeEventListener('pointerup', up);
+      box.removeEventListener('pointercancel', up);
+      box.removeEventListener('wheel', wheel);
+      document.removeEventListener('keydown', key);
+    };
+  }, [data]);
+
+  return (
+    <div ref={boxRef} className="relative min-h-0 flex-1 touch-none overflow-hidden select-none">
+      <div ref={innerRef} className="absolute top-0 left-0 will-change-transform">
+        {children}
+      </div>
+      <button
+        type="button"
+        className="btn btn-sm absolute right-3 bottom-3 min-h-11"
+        onClick={() => fitRef.current()}
+      >
+        {fitLabel}
+      </button>
+    </div>
   );
 }

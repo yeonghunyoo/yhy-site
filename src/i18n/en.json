@@ -131,7 +131,9 @@
       "title": "Diagram",
       "expand": "Enlarge",
       "close": "Close",
-      "connections": "Connections"
+      "connections": "Connections",
+      "hint": "Pinch to zoom · double-tap to fit",
+      "fit": "Fit to screen"
     }
   }
 }
