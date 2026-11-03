@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import type { Dict, Locale } from '../../i18n';
 import { visibleAnswer } from './chat-text';
 import { lockScroll } from './scroll-lock';
+import { watchViewport } from './viewport';
 
 interface Props {
   dict: Dict;
@@ -36,7 +37,9 @@ export default function ChatDock({ dict, locale }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   // 모바일 풀스크린일 때 보이는 영역(visualViewport)에 맞춘 높이·위치. 데스크톱 패널이면 null
-  const [frame, setFrame] = useState<{ height: number; top: number; keyboard: boolean } | null>(null);
+  // 모바일 풀스크린이면 { keyboard }. 높이·위치는 프레임마다 DOM에 바로 쓴다(viewport.ts) — 상태로 받으면 늦게 그려져 창이 출렁인다
+  const [frame, setFrame] = useState<{ keyboard: boolean } | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -75,27 +78,31 @@ export default function ChatDock({ dict, locale }: Props) {
       return () => document.removeEventListener('keydown', onKey);
     }
 
-    const vv = window.visualViewport;
-    // 키보드 판정은 열린 뒤 본 가장 큰 높이와 비교한다 — Chrome Android(interactive-widget=resizes-content)는
-    // innerHeight도 같이 줄어 innerHeight와 비교하면 키보드를 못 알아챈다
-    let fullHeight = vv?.height ?? window.innerHeight;
-    const fit = () => {
-      if (!vv) return;
-      fullHeight = Math.max(fullHeight, vv.height);
-      setFrame({ height: vv.height, top: vv.offsetTop, keyboard: vv.height < fullHeight - 120 });
-    };
-    fit();
-    vv?.addEventListener('resize', fit);
-    vv?.addEventListener('scroll', fit);
+    const stop = watchViewport(({ height, top, keyboard }) => {
+      const panel = panelRef.current;
+      const list = listRef.current;
+      // 목록이 맨 아래였으면 높이가 바뀐 뒤에도 맨 아래(최근 답)를 보여 준다
+      const atBottom = list ? list.scrollTop + list.clientHeight >= list.scrollHeight - 8 : false;
+      if (panel) {
+        panel.style.height = `${height}px`;
+        panel.style.transform = `translate3d(0, ${top}px, 0)`;
+      }
+      if (list && atBottom) list.scrollTop = list.scrollHeight;
+      setFrame((prev) => (prev?.keyboard === keyboard ? prev : { keyboard }));
+    });
 
     // 배경 스크롤 잠금(iOS는 overflow:hidden만으로는 밀린다 — scroll-lock.ts). 위에 로그인 시트가 겹쳐 열려도 횟수로 센다.
     const unlock = lockScroll();
 
     return () => {
-      vv?.removeEventListener('resize', fit);
-      vv?.removeEventListener('scroll', fit);
+      stop();
       document.removeEventListener('keydown', onKey);
       unlock();
+      const panel = panelRef.current;
+      if (panel) {
+        panel.style.height = '';
+        panel.style.transform = '';
+      }
       setFrame(null);
     };
   }, [open]);
@@ -199,10 +206,10 @@ export default function ChatDock({ dict, locale }: Props) {
         iOS가 보이는 영역을 밀어도 페이지가 드러나지 않는다 */}
     {frame && <div className="fixed inset-x-0 top-0 z-40 h-[200lvh] bg-surface md:hidden" aria-hidden="true" />}
     <section
+      ref={panelRef}
       role="dialog"
       aria-label={dict.chat.title}
       className="fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:inset-auto md:right-4 md:bottom-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px] md:rounded-[var(--radius)] md:border md:border-border md:shadow-2xl"
-      style={frame ? { height: frame.height, top: frame.top } : undefined}
     >
       <header className={`flex shrink-0 items-center justify-between border-b border-border pr-2 pl-4 ${frame?.keyboard ? '' : 'pt-[env(safe-area-inset-top)]'}`}>
         <h2 className="font-bold">{dict.chat.title}</h2>

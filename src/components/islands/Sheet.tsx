@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { lockScroll } from './scroll-lock';
+import { watchViewport } from './viewport';
 
 interface SheetProps {
   open: boolean;
@@ -20,8 +21,6 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
   const panelRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
-  const [keyboard, setKeyboard] = useState(0);
-  const [viewportH, setViewportH] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -48,22 +47,18 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
       }
     };
 
-    // 키보드가 올라오면 보이는 영역(visualViewport)에 맞춰 시트를 올리고 높이를 줄인다.
-    const vv = window.visualViewport;
-    const onViewport = () => {
-      if (!vv) return;
-      setKeyboard(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
-      setViewportH(vv.height);
-    };
-    onViewport();
-    vv?.addEventListener('resize', onViewport);
-    vv?.addEventListener('scroll', onViewport);
+    // 키보드가 올라오면 보이는 영역에 맞춰 시트를 올리고 높이를 줄인다. 프레임마다 DOM에 바로 쓴다(viewport.ts) —
+    // 상태로 받으면 늦게 그려져 키보드를 내릴 때마다 시트가 출렁인다
+    const stopViewport = watchViewport(({ height, top }) => {
+      if (!panel) return;
+      panel.style.marginBottom = `${Math.max(0, window.innerHeight - height - top)}px`;
+      panel.style.maxHeight = `${Math.round(height * 0.92)}px`;
+    });
     document.addEventListener('keydown', onKey);
 
     return () => {
       unlock();
-      vv?.removeEventListener('resize', onViewport);
-      vv?.removeEventListener('scroll', onViewport);
+      stopViewport();
       document.removeEventListener('keydown', onKey);
       setDragY(0);
       previous?.focus?.({ preventScroll: true });
@@ -88,8 +83,6 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
     else setDragY(0);
   };
 
-  const maxHeight = viewportH ? `${Math.round(viewportH * 0.92)}px` : '92dvh';
-
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
       {/* 화면 높이의 2배로 늘린 어두운 막 — iOS가 보이는 영역을 밀어도 페이지가 드러나지 않는다 */}
@@ -100,10 +93,8 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
+        className="relative flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
         style={{
-          maxHeight,
-          marginBottom: keyboard,
           transform: dragY ? `translateY(${dragY}px)` : undefined,
           transition: dragStart.current === null ? 'transform 0.2s' : undefined,
         }}
