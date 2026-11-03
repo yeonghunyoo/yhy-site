@@ -20,7 +20,7 @@
 - React 아일랜드는 `client:demand`(src/directives/demand.ts)로 필요할 때만 로드한다. 초기 JS 예산 50KB
 - HTML에 `style=""` 속성 금지(CSP). Tailwind 클래스를 쓴다
 - 3D·챗은 지연 로드 아일랜드로 격리하고 저사양·reduced-motion 폴백을 둔다
-- 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI. 테마는 11/03 확정(블루/나이트, Black Han Sans + IBM Plex Mono — `docs/01-frontend.md` "홈"). 색·글꼴을 바꿀 때는 docs를 먼저 고친다. daisyUI 컴포넌트 이름(`hero`·`label`·`timeline` 등)과 겹치는 클래스명은 쓰지 않는다
+- 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI. 테마는 11/03 확정(나이트 한 가지, Black Han Sans + IBM Plex Mono — `docs/01-frontend.md` "홈"). 색·글꼴을 바꿀 때는 docs를 먼저 고친다. daisyUI 컴포넌트 이름(`hero`·`label`·`timeline` 등)과 겹치는 클래스명은 쓰지 않는다
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
 - `/admin`과 `/api/admin/*`는 관리자 이메일 허용목록(`ADMIN_EMAILS`) 검증, 비관리자는 404
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다

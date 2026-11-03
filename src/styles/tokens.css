@@ -1,23 +1,23 @@
 /*
  * 디자인 토큰 — 색·글꼴·모서리는 이 파일에만 둔다.
- * 11/03 테마: 글자·숫자·가는 선 중심. 밝은 설정 = 블루(전기 파랑 + 노랑 강조), 어두운 설정 = 나이트. 표시(태그)는 분홍.
+ * 11/03 테마: 글자·숫자·가는 선 중심. 나이트 한 가지(차콜 바탕 + 연보라 파랑 강조), 표시(태그)는 분홍.
  * 글꼴 2종: 제목 Black Han Sans, 숫자·라벨 IBM Plex Mono(자체 호스팅). 본문은 시스템 글꼴.
  */
 :root {
-  /* 기본(밝은 설정) = 블루: 전기 파랑 바탕 + 흰 글자 + 노랑 강조(11/03, Clipo 참고) */
+  /* 나이트 한 가지(11/03 확정): 기기의 밝은·어두운 설정과 상관없이 같은 색 */
   color-scheme: dark;
-  --color-bg: #1d2be3;
-  --color-surface: #2533e6;
-  --color-fg: #ffffff;
-  --color-muted: #d6daff;
-  --color-quiet: #9ea6f6;
-  --color-ghost: #3443ec;
-  --color-border: #4a57ef;
-  --color-accent: #ffd94a;
-  --color-accent-fg: #141414;
+  --color-bg: #17191c;
+  --color-surface: #202327;
+  --color-fg: #e9ebe6;
+  --color-muted: #b0b4ad;
+  --color-quiet: #858a81;
+  --color-ghost: #2c3034;
+  --color-border: #3a3f44;
+  --color-accent: #8c98ff;
+  --color-accent-fg: #0e1016;
   --color-tag: #ff5fa8;
-  --color-danger: #ffb4c0;
-  --color-success: #b6f5c8;
+  --color-danger: #f87171;
+  --color-success: #6fd08a;
 
   --font-sans: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Black Han Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
@@ -26,7 +26,7 @@
   --radius: 0.25rem;
   --header-h: 3.5rem;
 
-  /* daisyUI 테마 변수 — 값은 위 토큰에서 가져온다(다크 모드도 위 토큰을 따라감) */
+  /* daisyUI 테마 변수 — 값은 위 토큰에서 가져온다 */
   --color-base-100: var(--color-bg);
   --color-base-200: var(--color-border);
   --color-base-300: var(--color-border);
@@ -46,21 +46,4 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #17191c;
-    --color-surface: #202327;
-    --color-fg: #e9ebe6;
-    --color-muted: #b0b4ad;
-    --color-quiet: #858a81;
-    --color-ghost: #2c3034;
-    --color-border: #3a3f44;
-    --color-accent: #8c98ff;
-    --color-accent-fg: #0e1016;
-    --color-tag: #ff5fa8;
-    --color-danger: #f87171;
-    --color-success: #6fd08a;
-  }
 }
