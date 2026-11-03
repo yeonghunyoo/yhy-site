@@ -92,14 +92,15 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
+      {/* 화면 높이의 2배로 늘린 어두운 막 — iOS가 보이는 영역을 밀어도 페이지가 드러나지 않는다 */}
+      <div className="fixed inset-x-0 top-0 h-[200lvh] bg-black/50" onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none md:max-w-lg md:rounded-[var(--radius)]"
+        className="relative flex w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
         style={{
           maxHeight,
           marginBottom: keyboard,
@@ -126,7 +127,7 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
+        <div data-scroll-allow className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
         {footer && (
           <div className="border-t border-border px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {footer}

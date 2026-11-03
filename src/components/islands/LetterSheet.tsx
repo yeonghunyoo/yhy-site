@@ -131,6 +131,7 @@ export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnau
             {dict.letter.body}
           </label>
           <textarea
+            data-scroll-allow
             id="letter-body"
             data-autofocus
             className="field mt-2 min-h-40 resize-y"

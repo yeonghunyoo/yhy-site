@@ -194,6 +194,10 @@ export default function ChatDock({ dict, locale }: Props) {
   }
 
   return (
+    <>
+    {/* 모바일: 뒤 페이지를 화면 아래(키보드 뒤)까지 같은 배경으로 덮는다 — 보이지도, 눌리지도 않게. 화면 높이의 2배로 늘려
+        iOS가 보이는 영역을 밀어도 페이지가 드러나지 않는다 */}
+    {frame && <div className="fixed inset-x-0 top-0 z-40 h-[200lvh] bg-surface md:hidden" aria-hidden="true" />}
     <section
       role="dialog"
       aria-label={dict.chat.title}
@@ -207,7 +211,7 @@ export default function ChatDock({ dict, locale }: Props) {
         </button>
       </header>
 
-      <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
+      <div ref={listRef} data-scroll-allow className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
         <p className="rounded-[var(--radius)] bg-bg px-3 py-2">{dict.chat.greeting}</p>
         {turns.length === 0 && (
           <div className="flex flex-wrap gap-2">
@@ -282,6 +286,7 @@ export default function ChatDock({ dict, locale }: Props) {
       >
         <div className="flex items-end gap-2">
           <textarea
+            data-scroll-allow
             ref={inputRef}
             rows={1}
             readOnly={busy}
@@ -305,5 +310,6 @@ export default function ChatDock({ dict, locale }: Props) {
         <p className="mt-2 text-xs text-muted">{dict.chat.notice}</p>
       </form>
     </section>
+    </>
   );
 }

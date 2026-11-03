@@ -9,6 +9,28 @@ interface LockState {
   saved: { position: string; top: string; width: string; overflow: string };
 }
 
+/**
+ * 잠긴 동안의 터치 스크롤 막기. iOS는 body를 고정해도 키보드가 떠 있으면 보이는 영역(visualViewport)을 손가락으로
+ * 밀 수 있어, 챗·시트 아래로 뒤 페이지가 드러난다. `data-scroll-allow` 안에서 실제로 스크롤할 수 있는 방향만 허용하고
+ * 나머지 touchmove는 막는다(docs/guides/browser-support.md).
+ */
+let startY = 0;
+const onTouchStart = (e: TouchEvent) => {
+  startY = e.touches[0]?.clientY ?? 0;
+};
+const onTouchMove = (e: TouchEvent) => {
+  if (e.touches.length > 1) return; // 핀치 확대는 그대로
+  const box = (e.target as Element | null)?.closest?.<HTMLElement>('[data-scroll-allow]');
+  if (box) {
+    const dy = (e.touches[0]?.clientY ?? 0) - startY; // 양수 = 아래로 끌기(위로 스크롤)
+    const atTop = box.scrollTop <= 0;
+    const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 1;
+    const scrollable = box.scrollHeight > box.clientHeight;
+    if (scrollable && !(dy > 0 && atTop) && !(dy < 0 && atBottom)) return;
+  }
+  if (e.cancelable) e.preventDefault();
+};
+
 declare global {
   interface Window {
     __scrollLock?: LockState;
@@ -26,6 +48,8 @@ export function lockScroll(): () => void {
     body.style.top = `-${state.y}px`;
     body.style.width = '100%';
     html.style.overflow = 'hidden';
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
   }
   let released = false;
   return () => {
@@ -36,6 +60,8 @@ export function lockScroll(): () => void {
     body.style.top = state.saved.top;
     body.style.width = state.saved.width;
     html.style.overflow = state.saved.overflow;
+    document.removeEventListener('touchstart', onTouchStart);
+    document.removeEventListener('touchmove', onTouchMove);
     window.scrollTo(0, state.y);
   };
 }
