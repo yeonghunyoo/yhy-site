@@ -2,7 +2,7 @@
 title: About
 ---
 
-<!-- Draft — needs a human check: fill in or delete each [TO CONFIRM]. The chat never states experience or numbers that aren't in these docs. -->
+<!-- The chat never states experience or numbers that aren't in these docs. Career and project details live in the resume · handoff-agent · forest docs (imported from the 3-page portfolio site, 11/03). -->
 
 ## Who
 
@@ -18,4 +18,4 @@ Sign in and use "Send a letter" on the site to message yhy directly. Replies arr
 
 ## Background and interests
 
-[TO CONFIRM] Current work, areas of interest, and any background that is fine to share.
+yhy is Yeonghun Yoo (유영훈), a software engineer and builder who has mostly done native iOS work, with 4 years 6 months of experience as of November 2026. Yeonghun currently builds the Helmidak iOS app at Tripaid, and on the side makes handoff-agent (a Claude Code plugin) and Forest (a meditation sound-mixing app). The resume document has the details.
