@@ -67,7 +67,8 @@
     "label": "계정 메뉴",
     "signedInAs": "로그인 계정",
     "deleteAccount": "계정 삭제",
-    "signOut": "로그아웃"
+    "signOut": "로그아웃",
+    "admin": "관리자"
   },
   "account": {
     "title": "계정 삭제",

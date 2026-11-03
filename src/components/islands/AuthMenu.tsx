@@ -12,6 +12,21 @@ export default function AuthMenu({ dict }: Props) {
   const { data } = authClient.useSession();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  // 관리자 여부는 서버만 안다(ADMIN_EMAILS) — 로그인한 계정이 바뀔 때 한 번 묻는다
+  const [admin, setAdmin] = useState(false);
+  const sessionEmail = data?.user.email;
+  useEffect(() => {
+    setAdmin(false);
+    if (!sessionEmail) return;
+    let alive = true;
+    fetch('/api/account', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? (r.json() as Promise<{ admin?: boolean }>) : null))
+      .then((body: { admin?: boolean } | null) => alive && setAdmin(Boolean(body?.admin)))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [sessionEmail]);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,6 +85,11 @@ export default function AuthMenu({ dict }: Props) {
             {dict.menu.signedInAs}
             <span className="block break-all text-fg">{email}</span>
           </p>
+          {admin && (
+            <a role="menuitem" href="/admin" className="flex min-h-11 w-full items-center rounded-[calc(var(--radius)-4px)] px-3 font-semibold hover:bg-bg">
+              {dict.menu.admin}
+            </a>
+          )}
           <button
             type="button"
             role="menuitem"
