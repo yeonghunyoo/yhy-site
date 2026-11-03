@@ -1,5 +1,5 @@
 // 홈 연출(docs/01-frontend.md "홈"): 숫자 0부터 올리기, 밑줄·막대 채우기, 프로젝트 펼치기, 경력 라벨 배치,
-// 글자로 그린 이름(포인터 둘레 밀어내기), 소개 문단 흐르기(Pretext, 지연 로드). React 없이 이 파일 하나.
+// 글자로 그린 이름(포인터 둘레 밀어내기). React 없이 이 파일 하나.
 import { tapPeek } from './tap-peek';
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -22,7 +22,6 @@ export function initHome(): void {
   setupProjects(root);
   setupCareer(root);
   setupAscii(root);
-  setupFlow(root);
 }
 
 /* ---------- 숫자·밑줄·막대: 화면에 들어올 때 한 번 ---------- */
@@ -225,116 +224,4 @@ function setupAscii(root: HTMLElement) {
     clearTimeout(timer);
     timer = window.setTimeout(build, 200);
   }).observe(box);
-}
-
-/* ---------- 소개 문단: 포인터 자리에 빈 원을 내고 글이 둘레로 흐른다(Pretext) ---------- */
-function setupFlow(root: HTMLElement) {
-  const box = root.querySelector<HTMLElement>('[data-flow]');
-  if (!box) return;
-  const text = box.textContent!.trim();
-  const unit = root.closest('[lang]')?.getAttribute('lang') === 'en' || root.dataset.locale === 'en' ? 'lines' : '줄';
-  type Pretext = typeof import('@chenglou/pretext');
-  let lib: Promise<Pretext> | null = null;
-  const load = () => (lib ??= import('@chenglou/pretext'));
-  // 화면에 보이면 쉬는 시간에 미리 받아 둔다(초기 JS에는 넣지 않는다)
-  const io = new IntersectionObserver((es) => {
-    if (!es.some((e) => e.isIntersecting)) return;
-    io.disconnect();
-    ('requestIdleCallback' in window ? requestIdleCallback : setTimeout)(() => load().catch(() => {}));
-  });
-  io.observe(box);
-
-  let ready: ((p: { x: number; y: number }) => void) | null = null;
-  let mover: ((p: { x: number; y: number }) => void) | null = null;
-  let closer: (() => void) | null = null;
-  const enable = async () => {
-    if (ready) return;
-    const { prepareWithSegments, layoutNextLineRange, materializeLineRange } = await load();
-    const cs = getComputedStyle(box);
-    const LH = parseFloat(cs.lineHeight) || 26;
-    const prepared = prepareWithSegments(text, `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`, { wordBreak: 'keep-all' });
-    const label = document.createElement('span');
-    label.className = 'sr-only';
-    label.textContent = text;
-    const layer = document.createElement('span');
-    layer.setAttribute('aria-hidden', 'true');
-    const hole = document.createElement('span');
-    hole.className = 'hole';
-    hole.innerHTML = `<span><b>0</b>${unit}</span>`;
-    box.textContent = '';
-    box.append(label, layer);
-    layer.append(hole);
-    box.classList.add('flow');
-    const pool: HTMLSpanElement[] = [];
-    const cur = { x: 0, y: 0, r: 0 }, target = { x: 0, y: 0, r: 0 };
-    const R = 46, MIN = 36;
-    let width = box.clientWidth, baseRows = 0, raf = 0;
-    const lay = () => {
-      let cursor = { segmentIndex: 0, graphemeIndex: 0 };
-      const lines: { x: number; y: number; text: string }[] = [];
-      let row = 0;
-      for (; row < 60; row++) {
-        const top = row * LH, mid = top + LH / 2;
-        let spans: [number, number][] = [[0, width]];
-        if (cur.r > 4 && Math.abs(mid - cur.y) < cur.r + LH / 2) {
-          const dy = Math.min(Math.abs(mid - cur.y), cur.r);
-          const half = Math.sqrt(Math.max(0, (cur.r + 6) ** 2 - dy ** 2));
-          spans = ([[0, cur.x - half], [cur.x + half, width]] as [number, number][]).filter(([a, b]) => b - a >= MIN);
-        }
-        let ended = false;
-        for (const [a, b] of spans) {
-          const range = layoutNextLineRange(prepared, b - a, cursor);
-          if (!range) { ended = true; break; }
-          lines.push({ x: a, y: top, text: materializeLineRange(prepared, range).text });
-          cursor = range.end;
-        }
-        if (ended) { row++; break; }
-      }
-      return { lines, rows: row };
-    };
-    const draw = () => {
-      const { lines, rows } = lay();
-      if (!baseRows) baseRows = rows;
-      box.style.height = `${Math.max(rows, baseRows) * LH}px`;
-      while (pool.length < lines.length) { const s = document.createElement('span'); s.className = 'ln'; layer.append(s); pool.push(s); }
-      pool.forEach((s, i) => {
-        const l = lines[i];
-        s.hidden = !l;
-        if (!l) return;
-        if (s.textContent !== l.text) s.textContent = l.text;
-        s.style.transform = `translate(${l.x}px, ${l.y}px)`;
-      });
-      hole.style.width = hole.style.height = `${cur.r * 2}px`;
-      hole.style.transform = `translate(${cur.x - cur.r}px, ${cur.y - cur.r}px)`;
-      hole.querySelector('b')!.textContent = String(lines.length);
-    };
-    const tick = () => {
-      const k = reduce ? 1 : 0.22;
-      cur.x += (target.x - cur.x) * k; cur.y += (target.y - cur.y) * k; cur.r += (target.r - cur.r) * k;
-      draw();
-      raf = Math.abs(target.x - cur.x) + Math.abs(target.y - cur.y) + Math.abs(target.r - cur.r) > 0.3 ? requestAnimationFrame(tick) : 0;
-    };
-    const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
-    ready = (p) => { Object.assign(target, p, { r: R }); if (cur.r < 1) Object.assign(cur, p); hole.classList.add('on'); kick(); };
-    mover = (p) => { Object.assign(target, p); kick(); };
-    closer = () => { target.r = 0; hole.classList.remove('on'); kick(); };
-    new ResizeObserver(() => { if (box.clientWidth !== width) { width = box.clientWidth; baseRows = 0; draw(); } }).observe(box);
-    draw();
-  };
-
-  const local = (x: number, y: number) => { const r = box.getBoundingClientRect(); return { x: x - r.left, y: y - r.top }; };
-  let inside = false, hideT = 0;
-  const open = async (p: { x: number; y: number }) => {
-    // 첫 호버에 라이브러리를 아직 받는 중이면 진행 커서를 보인다
-    if (!ready) box.classList.add('loading');
-    try { await enable(); } catch { return; } finally { box.classList.remove('loading'); } // 못 받으면 평범한 문단으로 둔다
-    if (inside) ready?.(p);
-  };
-  box.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; inside = true; open(local(e.clientX, e.clientY)); });
-  box.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') mover?.(local(e.clientX, e.clientY)); });
-  box.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'mouse') return; inside = false; closer?.(); });
-  tapPeek(box, {
-    start: (x, y) => { clearTimeout(hideT); inside = true; open(local(x, y)); },
-    end: () => { clearTimeout(hideT); hideT = window.setTimeout(() => { inside = false; closer?.(); }, 500); },
-  });
 }
