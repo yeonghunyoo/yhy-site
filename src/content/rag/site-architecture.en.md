@@ -104,7 +104,7 @@ The chat dock sits collapsed at the bottom right and opens on tap. One question 
 3. The pipeline (chat-pipeline.ts) checks the question with injection regexes; a match is refused without a model
 4. The Llama Guard safety check and the supervisor run at the same time
 5. The safety verdict is applied first (self-harm gets help information)
-6. The supervisor's route decides what happens: portfolio → the portfolio agent (RAG search and a grounded answer, streamed), chat → the supervisor's short reply, contact → letter guidance with a letter button, off_task → a fixed refusal
+6. The supervisor's route decides what happens: portfolio → the portfolio agent (RAG search and a grounded answer, streamed), diagram → the diagram agent (same search, then Gemma 4 returns node/edge JSON and a summary, code validates it, and the chat dock draws it as an SVG flow chart), chat → the supervisor's short reply, contact → letter guidance with a letter button, off_task → a fixed refusal
 7. The output check (code blocks, runaway citations) runs and the answer goes to the page over SSE
 8. chat_logs records the question, route, retrieval, guard verdict and tokens (never the answer text; kept 90 days)
 
@@ -112,7 +112,7 @@ A sub-agent's answer goes straight to the page; it does not pass back through th
 
 ## Supervisor and routing
 
-The supervisor (src/lib/server/agents/supervisor.ts) calls the same Gemma 4 26B model as the answers, with reasoning off, and gets JSON-schema output {route, query, reply}. route must be one of portfolio, chat, contact, off_task.
+The supervisor (src/lib/server/agents/supervisor.ts) calls the same Gemma 4 26B model as the answers, with reasoning off, and gets JSON-schema output {route, query, reply}. route must be one of portfolio, diagram, chat, contact, off_task. diagram is for requests to draw a flow, structure or relationship; a plain "how does it work?" without asking for a picture is portfolio.
 
 - Input: the signature-verified recent conversation (up to 6 turns), the question, and the document outline (slug, title and section headings from D1 rag_sections, cached 5 minutes per isolate). The outline is only for recognising names that appear only in the portfolio
 - portfolio: it writes a standalone search query with pronouns resolved from the conversation and hands it to search
@@ -131,7 +131,7 @@ The portfolio agent is retrieve() in rag.ts plus the answer prompt in chat.ts.
 3. Both run in parallel, top 24 each, merged with RRF (k=60); vector candidates missed by keywords need a score of 0.35 or more
 4. Scope check: if the nearest vector scores below 0.42 there is no basis, and it ends with letter guidance without a model call
 5. Same-language documents get ×1.2 and FAQ ×1.1; child chunks roll up to parent sections and the top 6 are kept
-6. The sections go into <documents> tags; Gemma 4 answers in 1–3 sentences and ends with a [[slug]] source line
+6. The sections go into <documents> tags; Gemma 4 answers in Markdown — one fact in 1–2 sentences, several features or steps as a one-line lead plus a bullet list — and ends with a [[slug]] source line. The chat dock never parses Markdown as HTML; it turns only lists, bold and code into elements
 7. Only slugs of documents actually given count as source chips
 
 Chunking has two levels: parents (## sections, up to 1,500 characters) and children (300–500 characters). Reranking is off because the available reranker cannot separate Korean results.
