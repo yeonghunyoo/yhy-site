@@ -4,6 +4,8 @@ import { complete, hasAi, moderate, type ChatMessage, type Usage } from './ai';
 import { DECISION_SCHEMA, parseDecision, SUPERVISOR_MAX_TOKENS, supervisorMessages, topicsBlock, type Decision, type Route } from './agents/supervisor';
 import { ragSections } from '../../db/schema';
 import { getDb } from './db';
+import { DIAGRAM_MAX_TOKENS, DIAGRAM_SCHEMA, diagramMessages, parseDiagram } from './agents/diagram';
+import type { Diagram } from '../diagram';
 import { CHAT_LIMITS, documentsBlock, systemPrompt } from './chat';
 import { detectInjection, GUARD_REPLY, verifyTurn, type GuardFlag } from './guard';
 import { retrieve, type RetrievalTrace, type ScoredSection } from './rag';
@@ -39,6 +41,8 @@ export interface Prepared {
   category: string | null;
   /** 슈퍼바이저가 고른 경로. 주입 검사에서 막히면 null */
   route: Route | null;
+  /** 흐름도 경로: 흐름도 에이전트에 보낼 메시지. 흐름도가 안 나오면 messages(일반 답)로 대신한다 */
+  diagramMessages: ChatMessage[] | null;
   messages: ChatMessage[];
   sections: ScoredSection[];
   rewritten: string | null;
@@ -116,7 +120,7 @@ export async function decide(question: string, history: Turn[], locale: Locale, 
 
 export async function prepare(question: string, history: Turn[], locale: Locale): Promise<Prepared> {
   const usage: Usage = { tokensIn: 0, tokensOut: 0 };
-  const base = { category: null, messages: [], sections: [], rewritten: null, retrieval: [], usage, route: null };
+  const base = { category: null, messages: [], sections: [], rewritten: null, retrieval: [], usage, route: null, diagramMessages: null };
 
   // 노골적인 지시 변경·프롬프트 공개 요청은 모델 없이 거절한다.
   if (detectInjection(question)) return { ...base, reply: GUARD_REPLY.injection[locale], flag: 'injection' };
@@ -133,7 +137,7 @@ export async function prepare(question: string, history: Turn[], locale: Locale)
   const routed = (async () => {
     const decision = await decide(question, history, locale, usage);
     const found: { sections: ScoredSection[]; trace: RetrievalTrace | null } =
-      decision.route === 'portfolio' ? await retrieve(decision.query ?? question, locale) : { sections: [], trace: null };
+      decision.route === 'portfolio' || decision.route === 'diagram' ? await retrieve(decision.query ?? question, locale) : { sections: [], trace: null };
     return { decision, ...found };
   })();
 
@@ -157,5 +161,31 @@ export async function prepare(question: string, history: Turn[], locale: Locale)
     ...history,
     { role: 'user', content: `${documentsBlock(sections)}\n\n<question>\n${escapeTags(question)}\n</question>` },
   ];
-  return { ...done, reply: null, flag: null, messages };
+  const diagram = decision.route === 'diagram' ? diagramMessages(sections, escapeTags(question), locale) : null;
+  return { ...done, reply: null, flag: null, messages, diagramMessages: diagram };
+}
+
+/**
+ * 흐름도 에이전트 호출(docs/05-06-chat-rag.md "흐름도 에이전트"). 요약 + `[[slug]]` 줄과 검사한 흐름도를 돌려준다.
+ * 용량 오류 등은 한 번 다시 시도하고, 그래도 안 되거나 노드가 2개 미만이면 null — 부르는 쪽이 일반 답(prepared.messages)으로 대신한다.
+ */
+export async function runDiagram(prepared: Prepared, usage: Usage): Promise<{ text: string; diagram: Diagram } | null> {
+  if (!prepared.diagramMessages || !hasAi()) return null;
+  const call = () => complete(prepared.diagramMessages!, DIAGRAM_MAX_TOKENS, DIAGRAM_SCHEMA);
+  const result = await call()
+    .catch(() => new Promise<void>((r) => setTimeout(r, 300)).then(call))
+    .catch((error) => {
+      console.error('[chat:diagram]', error);
+      return null;
+    });
+  if (!result) return null;
+  usage.tokensIn += result.usage.tokensIn;
+  usage.tokensOut += result.usage.tokensOut;
+  const parsed = parseDiagram(result.text, [...new Set(prepared.sections.map((s) => s.section.slug))]);
+  if (!parsed) {
+    console.error('[chat:diagram] unusable', result.text.slice(0, 200));
+    return null;
+  }
+  const cite = parsed.sources.map((slug) => `[[${slug}]]`).join(' ');
+  return { text: `${parsed.summary}${cite ? `\n\n${cite}` : ''}`.trim(), diagram: parsed.diagram };
 }

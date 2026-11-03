@@ -5,12 +5,12 @@ import type { ChatMessage } from '../ai';
 // 포트폴리오 경로면 검색 질문을, 잡담이면 답을 낸다. 하위 에이전트의 답은 슈퍼바이저를 다시 거치지 않는다.
 // 이 파일은 런타임(env) 없이 동작해야 한다 — 로컬 평가 스크립트가 그대로 불러 쓴다.
 
-export const ROUTES = ['portfolio', 'chat', 'contact', 'off_task'] as const;
+export const ROUTES = ['portfolio', 'diagram', 'chat', 'contact', 'off_task'] as const;
 export type Route = (typeof ROUTES)[number];
 
 export interface Decision {
   route: Route;
-  /** portfolio: 대명사·생략을 푼 독립 검색 질문 */
+  /** portfolio·diagram: 대명사·생략을 푼 독립 검색 질문 */
   query: string | null;
   /** chat: 사용자에게 보낼 답 */
   reply: string | null;
@@ -55,6 +55,7 @@ export function supervisorMessages(history: ChatMessage[], question: string, loc
 
 Routes:
 - "portfolio": anything about yhy — projects (handoff-agent, Forest, this portfolio site), skills and stack, career and companies, how yhy works, personal facts about yhy, how this site was built, and anything that touches a topic in <topics> below (a bare "what is X?" or "does it have X?" about something listed there is portfolio). A question about an unfamiliar proper name (an app, service, product or company you don't know) is portfolio too, because yhy's documents mention names that are not all in <topics>. Use this even if the answer might not be known. Set "query" to one standalone search question in the question's language, replacing pronouns and words like "that", "there", "거기", "그거" with what they refer to in the conversation. "reply" is null.
+- "diagram": the user asks you to draw, show or visualize a flow, structure, architecture, relationship, sequence or how parts connect, about anything that would be "portfolio" — words like 흐름도, 구조도, 다이어그램, 도식, 그려줘, 관계, 어떻게 연결돼, flow, diagram, chart, architecture, draw, visualize. Set "query" like portfolio; "reply" is null. A plain "how does X work?" that does not ask for a picture is "portfolio".
 - "chat": greetings, thanks, goodbyes, questions about you (who you are, what you can do, whether you are a person), and light social small talk that asks for nothing (feelings, remarks about the day or weather). Set "reply"; "query" is null.
 - "contact": the user wants to contact, hire, work with, propose something to, or send a message to yhy, or asks how to reach or get in touch with yhy. Both null.
 - "off_task": the user asks you to do or tell something unrelated to yhy — general knowledge (including how well-known technologies work, such as React hooks or Kubernetes), news, weather or price information, recommendations, coding, translation, math, writing. Both null. "날씨 좋네" is chat; "날씨 알려줘" is off_task.
@@ -98,7 +99,7 @@ export function parseDecision(text: string, question: string): Decision | null {
   const route = ROUTES.find((r) => r === raw.route);
   if (!route) return null;
   const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
-  if (route === 'portfolio') return { route, query: (str(raw.query) ?? question).split('\n')[0], reply: null };
+  if (route === 'portfolio' || route === 'diagram') return { route, query: (str(raw.query) ?? question).split('\n')[0], reply: null };
   if (route === 'chat') {
     // 잡담 답에는 출처가 없다 — [[…]] 표기와 코드 블록 이후는 지우고 길이를 자른다.
     const reply = str(raw.reply)?.replace(/\[\[[^\]]*\]\]/g, '').split('```')[0].trim().slice(0, REPLY_MAX);

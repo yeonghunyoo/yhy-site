@@ -71,7 +71,7 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
               </p>
               <p class="mt-1 text-xs break-words text-muted">
                 경로 {r.route} → {r.gotRoute}
-                {r.route === 'portfolio' && <> · 기대 {r.expect.length ? r.expect.join(', ') : '없음'} → 결과 {r.got.length ? r.got.join(', ') : '거절'}</>} · 최고 벡터{' '}
+                {(r.route === 'portfolio' || r.route === 'diagram') && <> · 기대 {r.expect.length ? r.expect.join(', ') : '없음'} → 결과 {r.got.length ? r.got.join(', ') : '거절'}</>} · 최고 벡터{' '}
                 {r.maxVector === null ? '없음' : r.maxVector.toFixed(3)}
               </p>
             </li>

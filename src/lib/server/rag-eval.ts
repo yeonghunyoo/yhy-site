@@ -31,7 +31,7 @@ export async function runEval(): Promise<{ rows: EvalRow[]; routeAccuracy: numbe
     let got: string[] = [];
     let inScope = false;
     let maxVector: number | null = null;
-    if (decision.route === 'portfolio') {
+    if (decision.route === 'portfolio' || decision.route === 'diagram') {
       const { trace } = await retrieve(decision.query ?? item.q, item.locale);
       got = [...new Set(trace.sections.map((s) => s.slug))];
       inScope = trace.inScope;
@@ -39,14 +39,15 @@ export async function runEval(): Promise<{ rows: EvalRow[]; routeAccuracy: numbe
     }
     // 경로가 맞아야 통과. 포트폴리오 질문은 기대 slug 중 하나라도 상위 섹션에 있어야 한다.
     const routeOk = decision.route === item.route;
-    const pass = routeOk && (item.route !== 'portfolio' || !expect.length || expect.some((slug) => got.includes(slug)));
+    const searched = item.route === 'portfolio' || item.route === 'diagram';
+    const pass = routeOk && (!searched || !expect.length || expect.some((slug) => got.includes(slug)));
     rows.push({ q: item.q, locale: item.locale, route: item.route, expect, gotRoute: decision.route, got, inScope, maxVector, pass });
   }
   const rate = (list: EvalRow[], ok: (r: EvalRow) => boolean) => (list.length ? list.filter(ok).length / list.length : 1);
   return {
     rows,
     routeAccuracy: rate(rows, (r) => r.gotRoute === r.route),
-    recall: rate(rows.filter((r) => r.route === 'portfolio' && r.expect.length), (r) => r.pass),
+    recall: rate(rows.filter((r) => (r.route === 'portfolio' || r.route === 'diagram') && r.expect.length), (r) => r.pass),
     // 무관 작업 요청이 모델 답변 없이 끝난 비율
     refusal: rate(rows.filter((r) => r.route === 'off_task'), (r) => r.gotRoute === 'off_task' || (r.gotRoute === 'portfolio' && !r.got.length)),
   };

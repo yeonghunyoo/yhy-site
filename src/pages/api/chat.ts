@@ -5,7 +5,7 @@ import { isLocale, type Locale } from '../../i18n';
 import { chatLogs } from '../../db/schema';
 import { streamChat } from '../../lib/server/ai';
 import { CHAT_LIMITS, citedSources, hashIp, runawayCitations } from '../../lib/server/chat';
-import { prepare, verifiedHistory, type Prepared } from '../../lib/server/chat-pipeline';
+import { prepare, runDiagram, verifiedHistory, type Prepared } from '../../lib/server/chat-pipeline';
 import { getDb } from '../../lib/server/db';
 import { kstDate } from '../../lib/server/dates';
 import { GUARD_REPLY, outputBlocked, signTurn, type GuardFlag } from '../../lib/server/guard';
@@ -87,8 +87,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       flag = prepared.flag;
       usage.tokensIn += prepared.usage.tokensIn;
       usage.tokensOut += prepared.usage.tokensOut;
+      // 흐름도 경로: 요약 + 출처 줄을 본문으로, 흐름도는 별도 이벤트로. 흐름도가 안 나오면 아래 일반 답으로 대신한다
+      const drawn = prepared.reply === null ? await runDiagram(prepared, usage) : null;
       if (prepared.reply !== null) await send(prepared.reply);
-      else {
+      else if (drawn) {
+        await send(drawn.text);
+        await writer.write(sse({ t: 'diagram', diagram: drawn.diagram }));
+      } else {
         // 9. 스트리밍 답변. 코드 블록(출력 가드)이나 출처 표기 폭주가 보이면 거기서 끊는다.
         let pending = '';
         const result = await streamChat(prepared.messages, CHAT_LIMITS.answerMaxTokens, async (text) => {

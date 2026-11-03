@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState, type SubmitEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type SubmitEvent } from 'react';
 import type { Dict, Locale } from '../../i18n';
+import type { Diagram } from '../../lib/diagram';
+import { ChatMarkdown } from './chat-markdown';
 import { visibleAnswer } from './chat-text';
 import { lockScroll } from './scroll-lock';
 import { watchViewport } from './viewport';
+
+// 흐름도 렌더러는 흐름도 답이 왔을 때만 불러온다(초기 JS 예산 밖, docs/05-06-chat-rag.md "흐름도 에이전트")
+const DiagramView = lazy(() => import('./diagram/DiagramView'));
 
 interface Props {
   dict: Dict;
@@ -17,6 +22,8 @@ interface Turn {
   sig?: string;
   /** 한도 초과 등 안내(서버로 보내는 대화 기록에는 넣지 않는다) */
   notice?: 'login' | 'letter' | 'error';
+  /** 흐름도 답이면 그림 데이터(서버로 보내는 대화 기록에는 넣지 않는다) */
+  diagram?: Diagram;
 }
 
 const HISTORY_KEY = 'chatHistory';
@@ -150,8 +157,9 @@ export default function ChatDock({ dict, locale }: Props) {
         for (const raw of events) {
           const line = raw.replace(/^data: /, '');
           if (!line) continue;
-          const event = JSON.parse(line) as { t: 'delta' | 'done' | 'error'; text?: string; sources?: string[]; sig?: string };
+          const event = JSON.parse(line) as { t: 'delta' | 'diagram' | 'done' | 'error'; text?: string; sources?: string[]; sig?: string; diagram?: Diagram };
           if (event.t === 'delta') patchLast((t) => ({ content: t.content + (event.text ?? '') }));
+          if (event.t === 'diagram' && event.diagram) patchLast({ diagram: event.diagram });
           if (event.t === 'done') patchLast({ sources: event.sources ?? [], sig: event.sig });
           if (event.t === 'error') throw new Error('stream error');
         }
@@ -238,8 +246,9 @@ export default function ChatDock({ dict, locale }: Props) {
             </p>
           ) : (
             <div key={i} className="mr-8">
-              <p className={`rounded-[var(--radius)] bg-bg px-3 py-2 break-words whitespace-pre-wrap ${t.notice === 'error' ? 'text-danger' : ''}`}>
-                {visibleAnswer(t.content) ||
+              {/* 답은 작은 마크다운(목록·굵게)으로 그린다 — HTML로 해석하지 않는다(chat-markdown.tsx) */}
+              <div className={`rounded-[var(--radius)] bg-bg px-3 py-2 break-words ${t.notice === 'error' ? 'text-danger' : ''}`}>
+                {(visibleAnswer(t.content) && <ChatMarkdown text={visibleAnswer(t.content)} />) ||
                   (busy && i === turns.length - 1 ? (
                     // 슈퍼바이저 판단(약 1초) → 검색 → 첫 글자까지 걸리는 동안
                     <span className="inline-flex items-center gap-2 text-muted" role="status">
@@ -249,7 +258,12 @@ export default function ChatDock({ dict, locale }: Props) {
                   ) : (
                     ''
                   ))}
-              </p>
+              </div>
+              {t.diagram && (
+                <Suspense fallback={<span className="loading loading-dots loading-sm mt-2 text-muted" aria-hidden="true" />}>
+                  <DiagramView diagram={t.diagram} labels={dict.chat.diagram} />
+                </Suspense>
+              )}
               {t.sources?.some((slug) => !sourceLink(slug)) && (
                 <p className="mt-1 text-xs text-muted">
                   {dict.chat.sources.label}: {t.sources.filter((slug) => !sourceLink(slug)).map(sourceName).join(' · ')}
