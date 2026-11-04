@@ -18,7 +18,7 @@
 | Vectorize 인덱스 `portfolio-rag`, `ai`·`vectorize` 바인딩 | 있음 (11/01) — 인덱스는 로컬·운영 공용 |
 | 기준 질문 평가 | 11/03 실제 문서 22개(범위 안 18 · 밖 4): 재현율 100%, **범위 밖 거절 50%** — 날씨 0.426 · 주식 0.461이 기준 0.42를 넘는다. 추가 24개로 잰 분포가 겹친다(범위 안 최저 0.402 "What did you do at holich?", 범위 밖 최고 0.497 "비트코인 시세 알려줘") — 기준값 조정으로는 못 고친다(아래 3번). 로컬 D1 + Workers AI REST로 `retrieve()`를 그대로 옮겨 쟀다 |
 | 운영 D1 마이그레이션 0002~0005 | 적용됨 (0005는 11/02, `wrangler d1 migrations list --remote` → 남은 것 없음) |
-| 운영 청크 (`rag_sections` / `rag_chunks`) | **50 / 56** (11/03 `rag:build:remote`). Vectorize 벡터 56 — 로컬 초안 때 남은 6개는 지웠다. KV `rag:vector-ids`는 아직 없다(이 세션 토큰에 KV 쓰기 권한이 없음) → 배포 후 `/admin/chat` **벡터 갱신**을 한 번 누르면 같은 56개를 다시 넣고 KV를 채운다 |
+| 운영 청크 (`rag_chunks`) | **163** (11/04 `rag:sync:remote`로 D1 반영 — 클러쉬(주)·nuvo·프로젝트 페이지 포함). Vectorize는 133 → 배포 후 **벡터 갱신** 한 번이 남음(새 30·지울 3) |
 | 운영 `CHAT_ENABLED` 비밀 | **1** (11/03, 테스트 기간) — 끄려면 `wrangler secret delete CHAT_ENABLED` |
 | 운영 노출 | **켜짐** (11/03, `PUBLIC_CHAT_ENABLED=1`로 배포 — 챗 독 버튼이 보인다) |
 
@@ -29,7 +29,7 @@
 3. 확인 못 한 완료 기준: 턴 제한·월 상한, 실기기 키보드, 출처 칩 → 섹션 이동, 질문 로그 (아래 3번)
 4. 추천 칩 문구·인사말 다듬기
 5. ~~운영에 켜기~~ (11/03, 테스트 기간)
-6. 11/03 RAG 문서 수정(클러쉬(주) 경력·nuvo, `about`·`resume`) 운영 반영 확인 — `pnpm rag:build:remote` → `/admin/chat` **벡터 갱신**(KV `rag:vector-ids`도 이때 채워진다)
+6. RAG 운영 반영 자동화(11/04, `pnpm rag:sync:remote`·배포 때 자동) — 운영 D1은 반영됨. 남은 것: `RAG_SYNC_TOKEN` 운영 비밀 등록 + 배포, 그 뒤 첫 동기화(또는 `/admin/chat` **벡터 갱신**)
 7. 과정 보기(답마다 단계·수치 표시) 구현 — 설계는 `docs/05-06-chat-rag.md` "과정 보기"(11/03 설계, 미구현)
 8. FAQ(`faq.{ko,en}.md`)가 아직 초안 — 자주 받을 질문으로 교체
 
