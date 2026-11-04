@@ -396,6 +396,48 @@
         "resume",
         "about"
       ]
+    },
+    {
+      "q": "원격 근무 가능해?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "faq"
+      ]
+    },
+    {
+      "q": "Is Yeonghun available for remote work?",
+      "locale": "en",
+      "route": "portfolio",
+      "expect": [
+        "faq"
+      ]
+    },
+    {
+      "q": "코드 어디서 봐?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "faq",
+        "resume"
+      ]
+    },
+    {
+      "q": "이력서 받을 수 있어?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "faq"
+      ]
+    },
+    {
+      "q": "Flutter 실무로 써 봤어?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "stack",
+        "resume"
+      ]
     }
   ]
 }

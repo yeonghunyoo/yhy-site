@@ -4,7 +4,7 @@ title: How this portfolio site is built
 
 ## Site architecture overview
 
-This is the Korean/English portfolio of yhy, a builder and developer. Static pages show the projects, visitors can send yhy a letter (a message) without signing in, and the admin signs in at /admin to read and answer letters. The visitor site has no sign-in. A chat that answers from the portfolio documents (RAG) is the second-phase feature already running. 3D and shader effects are a later phase and not built yet; the brand, domain and visual world are undecided.
+This is the Korean/English portfolio of Yeonghun Yoo, a builder and developer. Static pages show the projects, visitors can send Yeonghun a letter (a message) without signing in, and the admin signs in at /admin to read and answer letters. The visitor site has no sign-in. A chat that answers from the portfolio documents (RAG) is the second-phase feature already running. 3D and shader effects are a later phase and not built yet; the brand, domain and visual world are undecided.
 
 One-line structure: visitor's browser → one Cloudflare Worker (static assets + dynamic code) → D1, KV, R2, Vectorize and Workers AI, plus external services Resend (email), Google (admin sign-in) and Telegram (alerts).
 
@@ -71,13 +71,13 @@ Google sign-in creates the same session through OAuth; inside in-app browsers su
 
 ## Letters: sending, email, alerts and replies
 
-A letter is a message any visitor sends to yhy without signing in.
+A letter is a message any visitor sends to Yeonghun without signing in.
 
 1. The visitor opens the letter sheet and fills in a subject (optional, 80 characters), a body (required, 10–2,000 characters, at most 5 links) and a reply-to email (required, typed by the visitor, not verified)
 2. The sheet calls POST /api/letters, which does not read the session
 3. The server checks limits: 3 per IP hash per 24 hours (KV letter:ip:{hash}), the site-wide daily cap LETTER_DAILY_CAP, and 409 for the same body as the previous letter from the same reply-to address. As bot defence, a hidden honeypot field website that is filled in gets a success answer without storing or sending. Turnstile may be added later if spam appears
 4. The server stores it in D1 letters (user_id is null)
-5. The server sends it to yhy's inbox through Resend (reply_to = the email the visitor typed; the mail has only a Reply-To line, no From or sign-in lines). On failure the letter stays with status = failed and the admin can resend it
+5. The server sends it to Yeonghun's inbox through Resend (reply_to = the email the visitor typed; the mail has only a Reply-To line, no From or sign-in lines). On failure the letter stays with status = failed and the admin can resend it
 6. The server alerts Telegram about the new letter (sender masked, sent with waitUntil apart from the response)
 7. When the admin replies at /admin/letters/{id}: POST /api/admin/letters/{id}/reply → D1 letter_replies → Resend sends it to the visitor → letters.status = replied
 
@@ -116,7 +116,7 @@ The supervisor (src/lib/server/agents/supervisor.ts) calls the same Gemma 4 26B 
 
 - Input: the signature-verified recent conversation (up to 6 turns), the question, and the document outline (slug, title and section headings from D1 rag_sections, cached 5 minutes per isolate). The outline is only for recognising names that appear only in the portfolio
 - portfolio: it writes a standalone search query with pronouns resolved from the conversation and hands it to search
-- chat: it writes a 1–2 sentence reply itself and states no facts about yhy
+- chat: it writes a 1–2 sentence reply itself and states no facts about Yeonghun
 - Mixed requests go to portfolio with only the portfolio part in the query
 - Failures: a failed call is retried once after 300ms; if it still fails or the JSON is broken, the original question takes the portfolio route
 
@@ -191,7 +191,7 @@ Migrations are generated with Drizzle Kit and applied with wrangler d1 migration
 - Solo operation: commits go straight to main without PRs, and a local pnpm build must pass before pushing
 - Deployment: only through the local wrangler CLI (pnpm run deploy). The chat dock is shown by the build flag PUBLIC_CHAT_ENABLED and the API is opened by the Worker secret CHAT_ENABLED
 - Alerts: new letters, mail failures, 5xx errors, chat cap and guard blocks go to Telegram; monitoring is Cloudflare's built-in logs
-- Claude Code implements; yhy understands the process and makes the decisions
+- Claude Code implements; Yeonghun understands the process and makes the decisions
 
 ## Browser support
 

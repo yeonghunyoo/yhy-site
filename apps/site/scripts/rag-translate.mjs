@@ -35,6 +35,7 @@ const GLOSSARY = [
   ['헬미닥', 'Helmidak'],
   ['홀리츠', 'holich'],
   ['(주)알파이글루', 'Alpha Igloo'],
+  ['클락', 'Clark'],
   ['반도체사', 'a semiconductor company (client)'],
 ];
 
@@ -74,7 +75,7 @@ Rules:
 - Keep the Markdown structure exactly: the same headings (## / ###) in the same order, lists, tables (same number of rows and columns), bold, line breaks.
 - Keep every placeholder like ⟦0⟧, ⟦12⟧ exactly as is, in the same place (they stand for links, emails and page markers). Keep unchanged: file paths, code, numbers, dates, version strings, product and library names written in Latin letters.
 - Translate image alt text inside ![...].
-- Refer to the person as "yhy" or "Yeonghun"; never use he/she pronouns — rephrase or use "they" only if unavoidable. First-person Korean ("저는") becomes first person ("I").
+- Refer to the person as "Yeonghun Yoo" or "Yeonghun" (유영훈 is the real name; "yhy" is only the site name); never use he/she pronouns — rephrase or use "they" only if unavoidable. First-person Korean ("저는") becomes first person ("I"). A Korean sentence without a subject keeps the subject the source implies — never invent "I" for Yeonghun where the source names Yeonghun.
 - Use these fixed names: ${GLOSSARY.map(([k, v]) => `${k} → ${v}`).join('; ')}.
 - Do not add facts, do not drop sentences, do not summarize.`;
 

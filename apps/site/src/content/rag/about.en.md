@@ -1,21 +1,21 @@
 ---
-title: About
+title: Introduction
 ---
 
-<!-- The chat never states experience or numbers that aren't in these docs. Career and project details live in the resume · handoff-agent · forest docs (imported from the 3-page portfolio site, 11/03). -->
+<!-- rag-translate: from=about.ko.md sha=6b3a93c46bc82fa3 model=@cf/google/gemma-4-26b-a4b-it — 자동 번역(pnpm rag:translate). 원문을 고치면 다시 돌린다. 손으로 고쳐 굳히려면 이 줄을 지운다 -->
 
-## Who
+## Who am I
 
-yhy works as a builder rather than a specialist in one field, and describes the work by what was built, why, and how it turned out — not by a list of tools.
+Yeonghun Yoo works as a "builder" rather than a developer specialized in a specific field. Instead of listing a tech stack, Yeonghun explains themselves through what was built, why it was built, and what the results were.
 
-## This site
+## This Site
 
-This portfolio is yhy's first public project, and building it is the content. The design docs came first, and each phase had to clear a completion bar.
+This portfolio is Yeonghun Yoo's first public project, and the process of creating it is content in itself. The project was built by writing design documents first and passing specific completion criteria at every stage.
 
-## How to get in touch
+## Contact
 
-Use "Send a letter" on the site to message yhy directly — no sign-in needed. Replies arrive at the email you leave.
+You can send a direct message to Yeonghun Yoo via the "Send a Letter" feature on this site. No login is required, and replies will be sent to the email address you provide.
 
-## Background and interests
+## Experience and Interests
 
-yhy is Yeonghun Yoo (유영훈), a software engineer and builder who has mostly done native iOS work, with 4 years 6 months of experience as of November 2026. Yeonghun currently works at Clush, on assignment at a semiconductor company building an internal agent and RAG pipeline (since September 2026; before that, the Helmidak iOS app at Tripaid), and on the side makes handoff-agent (a Claude Code plugin), Forest (a meditation sound-mixing app) and nuvo (a private photo service). The resume document has the details.
+Yeonghun Yoo (site name yhy) is a Software Engineer · Builder who has primarily focused on iOS native app development, with a total of 4 years and 6 months of experience (as of November 2026). Currently, Yeonghun is with Clush, dispatched to a semiconductor company to work on building internal agents and RAG pipelines (2026.09 ~, previously working on the Helmidak iOS app at Tripaid). As personal projects, Yeonghun is developing the Claude Code plugin handoff-agent, the meditation app Forest, and the private photo service nuvo. Further details can be found in the resume document.
