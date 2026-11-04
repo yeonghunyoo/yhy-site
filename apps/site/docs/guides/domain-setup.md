@@ -22,7 +22,7 @@
 | 1 | 도메인 구매, DNS 영역 | 사용자 | 완료(11/04) |
 | 2 | 코드: `wrangler.jsonc` 커스텀 도메인·`BETTER_AUTH_URL`, `astro.config.mjs` `site`, RAG 문서 연락처 → `hello@` | Claude | 완료(11/04) |
 | 3 | Email Routing 켜기 → 대상 주소(개인 메일) 추가·인증 메일 클릭 → 규칙 `hello@`·`letters@` → 개인 메일 | 사용자(대시보드) 또는 Claude(토큰 권한 추가 후) | |
-| 4 | Resend: Domains → Add `mail.bettercurl.dev`(도쿄). 11/04 루트 `bettercurl.dev`가 먼저 등록·Verified됨 → **Sign in to Cloudflare**로 DNS 자동 등록 → Verified → Open·Click Tracking 끄기 → Sending 키 | 사용자(Resend 대시보드) | 일부(11/04): Verified 확인(시험 발송 성공). Tracking 끄기는 미확인 — 아래 "Resend 점검" |
+| 4 | Resend: Domains → Add `mail.bettercurl.dev`(도쿄). 11/04 루트 `bettercurl.dev`가 먼저 등록·Verified됨 → **Sign in to Cloudflare**로 DNS 자동 등록 → Verified → Open·Click Tracking 끄기 → Sending 키 | 사용자(Resend 대시보드) | 일부(11/04): Verified 확인(시험 발송·도착 확인). Tracking 끄기는 미확인 — 아래 "Resend 점검" |
 | 5 | Google OAuth: 승인된 리디렉션 URI에 `https://bettercurl.dev/auth/callback/google`, 승인된 JavaScript 원본에 `https://bettercurl.dev` 추가 | 사용자(Google Cloud 콘솔) | |
 | 6 | `RESEND_API_KEY`는 운영 Secret(대시보드). `MAIL_FROM`·`LETTER_TO`는 공개 주소라 비밀이 아니다 → `wrangler.jsonc` `vars`에 둔다(배포해도 유지, 클라우드·로컬 같은 값). 대시보드에서 Text 변수로 넣으면 다음 배포 때 `vars`로 덮어써진다 | 사용자(키), Claude(vars) | 완료(11/04, Resend Verified) |
 | 7 | 배포 `pnpm site deploy` → `https://bettercurl.dev` 열림, 인증서 자동 | 사용자(클라우드 세션은 배포가 권한 검사에 막힌다) | |
@@ -32,11 +32,10 @@
 ## Resend 점검 (4) — 11/04
 
 - 세션의 `RESEND_API_KEY`는 **Sending access** 키라 `GET /domains`·`PATCH /domains/{id}`가 401(`restricted_api_key`)이다. 도메인 상태·Tracking 설정은 API로 못 읽고 못 바꾼다
-- 시험 발송 `letters@mail.bettercurl.dev` → 개인 메일: API가 받음(id `01a1a72e-43c6-7eac-89ab-714349871638`). Resend는 인증 안 된 도메인 발신을 403으로 거절하므로 `mail.bettercurl.dev`는 **Verified**로 본다. 도착·스팸함 여부와 헤더(DKIM `mail.bettercurl.dev`, SPF `send.mail.bettercurl.dev`)는 메일함에서 확인한다
+- 시험 발송 `letters@mail.bettercurl.dev` → 개인 메일: API가 받음(id `01a1a72e-43c6-7eac-89ab-714349871638`). Resend는 인증 안 된 도메인 발신을 403으로 거절하므로 `mail.bettercurl.dev`는 **Verified**로 본다. 11/04 개인 메일함 도착을 사용자가 확인함
 - 남은 일(사용자, Resend 대시보드):
   1. Domains → `mail.bettercurl.dev` → **Configuration** → Open Tracking·Click Tracking 끄기(켜져 있으면 링크가 추적 주소로 바뀌고 스팸 점수가 오른다)
-  2. Emails 로그에서 위 id가 **Delivered**인지
-  3. 루트 `bettercurl.dev`를 Resend에서 지울지 정한다(지우면 DNS의 `resend._domainkey`·`send.` 레코드도 정리)
+  2. 루트 `bettercurl.dev`를 Resend에서 지울지 정한다(지우면 DNS의 `resend._domainkey`·`send.` 레코드도 정리)
 - Claude가 API로 하려면 **Full access** 키를 세션에만 잠깐 주고 끝나면 지운다. 운영 Secret은 Sending 키 그대로 둔다
 
 ## Email Routing (3) — 대시보드
