@@ -93,6 +93,7 @@ PDF는 레이아웃만 있고 구조(제목·문단)가 없어서 바로 넣지 
 5. **D1 저장**: `rag_sections`(부모), `rag_chunks`(자식, FTS5 동기화). 스크립트는 전체를 지우고 다시 넣는다
 6. **벡터 갱신**: 배포된 Worker의 `/admin/chat` → "벡터 갱신"(`POST /api/admin/rag/reindex`). D1의 자식 id와 Vectorize의 id를 비교해 **없는 것만 임베딩하고 사라진 것만 지운다**. `/admin/chat`에 자식 수 / 벡터 수 / 마지막 갱신 시각을 보여 줘 어긋남을 바로 알 수 있게 한다
 7. **자동 동기화(11/04)**: `pnpm rag:sync:remote`가 5·6을 한 번에 한다 — 로컬 문서의 자식 id와 운영 D1 id가 다를 때만 `rag:build:remote`를 돌리고, 이어서 같은 `POST /api/admin/rag/reindex`를 `Authorization: Bearer {RAG_SYNC_TOKEN}`으로 부른다(관리자 세션 대신). 임베딩·KV 기록은 Worker의 같은 코드가 하므로 버튼과 결과가 같다. `pnpm run deploy`는 배포 뒤 `RAG_SYNC_TOKEN`이 있으면(환경변수 또는 `.prod.vars`) 이 동기화를 자동으로 돌린다. 토큰이 맞지 않으면 지금처럼 404
+8. **API로 벡터 갱신(11/04)**: `pnpm rag:reindex:api` — 6과 같은 일을 Worker를 거치지 않고 Cloudflare API로 한다(운영 주소 `*.workers.dev`에 닿지 않는 클라우드 세션용). 운영 D1 `rag_chunks`를 읽고, KV `rag:vector-ids`와 비교해 새 청크만 Workers AI(`@cf/baai/bge-m3`, 50개씩)로 임베딩해 Vectorize에 upsert, 사라진 id는 지우고, KV 두 키를 6과 같은 형식으로 쓴다. `--dry`는 읽기만 하고 새로·지울 개수를 보여 준다. 토큰은 `CLOUDFLARE_API_TOKEN`(Workers AI·Vectorize·KV 쓰기·D1 읽기 권한) + `CLOUDFLARE_ACCOUNT_ID`. 바인딩 이름 대신 `wrangler.jsonc`의 D1 id·KV id·인덱스 이름을 읽는다. 6의 코드와 계산이 같아야 하므로 둘 중 하나를 고치면 다른 쪽도 고친다
 
 ### 문서 속 이름 (11/04)
 

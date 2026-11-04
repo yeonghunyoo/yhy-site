@@ -99,6 +99,8 @@
 - 필요할 때만: 재현율이 0.8 아래로 떨어지면 부모마다 예상 질문 생성(빌드 때 1회)을 켠다
 - 2차로 미룬 것: 스캔 쪽 OCR·이미지 설명(비전 모델), docx·html 파서, 고아 이미지 정리 `rag:media:gc`, 다국어 리랭커 재측정, 프로젝트 안내 에이전트, MMR
 
+> **클라우드 세션에서 운영 반영(11/04)**: 클라우드 세션은 운영 주소(`*.workers.dev`)에 닿지 않아 `rag:sync:remote`의 벡터 갱신 단계가 실패한다. 대신 `pnpm rag:build:remote`(운영 D1) → `pnpm rag:reindex:api`(Cloudflare API로 임베딩·Vectorize·KV, 05-06 "넣기" 8) 두 줄로 같은 결과를 낸다. 먼저 `pnpm rag:reindex:api --dry`로 새로·지울 개수를 본다. 둘 다 운영에 쓰는 명령이라 사용자가 요청할 때만 돌린다
+
 > **`PUBLIC_CHAT_ENABLED` 기본값(11/03)**: 챗이 운영에 켜진 뒤로 `scripts/deploy.sh`가 이 값을 기본 `1`로 둔다 — `.env`가 없는 곳(클라우드 세션 등)에서 배포했다가 독이 사라진 일이 있었다. 독을 빼고 배포하려면 `PUBLIC_CHAT_ENABLED=0 pnpm run deploy`.
 
 ## 1. 문서 (사람이 제공)
