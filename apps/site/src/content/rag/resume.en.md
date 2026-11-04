@@ -3,7 +3,7 @@ title: Yeonghun Yoo's Resume
 source: { file: resume.ko.pdf, hash: 6d2a773d708f5296b660fa7245cbce238af30a4bc0144074e479e26a5dd7908a, parser: pdf-unpdf, pages: 3 }
 ---
 
-<!-- rag-translate: from=resume.ko.md sha=943d40a506eebbbb model=@cf/google/gemma-4-26b-a4b-it — 자동 번역(pnpm rag:translate). 원문을 고치면 다시 돌린다. 손으로 고쳐 굳히려면 이 줄을 지운다 -->
+<!-- rag-translate: from=resume.ko.md sha=5848b830b1ed906b model=@cf/google/gemma-4-26b-a4b-it — 자동 번역(pnpm rag:translate). 원문을 고치면 다시 돌린다. 손으로 고쳐 굳히려면 이 줄을 지운다 -->
 
 <!-- page:1 -->
 
@@ -25,7 +25,7 @@ Principle 2 — Speak with evidence. Showing rather than telling reduces misunde
 
 Skill: Swift, Kotlin (Compose), Dart, Flutter, TypeScript, Python, RxSwift, Fastlane
 
-Contact: yeonghun.yoo@gmail.com · GitHub [github.com/yeonghunyoo](https://github.com/yeonghunyoo)
+Contact: hello@bettercurl.dev · GitHub [github.com/yeonghunyoo](https://github.com/yeonghunyoo)
 
 ## Built: handoff-agent
 

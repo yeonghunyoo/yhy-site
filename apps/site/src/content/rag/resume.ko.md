@@ -23,7 +23,7 @@ iOS 네이티브 앱 개발을 주로 맡아왔지만, 특정 플랫폼이나 �
 
 Skill: Swift, Kotlin (Compose), Dart, Flutter, TypeScript, Python, RxSwift, Fastlane
 
-연락처: yeonghun.yoo@gmail.com · GitHub [github.com/yeonghunyoo](https://github.com/yeonghunyoo)
+연락처: hello@bettercurl.dev · GitHub [github.com/yeonghunyoo](https://github.com/yeonghunyoo)
 
 ## 만든 것: handoff-agent
 
