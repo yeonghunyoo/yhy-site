@@ -14,8 +14,8 @@
     // MVP는 무료 사용량 안에서 운영한다 (docs/mvp.md "무료 운영 한도")
     "PERSONAL_QUOTA_GB": "2",
     "SPACE_QUOTA_GB": "5",
-    // 서비스 전체 저장 상한. R2 무료 10GB에 여유를 둔 값. 0이면 상한 없음
-    "STORAGE_CAP_GB": "9"
+    // 서비스 전체 저장 상한. R2 무료 10GB는 계정 공용이라 portfolio-web(1GB 안)과 나눈다 (docs/mvp.md "계정 공용 한도"). 0이면 상한 없음
+    "STORAGE_CAP_GB": "8"
   },
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "nuvo-media" }],
   "hyperdrive": [

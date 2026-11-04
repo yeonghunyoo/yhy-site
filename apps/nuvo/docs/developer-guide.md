@@ -259,13 +259,13 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 | `KAKAO_CLIENT_ID` / `_SECRET` | `wrangler secret` / `.dev.vars` | 13단계 | 비우면 버튼 숨김 |
 | `ENVIRONMENT` | `wrangler.jsonc` vars (`production`) / `.dev.vars` (`development`) | — | `development`일 때만 이메일 로그인 |
 | `PERSONAL_QUOTA_GB` / `SPACE_QUOTA_GB` | `wrangler.jsonc` vars | — | MVP 2 / 5 (무료 운영). 바꿔도 이미 만든 사진함에는 반영되지 않음 |
-| `STORAGE_CAP_GB` | `wrangler.jsonc` vars | — | 서비스 전체 저장 상한, MVP 9 (R2 무료 10GB 안). 0이면 상한 없음 |
+| `STORAGE_CAP_GB` | `wrangler.jsonc` vars | — | 서비스 전체 저장 상한, MVP 8 (R2 무료 10GB는 portfolio-web과 계정 공용, [mvp.md](mvp.md) "계정 공용 한도"). 0이면 상한 없음 |
 | Hyperdrive `id` | `wrangler.jsonc` | 8단계 | |
 
 ## 결정이 필요한 것
 
 - [ ] 서비스 도메인 (10단계)
-- [x] 무료 용량: MVP는 무료 사용량 안에서 운영 (개인 2GB, Space 5GB, 전체 9GB). 2026-11-04 결정
+- [x] 무료 용량: MVP는 무료 사용량 안에서 운영 (개인 2GB, Space 5GB, 전체 8GB — 11/04 계정 공용으로 9→8). 2026-11-04 결정
 - [ ] 유료 플랜 도입 시점과 무료 용량 재조정 (후보: Space 100GB 월 3,900원)
 - [ ] 초대 링크 기본값: 7일, 최대 10명 (지금 값)
 - [ ] 유료 플랜과 결제 (MVP 범위 밖, 다음 단계)
