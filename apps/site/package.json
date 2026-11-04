@@ -19,7 +19,8 @@
     "rag:build": "node scripts/rag-build.mjs",
     "rag:build:remote": "node scripts/rag-build.mjs --remote",
     "rag:sync:remote": "node scripts/rag-sync.mjs",
-    "rag:import": "node scripts/ingest/index.mjs"
+    "rag:import": "node scripts/ingest/index.mjs",
+    "rag:translate": "node scripts/rag-translate.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",

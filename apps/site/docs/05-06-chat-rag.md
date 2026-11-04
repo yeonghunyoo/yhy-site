@@ -94,6 +94,21 @@ PDF는 레이아웃만 있고 구조(제목·문단)가 없어서 바로 넣지 
 6. **벡터 갱신**: 배포된 Worker의 `/admin/chat` → "벡터 갱신"(`POST /api/admin/rag/reindex`). D1의 자식 id와 Vectorize의 id를 비교해 **없는 것만 임베딩하고 사라진 것만 지운다**. `/admin/chat`에 자식 수 / 벡터 수 / 마지막 갱신 시각을 보여 줘 어긋남을 바로 알 수 있게 한다
 7. **자동 동기화(11/04)**: `pnpm rag:sync:remote`가 5·6을 한 번에 한다 — 로컬 문서의 자식 id와 운영 D1 id가 다를 때만 `rag:build:remote`를 돌리고, 이어서 같은 `POST /api/admin/rag/reindex`를 `Authorization: Bearer {RAG_SYNC_TOKEN}`으로 부른다(관리자 세션 대신). 임베딩·KV 기록은 Worker의 같은 코드가 하므로 버튼과 결과가 같다. `pnpm run deploy`는 배포 뒤 `RAG_SYNC_TOKEN`이 있으면(환경변수 또는 `.prod.vars`) 이 동기화를 자동으로 돌린다. 토큰이 맞지 않으면 지금처럼 404
 
+### 영어 문서 자동 번역 (`pnpm rag:translate`, 11/04)
+
+한국어로만 있는 문서(`resume`·`handoff-agent`·`forest`)는 영어 질문에서 질문 언어 가중(1.2배)에 밀려 재현율이 떨어졌다("What did you do at holich?"). 영어 문서를 두되, 한국어 원문 하나만 고치고 영어는 자동으로 만든다(11/04 결정 — 언어 가중을 끄는 안 대신).
+
+- 입력·출력: `src/content/rag/{slug}.ko.md` → `{slug}.en.md`. 넣기(`rag:build`)는 바뀌지 않는다 — 만든 파일을 다른 문서처럼 읽는다
+- 모델: Workers AI REST(`CLOUDFLARE_API_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`), 답변과 같은 Gemma 4, 추론 끔, temperature 0.2. `RAG_TRANSLATE_MODEL`로 바꿀 수 있다
+- 단위: `##` 섹션을 2,500자 안에서 묶어 보낸다. frontmatter는 `title`만 번역하고 나머지 줄(`source` 등)은 그대로. 쪽 표시 외 작성 메모 주석은 보내지 않는다(넣기도 지운다)
+- 보호: URL·메일·`/media/` 경로·쪽 표시는 자리표 `⟦n⟧`로 바꿔 보내고 받은 뒤 되돌린다 — 모델이 해시 이미지 이름을 한두 글자 틀리게 옮긴 일이 있었다. 이미지 대체 텍스트는 번역한다
+- 고유명사: 스크립트의 `GLOSSARY`(유영훈 → Yeonghun Yoo, 클러쉬(주) → Clush, 트립에이드 → Tripaid, 헬미닥 → Helmidak, 홀리츠 → holich, (주)알파이글루 → Alpha Igloo). 새 회사·서비스 이름이 생기면 여기에 더한다. he/she 대명사를 쓰지 않는다
+- 검사: `##`·`###` 제목 수, 표 행 수, 이미지 수, 자리표 전부, 잘림(`finish_reason: length`), 남은 한글 20자 이하. 실패하면 한 번 다시, 그래도 실패하면 그 문서 파일은 바꾸지 않고 exit 1
+- 표시 주석: 번역본 frontmatter 뒤에 `<!-- rag-translate: from=… sha=… model=… -->`. 원문 해시가 같으면 건너뛴다(`--force`로 다시). **표시 주석이 없는 `.en.md`는 사람이 쓴 문서로 보고 덮어쓰지 않는다** — 지금 `about`·`faq`·`stack`·`site-architecture`의 영어 문서가 그렇다. 번역본을 손으로 고쳐 굳히려면 주석을 지운다
+- 비용: 1회 실행 뉴런 상한 1,500(`RAG_TRANSLATE_NEURON_CAP`). 로컬 CLI라 `budget.ts`(요청 경로의 상한)를 거치지 않는 대신 이 상한으로 막는다. 11/04 세 문서 약 1만 2천 자 번역에 약 170뉴런(검사 재시도 포함 약 410) — 하루 무료 1만 중 일부
+- 순서: 한국어 문서 고침 → `pnpm rag:translate` → 번역본 훑어보기(수치·이름) → 커밋 → `pnpm rag:build` / `pnpm rag:sync:remote`
+- 하지 않는 것: 영어 → 한국어, 배포 때 자동 실행(번역은 사람이 한 번 보고 커밋한다)
+
 ### 질문 파이프라인 (`/api/chat`, WeKnora `rag_stream` 대응)
 
 | # | 단계 | 내용 | 기본값 |
