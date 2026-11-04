@@ -59,7 +59,7 @@
 | 구분 | 주소 |
 | --- | --- |
 | workers.dev | `https://portfolio-web.yeonghun-yoo.workers.dev` |
-| 커스텀 도메인 | 미정 (`overview.md` 결정 표의 후보, 구매 후) |
+| 커스텀 도메인 | `bettercurl.dev` (11/04 정함, 구매 전) |
 
 ## 0단계 작업 순서
 
