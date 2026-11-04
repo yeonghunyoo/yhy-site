@@ -32,7 +32,7 @@ Astro SSR 페이지 + `middleware.ts`에서 `/admin` 접두 경로 가드. 차�
 | 레터 전달 실패 | `⚠️ Resend 실패` + 레터 id + 에러 요약 |
 | 계정 삭제 | `🗑 계정 삭제 1건` (식별 정보 없음) |
 | 5xx 발생 | `🔥 5xx` + 경로 + 에러 메시지 앞 120자 (1분에 1회로 묶음, KV 키로 중복 억제) |
-| 챗 월 상한 도달 (2차) | `💸 챗 상한 도달` |
+| 챗 월 상한 도달 (2차) | `🧯 차단기 작동: …` (80%는 `⚠️ 사용량 80%: …`, `budget.ts` — 11/04 문구를 코드에 맞춤) |
 
 구현: `lib/notify.ts` 함수 하나, `https://api.telegram.org/bot{TOKEN}/sendMessage`. 모든 호출은 `ctx.waitUntil`로 응답과 분리. 실패는 무시.
 
