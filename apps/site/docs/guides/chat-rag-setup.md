@@ -18,7 +18,7 @@
 | Vectorize 인덱스 `portfolio-rag`, `ai`·`vectorize` 바인딩 | 있음 (11/01) — 인덱스는 로컬·운영 공용 |
 | 기준 질문 평가 | 11/03 실제 문서 22개(범위 안 18 · 밖 4): 재현율 100%, **범위 밖 거절 50%** — 날씨 0.426 · 주식 0.461이 기준 0.42를 넘는다. 추가 24개로 잰 분포가 겹친다(범위 안 최저 0.402 "What did you do at holich?", 범위 밖 최고 0.497 "비트코인 시세 알려줘") — 기준값 조정으로는 못 고친다. 로컬 D1 + Workers AI REST로 `retrieve()`를 그대로 옮겨 쟀다. 무관 작업은 이후 슈퍼바이저가 거른다(100%) — 근거 판단만 다시 재기는 아래 "보강" |
 | 운영 D1 마이그레이션 0002~0005 | 적용됨 (0005는 11/02, `wrangler d1 migrations list --remote` → 남은 것 없음) |
-| 운영 청크 (`rag_chunks`) | **163** (11/04 `rag:sync:remote`로 D1 반영 — 클러쉬(주)·nuvo·프로젝트 페이지 포함). Vectorize는 133 → 배포 후 **벡터 갱신** 한 번이 남음(새 30·지울 3) |
+| 운영 청크 (`rag_chunks`) | **247 = 벡터 247** (11/04 클라우드 세션에서 `rag:build:remote` + `rag:reindex:api` — 영어판 resume·handoff-agent·forest, 새 FAQ·스택 포함). 같은 날 운영 데이터로 기준 질문 58개 평가: 경로 정확도 100%, 재현율 100%, 무관 작업 거절 100%. 공격 질문 점검 12/12(답변 프롬프트 링크 규칙 반영 코드). 화면 코드(GitHub 링크, 답 아래 표시 세 종류)는 배포 대기 |
 | 운영 `CHAT_ENABLED` 비밀 | **1** (11/03, 테스트 기간) — 끄려면 `wrangler secret delete CHAT_ENABLED` |
 | 운영 노출 | **켜짐** (11/03, `PUBLIC_CHAT_ENABLED=1`로 배포 — 챗 독 버튼이 보인다) |
 
