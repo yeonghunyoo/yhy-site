@@ -53,8 +53,8 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `BETTER_AUTH_URL` | 운영 도메인 | 예 |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth | 예 |
 | `RESEND_API_KEY` | 메일 발송 | 예 |
-| `MAIL_FROM` | `letters@mail.bettercurl.dev` (Resend 하위 도메인, 11/04) | 예 |
-| `LETTER_TO` | `letters@bettercurl.dev` (Email Routing → 개인 메일, 11/04) | 예 |
+| `MAIL_FROM` | `letters@mail.bettercurl.dev` (Resend 하위 도메인, 11/04) — `wrangler.jsonc` `vars`(공개 주소라 비밀 아님, 11/04) | 아니요 |
+| `LETTER_TO` | `letters@bettercurl.dev` (Email Routing → 개인 메일, 11/04) — `wrangler.jsonc` `vars` | 아니요 |
 | `ADMIN_EMAILS` | 쉼표 구분 허용목록 | 예 |
 | `CHAT_MONTHLY_TOKEN_CAP` | 월 상한(기본 2,000,000) | 2차 |
 | `AI_DAILY_NEURON_CAP` · `CHAT_DAILY_TURN_CAP` · `MAIL_DAILY_CAP` · `MAIL_MONTHLY_CAP` · `LETTER_DAILY_CAP` | 사이트 전체 일일·월 상한(비우면 기본값, [guides/cost-guard.md](guides/cost-guard.md)) | 11/03 |
