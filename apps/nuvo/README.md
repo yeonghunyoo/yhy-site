@@ -6,6 +6,7 @@
 
 - [docs/service-plan.md](docs/service-plan.md): **목표** — 실서비스 운영, 개인 10GB 선택 구독, PC·휴대폰 로컬 사진 보기, 모바일 네이티브 앱 (11/04 재조정)
 - [docs/mvp.md](docs/mvp.md): 현재 구현 기록 — 범위, 아키텍처, 보안 설계, 검색 노출(기본 noindex), 한계
+- [docs/platform-policy.md](docs/platform-policy.md): 웹·모바일별 규칙 — 기기 사진 보기, 업로드, 다운로드, 동영상, 삭제, 로그인, 결제, 알림 (제안)
 - [docs/developer-guide.md](docs/developer-guide.md): **배포 전 사람이 해야 할 일 (순서대로)**
 - [docs/design-system.md](docs/design-system.md): 색, 테마, 인터랙션 규칙
 - [docs/roadmap-video-classification.md](docs/roadmap-video-classification.md): 동영상·자동 분류 제안 (구현 전)
