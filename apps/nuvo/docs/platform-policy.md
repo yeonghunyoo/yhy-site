@@ -89,7 +89,7 @@
 | | 웹 | 모바일 앱 |
 |---|---|---|
 | 방식 | 쿠키 세션 (Better Auth, 지금) | 제안: Better Auth의 앱용 토큰 방식. Google·카카오 로그인은 OS 브라우저 화면으로. **iOS는 Sign in with Apple 필수**(심사 4.8, [media-security.md](media-security.md) 3.3) |
-| 로그인 없이 | 기기 사진 보기 가능 (지금) | 같음 (구독 없이 로컬 보기, [service-plan.md](service-plan.md) 잠정) |
+| 로그인 없이 | 기기 사진 보기 가능 (지금) | 같음. 로그인하면 구독 없이도 초대받은 Space 보기([service-plan.md](service-plan.md) 11/04 결정) |
 
 - [ ] 앱 토큰 보관: iOS 키체인, Android Keystore (제안)
 - [x] 애플 로그인: Google·카카오로 주 계정을 만들면 **필수**(11/04 조사 확인). 웹에도 같은 로그인 버튼을 둘지는 정할 것
