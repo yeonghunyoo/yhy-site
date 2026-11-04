@@ -8,7 +8,7 @@
 
 - **코드는 같이, 자원은 따로.** 레포는 하나지만 Cloudflare 계정·Resend 계정은 앱마다 따로 둔다. 무료 한도는 계정 단위라, 한 계정을 나눠 쓰면 한 앱의 폭주가 다른 앱을 멈춘다(11/04 결정)
 - **forest-app은 넣지 않는다.** 비공개 레포이고 Claude Design 패키지와 handoff 작업 방식(레포 루트 기준)을 쓴다. 따로 둔다(11/04 결정)
-- 이 레포(`yeonghunyoo/yhy-site`)를 그대로 키운다. `yeonghunyoo/nuvo`는 기록째 합친 뒤 보관(archive)한다
+- 이 레포(`yeonghunyoo/yhy-site`)를 그대로 키운다. `yeonghunyoo/nuvo`는 기록째 합친 뒤 삭제했다(11/04). nuvo 코드 링크는 `https://github.com/yeonghunyoo/yhy-site/tree/main/apps/nuvo`
 
 ## 구조
 
@@ -91,11 +91,11 @@ nuvo는 운영에 `RESEND_API_KEY`를 넣으면 이메일 가입이 켜지는데
 
 1. 이 문서 커밋
 2. site 파일을 `apps/site/`로 `git mv` (이 문서와 `.claude/`는 루트에 남긴다)
-3. nuvo `main`의 기록을 `git filter-branch --index-filter`로 최종 경로(`apps/nuvo`·`packages/nuvo-*`)로 다시 쓴 뒤 `--allow-unrelated-histories`로 합친다. 루트 설정 파일만 바꾼 커밋은 빠진다(원본은 보관된 `yeonghunyoo/nuvo`에 남는다)
+3. nuvo `main`의 기록을 `git filter-branch --index-filter`로 최종 경로(`apps/nuvo`·`packages/nuvo-*`)로 다시 쓴 뒤 `--allow-unrelated-histories`로 합친다. 루트 설정 파일만 바꾼 커밋은 빠진다(내용은 루트 `pnpm-workspace.yaml`에 있다. 옛 레포는 삭제되어 옛 커밋 해시는 더 이상 열리지 않는다)
 4. 루트 설정(`package.json`·`pnpm-workspace.yaml`·`.gitignore`·`.nvmrc`·`CLAUDE.md`), 경로 참조 갱신, `pnpm install`, `pnpm build`·`check`·`test`
 5. cf-kit 추출: mail → budget → guard → notify
 6. nuvo 메일 상한
 7. (사용자) nuvo용 Cloudflare·Resend 계정 생성 → `account_id`, 리소스 다시 만들기, R2 상한 원복
-8. `yeonghunyoo/nuvo` README에 새 위치를 적고 보관(archive)은 사용자가 한다
+8. 이관 뒤 옛 레포에 올라온 문서 커밋 2개를 `apps/nuvo/`로 옮기고, 옛 레포가 새 레포와 같은지 대조한 뒤 `yeonghunyoo/nuvo`를 삭제했다(11/04). 사이트의 nuvo 코드 링크도 새 위치로
 
 기록 확인: `git log --follow apps/site/src/middleware.ts`, `git log --follow apps/nuvo/worker/index.ts`.

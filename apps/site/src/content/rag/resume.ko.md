@@ -59,7 +59,7 @@ Forest (사운드 믹싱 집중 & 명상 앱 · 2026.09 ~)는 파도 · 비 · �
 
 ## 만든 것: nuvo
 
-nuvo (프라이빗 사진 서비스 · 2026.11 ~)는 흩어진 사진을 한곳에 모아 보고, 가족·친구와 함께 쌓아가는 프라이빗 사진 서비스입니다. 서비스 https://nuvo.yeonghun-yoo.workers.dev · 코드 github.com/yeonghunyoo/nuvo
+nuvo (프라이빗 사진 서비스 · 2026.11 ~)는 흩어진 사진을 한곳에 모아 보고, 가족·친구와 함께 쌓아가는 프라이빗 사진 서비스입니다. 서비스 https://nuvo.yeonghun-yoo.workers.dev · 코드 github.com/yeonghunyoo/yhy-site/tree/main/apps/nuvo
 
 - 이 PC 폴더를 업로드 없이 바로 보기(로그인 없이도 사용) + nuvo 저장소 업로드 — 같은 사진은 한 칸으로 합친 통합 타임라인
 - Space: 초대 링크로 가족·친구와 함께 올리기, 역할 · 내보내기 · 소유권 이전, 실시간 피드(WebSocket)

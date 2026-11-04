@@ -8,7 +8,7 @@ stack: [React, Vite, React Three Fiber, Cloudflare Workers, Hono, R2, Durable Ob
 order: 3
 ---
 
-[서비스 보기](https://nuvo.yeonghun-yoo.workers.dev) · [코드](https://github.com/yeonghunyoo/nuvo)
+[서비스 보기](https://nuvo.yeonghun-yoo.workers.dev) · [코드](https://github.com/yeonghunyoo/yhy-site/tree/main/apps/nuvo)
 
 ## 무엇
 

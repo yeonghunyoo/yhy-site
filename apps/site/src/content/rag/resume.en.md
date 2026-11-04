@@ -59,7 +59,7 @@ Forest (Sound mixing focus & meditation app · 2026.09 ~) is a meditation app th
 
 ## Built: nuvo
 
-nuvo (Private Photo Service · 2026.11 ~) is a private photo service that gathers scattered photos in one place to view and build memories with family and friends. Service https://nuvo.yeonghun-yoo.workers.dev · Code github.com/yeonghunyoo/nuvo
+nuvo (Private Photo Service · 2026.11 ~) is a private photo service that gathers scattered photos in one place to view and build memories with family and friends. Service https://nuvo.yeonghun-yoo.workers.dev · Code github.com/yeonghunyoo/yhy-site/tree/main/apps/nuvo
 
 - View local PC folders directly without uploading (usable without login) + upload to nuvo storage — integrated timeline that merges duplicate photos into a single entry
 - Space: Upload with family/friends via invitation links, roles · export · ownership transfer, real-time feed (WebSocket)
