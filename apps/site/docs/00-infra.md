@@ -59,7 +59,7 @@
 | 구분 | 주소 |
 | --- | --- |
 | workers.dev | `https://portfolio-web.yeonghun-yoo.workers.dev` |
-| 커스텀 도메인 | 미정 (도메인 구매 후) |
+| 커스텀 도메인 | `yeong.dev` (11/04 정함, 구매 전) |
 
 ## 0단계 작업 순서
 
@@ -78,6 +78,6 @@
 
 ## 본인이 직접 할 일
 
-- [ ] 도메인 구매(Cloudflare 계정 결제 수단 등록)
+- [ ] 도메인 구매(Cloudflare 계정 결제 수단 등록) — `yeong.dev`(11/04 정함). 사이트 Cloudflare 계정에서 산다(nuvo 계정과 따로, `docs/monorepo.md`)
 - [x] GitHub 레포 생성 (`yeonghunyoo/yhy-site`)
 - [x] Cloudflare 계정 생성, `wrangler login`, workers.dev 서브도메인 등록
