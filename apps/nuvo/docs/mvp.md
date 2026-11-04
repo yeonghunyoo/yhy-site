@@ -4,6 +4,7 @@
 
 - 배포 전에 사람이 해야 할 일: [developer-guide.md](developer-guide.md)
 - 색과 테마: [design-system.md](design-system.md)
+- 다음 단계 제안 (동영상, 자동 분류): [roadmap-video-classification.md](roadmap-video-classification.md)
 
 ## 범위
 

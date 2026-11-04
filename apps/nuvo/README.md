@@ -7,6 +7,7 @@
 - [docs/mvp.md](docs/mvp.md): 범위, 아키텍처, 보안 설계, 검색 노출(기본 noindex), 한계
 - [docs/developer-guide.md](docs/developer-guide.md): **배포 전 사람이 해야 할 일 (순서대로)**
 - [docs/design-system.md](docs/design-system.md): 색, 테마, 인터랙션 규칙
+- [docs/roadmap-video-classification.md](docs/roadmap-video-classification.md): 동영상·자동 분류 제안 (구현 전)
 
 ## 구조
 
