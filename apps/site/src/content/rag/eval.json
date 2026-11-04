@@ -342,6 +342,60 @@
         "site-architecture",
         "stack"
       ]
+    },
+    {
+      "q": "nuvo가 뭐야?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "resume",
+        "projects/nuvo"
+      ]
+    },
+    {
+      "q": "nuvo는 어떤 기술로 만들었어?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "resume",
+        "projects/nuvo"
+      ]
+    },
+    {
+      "q": "How does nuvo handle duplicate photos?",
+      "locale": "en",
+      "route": "portfolio",
+      "expect": [
+        "resume",
+        "projects/nuvo"
+      ]
+    },
+    {
+      "q": "nuvo 구조를 그려줘",
+      "locale": "ko",
+      "route": "diagram",
+      "expect": [
+        "resume",
+        "projects/nuvo"
+      ]
+    },
+    {
+      "q": "클러쉬에서 뭐 해?",
+      "locale": "ko",
+      "route": "portfolio",
+      "expect": [
+        "resume",
+        "about"
+      ]
+    },
+    {
+      "q": "Where does Yeonghun work now?",
+      "locale": "en",
+      "route": "portfolio",
+      "expect": [
+        "resume",
+        "about"
+      ]
     }
   ]
 }
