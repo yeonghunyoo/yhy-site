@@ -40,6 +40,8 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
   const [draft, setDraft] = useState<Draft>({ subject: '', body: '', replyTo: '' });
   // 허니팟 — 사람에게는 안 보이는 칸. 봇이 채우면 서버가 조용히 버린다
   const [website, setWebsite] = useState('');
+  // 시트를 연 시각 — 작성 시간이 너무 짧으면 서버가 봇으로 본다
+  const [openedAt, setOpenedAt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,6 +52,7 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
     setDraft({ subject: saved?.subject ?? '', body: saved?.body ?? '', replyTo: saved?.replyTo ?? '' });
     setError(null);
     setBusy(false);
+    setOpenedAt(Date.now());
   }, [open]);
 
   const update = (patch: Partial<Draft>) => {
@@ -72,7 +75,7 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
     const res = await fetch('/api/letters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...draft, website, locale }),
+      body: JSON.stringify({ ...draft, website, elapsed: Date.now() - openedAt, locale }),
     }).catch(() => null);
     setBusy(false);
 

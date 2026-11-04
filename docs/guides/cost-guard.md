@@ -32,6 +32,18 @@
 4. **본문 크기**: `Content-Length` 16KB 초과(관리자 API 64KB) 413. 챗 질문은 500자, 레터 본문은 앱 상한이 따로 있다
 5. **출처 확인**: 상태를 바꾸는 `/api/*` 요청(POST·PUT·PATCH·DELETE)은 `Origin`(없으면 `Referer`)이 사이트 출처와 같아야 한다. 아니면 403. `/auth/*`는 Better Auth가 자체로 확인한다
 6. **형식**: JSON을 받는 `/api/*`(관리자 폼 제외)는 `Content-Type: application/json`이 아니면 415
+7. **봇 신호(11/04)**: 로그인 없이 열린 `POST /api/letters`·`POST /api/chat`만. 브라우저라면 반드시 보내는 신호가 없으면 403 `bot`(AI·D1·메일 안 씀)
+   - `User-Agent`가 없거나 도구·자동화 이름(curl, wget, python, Go-http, Java, okhttp, axios, node-fetch, undici, Scrapy, HeadlessChrome, PhantomJS, Selenium, Puppeteer, Playwright, bot·spider·crawler)
+   - `Sec-Fetch-Site`가 `same-origin`이 아님(지원 브라우저 Safari 16.4+·Chrome 111+는 모두 보낸다), `Sec-Fetch-Mode`가 `cors`·`same-origin`이 아님
+   - `Accept-Language`가 없음
+   - 판정은 `usage-math.ts`의 `botReason()`(순수 함수), 차단은 Telegram `🤖 봇 차단`(시간당 1회). 관리자 API·`/auth/*`는 제외(관리자 스크립트 `rag:sync:remote`는 브라우저가 아니다)
+   - 한계: 헤더는 위조할 수 있다 — 브라우저 흉내를 낸 봇은 다음 층(작성 시간, 허니팟, IP 한도, 사이트 상한)이 받는다
+
+**레터 작성 시간(11/04)**: 레터 시트가 열린 뒤 보낼 때까지의 시간(`elapsed`, 밀리초)을 함께 보낸다. 3초 미만이면 허니팟과 같이 저장·발송 없이 성공처럼 응답한다(봇에게 막혔다는 신호를 주지 않는다).
+
+**다음 단계 — Cloudflare Turnstile(설계, 키 발급 후 구현)**: 방문자는 대개 클릭 없이 통과하는 Cloudflare 무료 봇 검사. 대시보드 → Turnstile에서 위젯을 만들어 사이트 키(공개, 빌드 변수 `PUBLIC_TURNSTILE_SITE_KEY`)와 비밀 키(`TURNSTILE_SECRET`)를 받는다. 비밀 키가 있을 때만 켠다 — 레터는 보낼 때마다 토큰 검증(`siteverify`), 챗은 첫 질문에서 한 번 검증하고 6시간짜리 서명 쿠키로 대신한다. 스크립트는 레터 시트·챗을 처음 열 때만 불러 초기 JS 예산을 지키고, CSP에 `https://challenges.cloudflare.com`(script·frame)을 더한다. 로컬은 Cloudflare 테스트 키(항상 통과·항상 실패)로 확인한다
+
+**도메인 연결 후**: Cloudflare 대시보드 → 보안 → Bots → **Bot Fight Mode** 켜기(무료, 도메인 영역 단위라 workers.dev에는 없다)
 
 막힌 요청은 AI·D1·메일을 전혀 쓰지 않는다.
 

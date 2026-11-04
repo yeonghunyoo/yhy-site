@@ -5,6 +5,7 @@ export const LETTER_LIMITS = {
   bodyMax: 2000,
   linksMax: 5,
   perDay: 3,
+  minElapsedMs: 3000, // 시트를 연 뒤 이보다 빨리 보내면 봇으로 본다(11/04)
 } as const;
 
 export type LetterError = 'invalid' | 'links' | 'limit' | 'duplicate';

@@ -117,3 +117,21 @@ export function sameOrigin(siteOrigin: string, origin: string | null, referer: s
   }
   return false;
 }
+
+// 봇 신호(docs/guides/cost-guard.md "2. 비정상 요청 방어" 7) — 로그인 없이 열린 POST /api/letters·/api/chat에만 쓴다.
+const BOT_UA =
+  /curl|wget|python|httpie|go-http|java\/|okhttp|axios|node-fetch|undici|libwww|scrapy|headlesschrome|phantomjs|selenium|puppeteer|playwright|bot\b|spider|crawl/i;
+
+export const botChecked = (method: string, pathname: string) => method === 'POST' && (pathname === '/api/letters' || pathname === '/api/chat');
+
+/** 브라우저라면 반드시 보내는 신호가 빠졌으면 이유, 아니면 null */
+export function botReason(headers: Headers): string | null {
+  const ua = headers.get('user-agent') ?? '';
+  if (!ua) return 'no_ua';
+  if (BOT_UA.test(ua)) return 'tool_ua';
+  if (headers.get('sec-fetch-site') !== 'same-origin') return 'fetch_site';
+  const mode = headers.get('sec-fetch-mode');
+  if (mode !== 'cors' && mode !== 'same-origin') return 'fetch_mode';
+  if (!headers.get('accept-language')) return 'no_lang';
+  return null;
+}

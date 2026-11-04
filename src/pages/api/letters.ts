@@ -24,6 +24,8 @@ export const POST: APIRoute = async ({ request }) => {
   const input = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   // 허니팟: 화면에 안 보이는 칸. 채워져 있으면 봇 — 저장·발송 없이 성공처럼 응답한다
   if (String(input?.website ?? '').trim()) return Response.json({ ok: true });
+  // 작성 시간: 시트를 연 지 3초 안에 보냈으면 봇 — 같은 식으로 조용히 버린다(docs/guides/cost-guard.md)
+  if (Number(input?.elapsed ?? 0) < LETTER_LIMITS.minElapsedMs) return Response.json({ ok: true });
   const subject = String(input?.subject ?? '').trim() || null;
   const body = String(input?.body ?? '').trim();
   const replyTo = String(input?.replyTo ?? '').trim();

@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { allowedMethods, sameOrigin, WindowLimiter } from '../usage-math';
+import { allowedMethods, botChecked, botReason, sameOrigin, WindowLimiter } from '../usage-math';
 import { hashIp } from './chat';
 import { notify } from './notify';
 import { clientIp } from './ratelimit';
@@ -14,6 +14,7 @@ const media = new WindowLimiter(120, MINUTE);
 // 같은 isolate가 차단을 이미 기록했으면 다시 쓰지 않는다(KV 쓰기 절약)
 const blockedHere = new Map<string, number>();
 let lastAlert = 0;
+let lastBotAlert = 0;
 
 const MAX_BODY = 16 * 1024;
 const MAX_BODY_ADMIN = 64 * 1024;
@@ -69,6 +70,19 @@ export async function guardRequest(request: Request, url: URL): Promise<Response
     if (!sameOrigin(url.origin, request.headers.get('origin'), request.headers.get('referer'))) return json(403, 'forbidden_origin');
     const type = (request.headers.get('content-type') ?? '').toLowerCase();
     if (!pathname.startsWith('/api/admin/') && length > 0 && !type.startsWith('application/json')) return json(415, 'unsupported_media_type');
+  }
+
+  // 7. 봇 신호 — 로그인 없이 열린 레터·챗만(관리자 API·/auth/*는 제외)
+  if (botChecked(method, pathname)) {
+    const reason = botReason(request.headers);
+    if (reason) {
+      console.log(`[guard] bot ${reason} ${pathname}`);
+      if (Date.now() - lastBotAlert > 60 * MINUTE) {
+        lastBotAlert = Date.now();
+        notify(`🤖 봇 차단: ${pathname} (${reason}) — 이 isolate에서 시간당 1번만 알림`);
+      }
+      return json(403, 'bot');
+    }
   }
   return null;
 }
