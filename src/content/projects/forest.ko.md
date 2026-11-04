@@ -6,6 +6,11 @@ metric: { value: 5, label: 트랙 동시 믹싱 }
 period: 2026.09 ~
 stack: [SwiftUI, Jetpack Compose, AVAudioEngine, Cloudflare Workers, Hono, D1, R2]
 order: 2
+images:
+  - { src: ./forest/01-onboarding.jpg, alt: "Forest 온보딩 화면 — 숨 쉴 틈을 위한 소리" }
+  - { src: ./forest/02-home.jpg, alt: "Forest 홈 화면 — 저장한 믹스 목록" }
+  - { src: ./forest/03-mixer.jpg, alt: "Forest 소리 조절 화면 — 다섯 소리의 볼륨 슬라이더" }
+  - { src: ./forest/04-player.jpg, alt: "Forest 재생 화면 — 저녁 물결 믹스 재생 중" }
 ---
 
 ## 무엇

@@ -6,6 +6,11 @@ metric: { value: 5, label: tracks mixed at once }
 period: 2026.09 ~
 stack: [SwiftUI, Jetpack Compose, AVAudioEngine, Cloudflare Workers, Hono, D1, R2]
 order: 2
+images:
+  - { src: ./forest/01-onboarding.jpg, alt: "Forest onboarding — sounds for a moment to breathe" }
+  - { src: ./forest/02-home.jpg, alt: "Forest home — saved mixes" }
+  - { src: ./forest/03-mixer.jpg, alt: "Forest mixer — volume sliders for the five sounds" }
+  - { src: ./forest/04-player.jpg, alt: "Forest player — the Evening Waves mix playing" }
 ---
 
 ## What

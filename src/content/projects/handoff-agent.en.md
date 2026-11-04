@@ -6,6 +6,12 @@ metric: { value: 39, unit: '%', label: 'fewer tokens · 8 runs each on iOS and A
 period: 2026.09 ~
 stack: [Claude Code plugin, Python MCP server]
 order: 1
+images:
+  - { src: ./handoff-agent/01-home.jpg, alt: "Consistency check — three builds of the Forest home screen" }
+  - { src: ./handoff-agent/02-onboarding.jpg, alt: "Consistency check — three builds of the Forest onboarding screen" }
+  - { src: ./handoff-agent/03-sounds.jpg, alt: "Consistency check — three builds of the Forest sound list" }
+  - { src: ./handoff-agent/04-timer.jpg, alt: "Consistency check — three builds of the player timer dropdown" }
+  - { src: ./handoff-agent/05-mix-sheet.jpg, alt: "Consistency check — three builds of the mix volume sheet" }
 ---
 
 ## Problem
