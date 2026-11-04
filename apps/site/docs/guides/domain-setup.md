@@ -23,7 +23,7 @@
 | 2 | 코드: `wrangler.jsonc` 커스텀 도메인·`BETTER_AUTH_URL`, `astro.config.mjs` `site`, RAG 문서 연락처 → `hello@` | Claude | 완료(11/04) |
 | 3 | Email Routing 켜기 → 대상 주소(개인 메일) 추가·인증 메일 클릭 → 규칙 `hello@`·`letters@` → 개인 메일 | 사용자(대시보드) 또는 Claude(토큰 권한 추가 후) | 완료(11/04): 사용자가 켜기·인증, Claude가 API로 대상 주소·규칙. `letters@` 전달 도착 확인(몇 분 늦게). 아래 "겪은 일" |
 | 4 | Resend: Domains → Add `mail.bettercurl.dev`(도쿄). 11/04 루트 `bettercurl.dev`가 먼저 등록·Verified됨 → **Sign in to Cloudflare**로 DNS 자동 등록 → Verified → Open·Click Tracking 끄기 → Sending 키 | 사용자(Resend 대시보드) | 일부(11/04): Verified 확인(시험 발송·도착 확인). Tracking 끄기는 미확인 — 아래 "Resend 점검" |
-| 5 | Google OAuth: 승인된 리디렉션 URI에 `https://bettercurl.dev/auth/callback/google`, 승인된 JavaScript 원본에 `https://bettercurl.dev` 추가 | 사용자(Google Cloud 콘솔) | |
+| 5 | Google OAuth: 승인된 리디렉션 URI에 `https://bettercurl.dev/auth/callback/google`, 승인된 JavaScript 원본에 `https://bettercurl.dev` 추가 | 사용자(Google Cloud 콘솔) | 완료(11/04, 배포 후 `bettercurl.dev`에서 Google 로그인 확인) |
 | 6 | `RESEND_API_KEY`는 운영 Secret(대시보드). `MAIL_FROM`·`LETTER_TO`는 공개 주소라 비밀이 아니다 → `wrangler.jsonc` `vars`에 둔다(배포해도 유지, 클라우드·로컬 같은 값). 대시보드에서 Text 변수로 넣으면 다음 배포 때 `vars`로 덮어써진다 | 사용자(키), Claude(vars) | 완료(11/04, Resend Verified) |
 | 7 | 배포 `pnpm site deploy` → `https://bettercurl.dev` 열림, 인증서 자동 | 사용자(클라우드 세션은 배포가 권한 검사에 막힌다) | 완료(11/04, Claude가 클라우드 세션에서 배포, 버전 `09489d76`). 커스텀 도메인 붙음·A/AAAA 응답. `workers_dev`가 `wrangler.jsonc`에 없어 workers.dev 주소는 꺼졌다(위 "당분간 남는다"와 다름 — 남길지 정한다). RAG 동기화는 토큰이 없어 건너뜀 → 8 |
 | 8 | RAG 운영 반영(`pnpm rag:build:remote` → `pnpm rag:reindex:api`) — 연락처 바뀐 이력서. 안 하면 챗이 옛 연락처(개인 Gmail)를 답한다 | 사용자(클라우드 세션에서 11/04 권한 검사에 막힘) 또는 허용 후 Claude | |
@@ -50,7 +50,7 @@
 겪은 일(11/04):
 - MX·규칙이 생기기 전에 `@bettercurl.dev`로 보낸 메일은 Cloudflare가 `Recipient not found`로 거절했고, Resend가 그 주소(`hello@`·`letters@`)를 **Suppressions**에 자동으로 넣었다. 그 뒤로는 규칙이 있어도 Resend가 보내지 않는다(로그 "Recipient was suppressed"). Resend 대시보드 Suppressions에서 지워서 풀었다. 처음 연동할 때는 Email Routing을 켜고 규칙까지 만든 **뒤에** 시험 메일을 보낸다
 - 풀린 뒤 첫 메일은 Resend 로그가 한동안 `Sent`(Delivered 아님)로 남다가 몇 분 뒤 도착했다(재시도로 보임)
-- `_dmarc.bettercurl.dev`가 없어 Resend가 "No DMARC record found"를 띄운다. 전달 경로에서 Gmail이 인증을 엄하게 보므로 `TXT _dmarc` `v=DMARC1; p=none;`을 둔다(감시만, `mail.`에도 적용). 11/04 사용자 요청으로 Claude가 API로 추가함(처음 시도는 권한 검사에 막혔고, 사용자가 명시적으로 맡긴 뒤 됨)
+- `_dmarc.bettercurl.dev`가 없어 Resend가 "No DMARC record found"를 띄운다. 전달 경로에서 Gmail이 인증을 엄하게 보므로 `TXT _dmarc` `v=DMARC1; p=none;`을 둔다(감시만, `mail.`에도 적용). 11/04 사용자 요청으로 Claude가 API로 추가함(처음 시도는 권한 검사에 막혔고, 사용자가 명시적으로 맡긴 뒤 됨). 재점검(11/04): 1.1.1.1·8.8.8.8 모두 조회됨. `_dmarc.mail`은 따로 두지 않는다 — 하위 도메인은 루트 정책을 따른다. 정렬: DKIM `d=mail.bettercurl.dev`, SPF 반송 주소 `send.mail.bettercurl.dev` 둘 다 루트 `bettercurl.dev` 아래라 완화 정렬로 통과
 
 Claude가 하려면 토큰에 **Zone → DNS Edit, Zone → Email Routing Rules Edit, Account → Email Routing Addresses Edit**(영역은 `bettercurl.dev`만)을 더한다. 대상 주소 인증 클릭은 그래도 사용자가 한다.
 
