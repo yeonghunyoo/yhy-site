@@ -68,6 +68,6 @@ pnpm check && pnpm run deploy
 
 ## 공개 전 사람이 확인할 것
 
-- [ ] 인트로 문구·프로젝트 본문 초안 다듬기 (`src/i18n/*.json`, `src/content/projects/`)
+- [ ] 인트로 문구·프로젝트 본문 초안 다듬기 (`src/i18n/*.json`, `src/content/projects/`) — 11/03 nuvo 추가·경력 갱신, 다듬기는 남음
 - [ ] 개인정보처리방침 초안 확인 (`src/pages/[locale]/privacy.astro`)
-- [ ] 세계관·디자인 확정 시 `src/styles/tokens.css` 교체
+- [x] 디자인 확정 후 `src/styles/tokens.css` 교체 (11/03, 나이트 한 가지 + Black Han Sans · IBM Plex Mono)
