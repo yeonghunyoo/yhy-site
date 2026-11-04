@@ -5,6 +5,7 @@
 흩어진 사진을 한곳에 모아 보고, 가족·친구와 함께 쌓아가는 프라이빗 사진 서비스.
 
 - [docs/service-plan.md](docs/service-plan.md): **목표** — 모바일 앱 중심(구독·백업·가족 공유, 결제는 앱 스토어만), 웹은 확장(큰 화면 감상·관리). 개인 10GB 선택 구독. 개발은 웹(서버) 먼저 → 모바일 (11/04 재조정)
+- [docs/pricing.md](docs/pricing.md): 구독 가격 — 손익분기 계산, 타 서비스 비교, 가격 안 A/B/C (미결정)
 - [docs/mvp.md](docs/mvp.md): 현재 구현 기록 — 범위, 아키텍처, 보안 설계, 검색 노출(기본 noindex), 한계
 - [docs/platform-policy.md](docs/platform-policy.md): 웹·모바일별 규칙 — 기기 사진 보기, 업로드, 다운로드, 동영상, 삭제, 로그인, 결제, 알림 (제안)
 - [docs/media-security.md](docs/media-security.md): 이미지·동영상 보안·개인정보 규칙 — 공통·서비스 이용·웹·iOS·Android (제안)
