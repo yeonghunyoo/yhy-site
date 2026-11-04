@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nuvo",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "not_found_handling": "single-page-application",
+    // /api, /m(미디어)는 Worker가 먼저 처리
+    "run_worker_first": ["/api/*", "/m/*"]
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    // MVP는 무료 사용량 안에서 운영한다 (docs/mvp.md "무료 운영 한도")
+    "PERSONAL_QUOTA_GB": "2",
+    "SPACE_QUOTA_GB": "5",
+    // 서비스 전체 저장 상한. R2 무료 10GB는 계정 공용이라 portfolio-web(1GB 안)과 나눈다 (docs/mvp.md "계정 공용 한도"). 0이면 상한 없음
+    "STORAGE_CAP_GB": "8"
+  },
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "nuvo-media" }],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // docs/developer-guide.md 4단계에서 발급한 ID로 교체
+      "id": "7fc232ed9f174c89a1319101f331d866",
+      "localConnectionString": "postgres://nuvo:nuvo@localhost:5432/nuvo"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "SPACE_HUB", "class_name": "SpaceHub" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SpaceHub"] }],
+  // 완료되지 않은 업로드·참조가 끊긴 사진의 R2 객체 정리 (worker/lib/gc.ts)
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "observability": { "enabled": true }
+}
