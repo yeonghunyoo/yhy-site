@@ -1,0 +1,48 @@
+# portfolio-web 결정 기록
+
+프로젝트의 **왜**를 남기는 문서다. 무엇을 정했는지뿐 아니라 어떤 선택지를 봤고, 무엇을 버렸고, 무엇을 근거로 했는지를 적는다. 규칙은 루트 `CLAUDE.md`와 같다.
+
+- 결정·잠정·제안이 생기거나 바뀔 때마다 **위에 덧붙인다**. 지우지 않고, 뒤집히면 새 항목에서 "S-00N을 뒤집음"이라고 쓴다
+- 한 항목 = 날짜 · 상태(확정/잠정/제안) · 결정 · 본 선택지 · 이유 · 자료 · 관련 문서
+- 세부 수치·표는 설계 문서에 두고 여기서는 링크한다. 제품·정책·구조·돈에 관한 것만 적는다
+- 이 문서를 만들기 전(10/28~11/03)의 결정은 [overview.md](overview.md) "확정된 결정 사항" 표에 있다
+
+상태: **확정** = 그대로 진행 / **잠정** = 이 기준으로 진행하되 바뀔 수 있음 / **제안** = 기본값일 뿐 아직 결정 아님
+
+---
+
+## 2026-11-04
+
+### S-006 · 확정 · 메일 주소 체계 — 받기는 Cloudflare Email Routing, 보내기는 Resend 하위 도메인
+- 결정: 사이트·챗에 보이는 연락처 `hello@bettercurl.dev`, 레터 수신 `letters@bettercurl.dev`(둘 다 Email Routing → 개인 메일로 전달), 발신 `letters@mail.bettercurl.dev`(Resend). 관리자 로그인 이메일은 개인 메일 그대로
+- 본 것: 개인 Gmail을 사이트·레터에 그대로 / 루트 도메인에서 발신(`letters@bettercurl.dev`) / Google Workspace 메일함(유료)
+- 이유: 개인 메일을 공개하지 않고, 주소를 나중에 바꿔도 사이트는 그대로. Email Routing은 무료, 받는 MX(루트)와 Resend의 보내는 MX(`send.mail.`)가 겹치지 않는다. Resend는 보내기 전용 하위 도메인을 권한다
+- 문서: [guides/domain-setup.md](guides/domain-setup.md), [guides/resend-setup.md](guides/resend-setup.md)
+
+### S-005 · 확정 · 도메인 `bettercurl.dev` 구매
+- 결정: `bettercurl.dev`(Cloudflare Registrar, 첫해 $8.20 / 갱신 $12.20). 보조 도메인은 사지 않음(나중에 실명 `yeonghun.dev`를 살 수 있음, 11/04 기준 구매 가능)
+- 본 것: `yeong.dev`(이미 등록), `yeong.build` $25.20, `yeonglab.dev`, `yeongbuilds.dev`, `curlyeong.dev`, `bettercallyeong.dev`(김), `young.dev`(프리미엄·주니어로 읽힘), `godev`(Go 언어 `go.dev`와 겹침), `zerodev`(같은 이름 회사), `odev`(터키어 "숙제"), `enter.dev`(이름과 무관)
+- 이유: "Better Call ○○"의 개발자 버전(call → `curl`, 소리·글자·뜻이 겹침), 짧고 세일즈 문구가 된다. 약점(사람이 안 보임, HTTP 도구 이름처럼 읽힘, `.com`은 남의 것)은 알고 간다. 원작의 이름·로고·인물·대사는 쓰지 않는다
+- 자료: Cloudflare Registrar `POST /registrar/domain-check` 조회(11/04) — 조회 방법은 [00-infra.md](00-infra.md)
+- 문서: [overview.md](overview.md) 결정 표
+
+### S-004 · 확정 · 챗 답에서 링크는 GitHub(`github.com/yeonghunyoo/…`)만
+- 결정: 답의 마크다운 링크·맨 주소 중 `github.com/yeonghunyoo` 아래만 새 탭 링크로, 나머지는 글자. 답변 프롬프트도 문서에 있는 GitHub 주소만 허용
+- 본 것: 링크 전부 금지(이전) / 문서에 있는 모든 주소 허용
+- 이유: 모델이 지어낸 주소로 방문자를 보내지 않는다(가드레일 8층). 코드 위치를 묻는 질문에는 바로 누를 수 있어야 한다
+- 문서: [05-06-chat-rag.md](05-06-chat-rag.md) 가드레일 8층
+
+### S-003 · 확정 · RAG 문서는 실명 "유영훈"(영어 "Yeonghun Yoo"), "yhy"는 사이트 이름으로만
+- 결정: RAG 문서에서 사람을 가리키는 "yhy"를 실명으로. 챗 답변·프롬프트의 호칭은 그대로("문서만" 범위)
+- 이유: 포트폴리오·세일즈에서 누구인지가 분명해야 한다. FAQ 답에 주어를 넣어 영어 번역이 1인칭 "I"로 나오지 않게 했다
+- 문서: [05-06-chat-rag.md](05-06-chat-rag.md) "문서 속 이름"
+
+### S-002 · 확정 · 영어 RAG 문서는 한국어 원문에서 자동 번역
+- 결정: 한국어 문서를 고치고 `pnpm rag:translate`로 영어판을 만든다(Workers AI, 구조 검사). 손으로 쓴 영어 문서는 덮어쓰지 않는다
+- 본 것: 같은 slug에 그 언어 문서가 없으면 언어 가중을 끈다(코드 한 곳) / 영어 문서를 손으로 관리
+- 이유: 영어 질문 재현율 실패("What did you do at holich?")를 문서로 해결하고, 원문은 한 벌만 관리. 이후 운영 평가 재현율 100%
+- 문서: [05-06-chat-rag.md](05-06-chat-rag.md) "영어 문서 자동 번역"
+
+### S-001 · 확정 · FAQ와 스택 경험 수준
+- 결정: FAQ 8개(원격 근무 지향·출근은 서울·경기, 이력서는 레터로 요청 — 자동 발송은 나중), 스택은 실무 / 개인 프로젝트 두 단계로 문서 근거가 있는 것만. 근무 형태(정규직·계약)는 넣지 않음
+- 문서: [guides/chat-rag-setup.md](guides/chat-rag-setup.md) "남은 일" 2

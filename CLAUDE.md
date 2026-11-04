@@ -4,7 +4,7 @@
 
 | 경로 | 무엇 | 앱 지침 |
 | --- | --- | --- |
-| `apps/site/` | portfolio-web (Astro, Cloudflare Workers) | `apps/site/CLAUDE.md`, 설계 `apps/site/docs/` |
+| `apps/site/` | portfolio-web (Astro, Cloudflare Workers) | `apps/site/CLAUDE.md`, 설계 `apps/site/docs/`, 결정 기록 `apps/site/docs/decisions.md` |
 | `apps/nuvo/` | nuvo 사진 서비스 (Vite + Hono, Workers) | `apps/nuvo/README.md`, 설계 `apps/nuvo/docs/`, 결정 기록 `apps/nuvo/docs/decisions.md` |
 | `packages/cf-kit/` | `@yhy/cf-kit` — 두 앱이 같이 쓰는 서버 모듈 | `docs/monorepo.md` "@yhy/cf-kit" |
 | `packages/nuvo-db/`, `packages/nuvo-shared/` | nuvo 전용 패키지 | |
