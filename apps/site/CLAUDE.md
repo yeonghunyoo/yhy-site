@@ -25,6 +25,7 @@
 - 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI. 테마는 11/03 확정(나이트 한 가지, Black Han Sans + IBM Plex Mono — `docs/01-frontend.md` "홈"), 본문 글꼴 IBM Plex Sans KR·본문 15px(11/04). 색·글꼴을 바꿀 때는 docs를 먼저 고친다. daisyUI 컴포넌트 이름(`hero`·`label`·`timeline` 등)과 겹치는 클래스명은 쓰지 않는다
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
 - `/admin`과 `/api/admin/*`는 관리자만. 로그인 안 된 `/admin` 화면은 로그인 화면, 로그인한 비관리자는 "권한 없음", `/api/admin/*`는 404. 관리자 = 이메일 인증된 계정 중 `ADMIN_EMAILS`(최고 관리자, 비밀) 또는 D1 `user.is_admin`(어드민 사용자 화면에서 지정, 11/04)
+- SEO·GEO(`docs/01-frontend.md` "SEO·GEO"): 공개 페이지는 `BaseLayout`에 `title`·`description`을 넘긴다. `/admin`·`/api`·`/auth`는 색인하지 않는다. 도메인을 하드코딩하지 않고 절대 URL은 `Astro.site`로 만든다. 크롤러가 받아 갈 파일은 `/media/` 아래에 두지 않는다(동적 경로라 순간 제한·R2 비용). 프로젝트 본문 첫 문단에 무엇·왜·결과를 쓴다
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
 - 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. 푸시 전 루트 `pnpm build`가 통과해야 한다(모든 앱)
 - 서버 공용 모듈(메일·예산 상한·요청 방어·알림)은 `@yhy/cf-kit`(`packages/cf-kit`)에 있다. 사이트 전용 규칙(경로·상한 기본값)은 `src/lib/`에 둔다

@@ -80,6 +80,40 @@ src/
 - 크게 보기: 이미지를 누르면 전체 화면 `<dialog>`. 두 손가락 핀치·휠로 확대(최대 4배), 확대 중 한 손가락 끌기 = 이동, 두 번 탭 = 맞춤 ↔ 2.5배, 맞춤 상태에서 좌우 밀기 = 이전·다음, 아래로 밀기 = 닫기. 키보드 ←/→·+/−/0·Esc. 열 때 히스토리를 하나 쌓아 Android 뒤로 가기로 닫힌다. 처음엔 목록 이미지를 보여 주고 큰 이미지가 오면 바꾼다(현재·양옆만 미리 받는다). 닫으면 목록도 보던 장으로 맞춘다
 - 배경 스크롤 잠금은 공용 `scroll-lock.ts`. `prefers-reduced-motion`이면 넘김·닫기 전환 없이 바로
 
+## SEO·GEO (11/04)
+
+검색엔진과 AI 답변 엔진(ChatGPT·Claude·Perplexity·Google AI 개요) 둘 다 같은 것을 본다: 스크립트 없이 읽히는 HTML, 구조가 분명한 본문, 확실한 출처 URL. 정적 prerender와 `/ko`·`/en` 분리라 바탕은 되어 있다. 아래는 그 위에 더할 것이다.
+
+**원칙 (지금부터 모든 페이지에)**
+- 공개 페이지는 `BaseLayout`에 `title`·`description`을 넘긴다. 빠지면 사이트 기본값이 들어가 페이지마다 같아진다
+- 색인하지 않는 곳: `/admin/*`·`/api/*`·`/auth/*`. 화면은 `AdminLayout`이 `noindex`, robots.txt가 Disallow
+- 도메인을 코드에 쓰지 않는다. 절대 URL은 `Astro.site`(= `astro.config.mjs`의 `site`)에서 만든다
+- 크롤러·공유 미리보기가 받아 갈 파일(OG 이미지 등)은 `public/`이나 빌드 자산(`/_astro`)에 둔다. `/media/*`는 Worker가 R2에서 꺼내 주는 동적 경로라 순간 제한(`request-guard.ts`)과 R2 읽기 비용을 거친다 — 크롤러가 몰리면 429가 나거나 한도를 쓴다
+- 프로젝트 마크다운 본문 첫 문단에 무엇·왜·결과를 한두 문장으로 쓴다. AI가 인용하는 곳이 보통 첫 문단이다. 수치·기간·스택은 frontmatter(`metric`·`period`·`stack`)에만 두지 말고 본문에도 글로 쓴다
+
+**지금 상태 (11/04)**: `description`·hreflang만 있다. hreflang은 상대 경로이고 `x-default`·canonical이 없다. robots.txt·sitemap·OG·구조화 데이터 없음
+
+**구현 계획**
+
+| 항목 | 위치 | 도메인 필요 |
+| --- | --- | --- |
+| 관리자 화면 `noindex` | `src/layouts/AdminLayout.astro` | 아니오 |
+| JSON-LD: 홈 `Person` + `WebSite`, 프로젝트 상세 `CreativeWork` | 각 페이지에서 `BaseLayout`에 넘긴다. `<script type="application/ld+json" set:html>` — 실행되지 않는 데이터라 CSP와 상관없다 | URL만 |
+| `llms.txt`: 소개 한 단락, 프로젝트별 한 줄 요약과 링크(ko·en) | `src/pages/llms.txt.ts`(prerender), `projects` 컬렉션과 `src/data/career.ts`에서 만든다 | URL만 |
+| `site` 설정 | `astro.config.mjs` | 예 |
+| canonical, hreflang 절대 URL과 `x-default`(→ `/`, 언어 선택 리다이렉트) | `BaseLayout.astro` | 예 |
+| OG·Twitter 메타 | `BaseLayout` props에 `image`·`type` 추가 | 예 |
+| sitemap(ko·en 서로 연결, 관리자 제외) | `@astrojs/sitemap` 또는 `src/pages/sitemap.xml.ts` | 예 |
+| robots.txt(Disallow + sitemap 주소) | `src/pages/robots.txt.ts`(prerender) | 예 |
+
+JSON-LD·`llms.txt`는 도메인 전에 만들어 두고 URL만 `Astro.site`로 바꾼다.
+
+**운영자가 할 일 (코드 밖)**
+- Cloudflare 대시보드의 AI 크롤러 차단(Block AI bots, managed robots.txt 등)이 켜져 있으면 GPTBot·ClaudeBot·PerplexityBot이 막힌다. 노출하려면 끈다
+- 도메인 확정 뒤 Google Search Console·Bing Webmaster Tools에 등록하고 sitemap을 낸다
+
+**미결**: 도메인(`overview.md` "미결정 사항"), OG 이미지 방식 — 정적 한 장(`public/og.png`) vs 빌드 때 프로젝트별 생성(`@napi-rs/canvas`, 런타임 비용 없음)
+
 ## 반응형·모바일 UX
 
 레이아웃은 모바일 퍼스트로 잡고, 데스크톱은 확장형으로 본다. 아래는 구현 시 전부 체크리스트로 검증한다.
