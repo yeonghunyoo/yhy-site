@@ -162,13 +162,13 @@
 
 ## 4. Android 앱
 
-2026-11-04 조사. 출처는 각 항목 끝. **[스니펫]** 표시는 조사 환경에서 `support.google.com`(Play Console 도움말)이 막혀 검색 요약으로만 확인한 것 — 출시 전에 원문을 다시 봅니다.
+2026-11-04 조사, 같은 날 Play Console 도움말 원문으로 재확인(◎). 출처는 각 항목 끝. 일부 도움말 URL이 통합 페이지로 바뀌어 새 주소를 적었습니다.
 
 ### 4.1 사진·동영상 권한 (개발 단계 — 심사 통과의 핵심)
-- Play "사진·동영상 권한" 정책: `READ_MEDIA_IMAGES`·`READ_MEDIA_VIDEO`는 **시스템 포토 피커로 대체할 수 없는 핵심 기능이 지속적으로 사진 전체에 접근해야 할 때만** 선언할 수 있습니다. 가끔 한 장 고르는 용도는 포토 피커 의무. 2025-05-28부터 전면 시행, Play Console "App content"의 **선언 폼 심사**를 통과해야 하고 스토어 설명에 그 기능이 적혀 있어야 합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/14115180
-- Google이 든 적격 예시가 **갤러리·사진 관리 앱**이라 nuvo의 "기기 사진첩을 앱에서 보기"는 통과 가능성이 높습니다. 다만 "클라우드 백업"은 공식 예시에 없습니다(불확실). 선언 폼에는 **갤러리(타임라인·중복 정리)를 핵심 기능으로** 적고 백업은 부가로 적습니다(제안)
+- Play "사진·동영상 권한" 정책: `READ_MEDIA_IMAGES`·`READ_MEDIA_VIDEO`는 **시스템 포토 피커로 대체할 수 없는 핵심 기능이 지속적으로 사진 전체에 접근해야 할 때만** 선언할 수 있습니다. 가끔 한 장 고르는 용도는 포토 피커 의무. 2025-05-28부터 전면 시행, Play Console "App content"의 **선언 폼**에서 "왜 포토 피커로는 부족한지"를 입증해야 합니다(원문: 선언 폼의 세부 질문이나 시연 영상 요구는 없음). 자체 피커 UI만으로는 자격이 안 되고, 권한을 거부한 사용자를 위한 대안(시스템 피커)을 둬야 합니다 ◎ https://support.google.com/googleplay/android-developer/answer/16935362 (옛 14115180에서 통합)
+- 원문의 적격 예시는 **"사용자의 모든 사진·동영상을 관리·유지하는 것이 핵심 기능인 앱(갤러리 앱)"**이라 nuvo의 "기기 사진첩을 앱에서 보기"는 여기에 해당합니다. "백업"은 사진 권한 정책에 **언급이 없습니다**(백업은 All files access 정책에만 나옴) — 그래서 선언 폼에는 **갤러리(타임라인·중복 정리)를 핵심 기능으로** 적고 백업은 부가로 적습니다(제안)
 - Android 14+ 부분 접근: `READ_MEDIA_VISUAL_USER_SELECTED`를 함께 선언해 "일부만 선택"을 앱이 다룹니다. 권한 상태는 저장하지 말고 화면에 돌아올 때마다(`onResume`) 다시 확인 https://developer.android.com/about/versions/14/changes/partial-photo-video-access
-- `MANAGE_EXTERNAL_STORAGE`(모든 파일 접근)는 미디어 용도로 **불허**. 요청하지 않습니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/10467955
+- `MANAGE_EXTERNAL_STORAGE`(모든 파일 접근)는 미디어 용도로 **불허**. 요청하지 않습니다 ◎ https://support.google.com/googleplay/android-developer/answer/10467955 (원문: 불허 사례에 "Media Files access" 명시, MediaStore 사용 안내)
 - Capacitor·RN으로 감싸도 manifest·targetSdk·선언 폼은 똑같이 적용됩니다. 서드파티 SDK가 manifest 병합으로 권한을 끼워 넣어도 정책 대상이니 빌드 결과 manifest를 확인합니다
 
 ### 4.2 위치 EXIF (2.1과 연결)
@@ -177,27 +177,27 @@
 - [ ] `ACCESS_MEDIA_LOCATION` 첫 출시 제외 (제안: 제외)
 
 ### 4.3 Data safety·계정 삭제·개인정보 (심사 선언)
-- Data safety 폼: 로컬 열람만이면 사진은 "수집"이 아닙니다(기기 밖으로 안 나감). **백업 업로드는 "Photos and videos" 수집**, 위치 EXIF가 올라가면 **"Precise location" 수집**으로 신고. manifest 권한과 신고 내용이 다른 것이 흔한 거절 사유 [스니펫] https://support.google.com/googleplay/android-developer/answer/10787469
-- 계정 삭제: **앱 안 삭제 경로 + 앱 밖 웹 링크** 둘 다 필수(이미 시행). 웹 페이지에 앱·개발자 이름이 보여야 하고, 비활성화는 인정 안 됨. 지금 "설정 → 계정 삭제"는 있고, **웹 삭제 페이지**가 추가로 필요합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/13327111
+- Data safety 폼: 로컬 열람만이면 사진은 "수집"이 아닙니다(기기 밖으로 안 나감). **백업 업로드는 "Photos and videos" 수집**, 위치 EXIF가 올라가면 **"Precise location" 수집**으로 신고. manifest 권한과 신고 내용이 다른 것이 흔한 거절 사유. 원문 정의: "수집 = 기기 밖으로 전송", 기기 안 처리만이면 신고 불요, 메모리에서만 잠깐 쓰는 "임시 처리"는 폼에는 적되 공개되지 않음. 사진으로 인종 등 특성을 추정하면 그것도 신고 ◎ https://support.google.com/googleplay/android-developer/answer/10787469
+- 계정 삭제: **앱 안 삭제 경로 + 앱 밖 웹 링크** 둘 다 필수(이미 시행). 웹 페이지에 앱·개발자 이름이 보여야 하고, 비활성화는 인정 안 됨(User Data 정책 10144311). 앱 안 삭제가 완전해도 웹 링크는 별도 필수(앱을 지운 사용자용). 지금 "설정 → 계정 삭제"는 있고, **웹 삭제 페이지**가 추가로 필요합니다 ◎ https://support.google.com/googleplay/android-developer/answer/13327111
 - 사진·위치는 "개인·민감 정보"라 개인정보처리방침 링크(스토어 + 앱 안)와 눈에 띄는 고지·동의가 필요합니다(developer-guide 14단계와 같은 작업)
 - [ ] 계정 삭제 웹 페이지 (로그인 후 삭제 / 이메일 요청 폼)
 
 ### 4.4 UGC·아동 안전 (서비스 이용 규칙에 영향)
-- UGC 정책: 다른 사람에게 보이는 콘텐츠가 있으면 — 비공개 가족 Space라도 — **업로드 전 약관 동의, 앱 안 신고 기능, 사용자 차단·삭제, 지속적 조치**가 필요합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/9876937
+- UGC 정책: 원문 정의가 "**앱 사용자 중 일부에게라도** 보이는 콘텐츠"라 비공개 가족 Space도 범위 안입니다. 요건은 업로드 전 약관 동의, 금지 콘텐츠 정의, **앱 안 신고·차단과 조치**. 특정 사용자 집합만 쓰는 앱(학교·회사·가족)은 "콘텐츠·사용자 신고"가 최소 요건이고, 1:1 상호작용이 있으면 차단도 필요합니다 ◎ https://support.google.com/googleplay/android-developer/answer/9876937
   - 지금 nuvo에는 **신고 기능이 없습니다.** Space 안에서 사진 신고 → 소유자·운영자에게 전달, 멤버 차단(내보내기는 있음)을 넣어야 합니다
-- Child Safety Standards(CSAE): Play Console 카테고리를 **Social/Dating로 선언한 앱**이 대상(2025-03 시행, 2026 범위 확대 중 — 시행일 표기가 소스마다 달라 불확실). 공개 CSAE 표준 페이지·신고 메커니즘·담당 연락처가 요구됩니다. nuvo는 **"사진" 카테고리로 등록**해 범위 밖에 두되, Child Endangerment 정책(CSAM 즉시 삭제·신고)은 모든 앱에 적용되니 신고 처리 절차는 어차피 필요합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/14747720
+- Child Safety Standards(CSAE): 원문 범위는 **익명·랜덤 채팅 앱과 Social·Dating 카테고리 앱**(아동 사용자 유무 무관). 2026-10-29 발효 정책에도 같은 범위라, 앞서 "2026 범위 확대"로 봤던 것은 **공식 페이지로 확인되지 않습니다**. 요건은 공개 CSAE 표준 페이지(앱·개발자명 포함, Console에 링크 제출), 앱 안 피드백 경로, CSAM 조치, 아동 안전법 준수, 담당자 등록. nuvo는 **"사진" 카테고리로 등록**해 범위 밖에 두되, Child Endangerment 정책(CSAM 무관용, NCMEC 등 신고)은 모든 앱에 적용되니 신고 처리 절차는 어차피 필요합니다 ◎ https://support.google.com/googleplay/android-developer/answer/14747720 , https://support.google.com/googleplay/android-developer/answer/9878809
 - [ ] 사진 신고·멤버 차단 기능 (제안: 앱 출시 전 필수)
 - [ ] 스토어 카테고리: 사진 (제안)
 
 ### 4.5 결제
-- 앱 안에서 디지털 구독을 팔면 Play Billing 필수. **소비 전용 앱(웹에서 결제, 앱은 로그인만)은 허용**됩니다. 앱 안에서 외부 결제로 **직접 링크·유도는 금지**, "웹사이트에서 구독할 수 있어요" 같은 링크 없는 안내는 가능 [스니펫] https://support.google.com/googleplay/android-developer/answer/9858738
+- 앱 안에서 디지털 구독을 팔면 Play Billing 필수 — 원문 예시에 "구독 서비스"와 "**클라우드 소프트웨어·서비스(데이터 저장 서비스 등)**"가 명시돼 nuvo가 정확히 해당합니다. 소비 전용 앱(앱 안에서 아무것도 못 삼)은 허용되고 링크 없는 안내 문구만 가능. 외부 결제 유도 금지 범위는 스토어 등록정보·웹뷰·버튼·링크·메시지·광고·가입 흐름까지 ◎ https://support.google.com/googleplay/android-developer/answer/9858738 , FAQ https://support.google.com/googleplay/android-developer/answer/10281818
 - 지역별 대체 결제는 2025~2026에 계속 바뀌고 있습니다(미국 외부 링크 허용 → 수수료 프로그램, EEA Billing Choice, **한국은 2026-12-31 Billing Choice 적용 예정 + 2026-10-28 방미통위 아웃링크 결제 제공 명령**, 수수료 미정). 출시 시점에 다시 확인
 - 11/04 결정: Android 앱 안에서 구독을 팔기로 했으므로 **Google Play 결제 연동이 필수**입니다(소비 전용 아님). 한국은 Billing Choice(2026-12-31~) 또는 방미통위 아웃링크 명령에 따른 대체 결제가 열릴 수 있으나 수수료·시행이 미정 — 1차는 Play 결제 기본으로 가고 대체 결제는 출시 시점에 다시 봅니다
 - [x] Google Play 결제 연동 (11/04 결정)
 
 ### 4.6 백그라운드 업로드 (자동 백업)
 - 선택지: **WorkManager**(10분 미만 작업 단위, 충전·Wi-Fi 같은 제약 조건, 시스템이 취소·재시도) / **User-Initiated Data Transfer Job**(사용자가 시작한 전송, 진행 알림 필수, Android 14+) / 포그라운드 서비스는 최후 수단 https://developer.android.com/develop/background-work/background-tasks/data-transfer-options
-- `dataSync` 포그라운드 서비스는 Android 15+ 타겟에서 **24시간 중 6시간** 제한, 부팅 때 시작 불가, Play Console에 용도 설명 + **시연 동영상** 선언 필요(거절 사례 많음) https://developer.android.com/develop/background-work/services/fgs/service-types
+- `dataSync` 포그라운드 서비스는 Android 15+ 타겟에서 **24시간 중 6시간** 제한, 부팅 때 시작 불가, Play Console에 기능 설명·중단 시 영향·**시연 동영상**·사용 사례 선언 필요. 원문이 "백업·복원" 사례를 **사용자가 직접 시작한 작업용**으로 한정하고("특정 사진을 골라 백업 vs 매일 새 사진 자동 백업"), 영상에 "완전 자동·백그라운드 백업을 보여줄 수 없다"고 못박습니다. 사용자가 시작한 전송이면 dataSync 대신 **user-initiated data transfer job**을 권장 ◎ https://support.google.com/googleplay/android-developer/answer/13392821 , https://developer.android.com/develop/background-work/services/fgs/service-types
 - 제안: 자동 백업은 **WorkManager + 제약 조건(Wi-Fi, 배터리 부족 아님)**으로 만들고, 사진을 작은 묶음으로 나눠 10분 안에 끝나게 합니다. 포그라운드 서비스 선언은 피합니다. platform-policy.md 2의 "Wi-Fi에서만·저전력 멈춤" 기본값과 맞습니다
 - [ ] WorkManager 방식 확정
 
@@ -207,7 +207,7 @@
 - Play Integrity: 1차에는 넣지 않습니다(제안). 서버 검증이 이미 요청마다 있고, 통합 비용 대비 막는 위협(변조 앱)이 가족 사진 서비스에서 크지 않습니다
 - 화면 캡처: `FLAG_SECURE`로 차단 가능하지만 2.4 결정대로 **쓰지 않음**
 - 형식: HEIC 디코딩은 Android 9+이지만 **기기 선택 사항**(`ImageDecoder.isMimeTypeSupported`로 확인). Motion Photo는 JPEG/HEIC 뒤에 MP4가 붙은 한 파일 — 백업은 **원본 바이트 그대로** 보존해야 모션이 살아 있습니다(roadmap V6 Live Photo와 함께 다룸) https://developer.android.com/media/platform/motion-photo-format
-- targetSdk: **2026-08-31부터 신규 앱은 Android 16(API 36) 필수** — 지금 출시하면 36 https://developer.android.com/google/play/requirements/target-sdk
+- targetSdk: **2026-08-31부터 신규 앱·업데이트는 Android 16(API 36) 필수**, 연장 신청 시 2026-11-01까지 — 지금 출시하면 36 ◎ https://support.google.com/googleplay/android-developer/answer/11926878
 
 ## 5. 웹 (브라우저)
 
