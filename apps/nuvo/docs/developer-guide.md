@@ -243,6 +243,8 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 - [ ] GitHub 저장소 연결 후 둘 중 하나:
   - Cloudflare Workers Builds (대시보드에서 저장소 연결)
   - GitHub Actions + 비밀값 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+- 준비됨: `pnpm typecheck`는 `.dev.vars` 없이도 통과합니다. 비밀값 타입을 `.dev.vars.example`에서 만들기 때문입니다.
+  CI에서는 `pnpm install --frozen-lockfile && pnpm typecheck && pnpm test && pnpm build`만 돌리면 됩니다 (DB 필요 없음).
 
 ---
 

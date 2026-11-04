@@ -38,6 +38,8 @@ pnpm e2e         # 브라우저 (처음: pnpm --filter @nuvo/web exec playwright
 
 저장소에는 비밀값이 없습니다. 모두 git에서 제외된 파일이나 Cloudflare Secrets에만 있습니다.
 
+**새 비밀값을 추가할 때는 `apps/web/.dev.vars.example`에도 이름을 넣으세요.** Worker의 `Env` 타입을 이 템플릿에서 만들기 때문에, 빠뜨리면 typecheck가 실패합니다.
+
 | 값 | 로컬 | 운영 |
 |---|---|---|
 | `BETTER_AUTH_SECRET`, `MEDIA_SIGNING_KEY`, OAuth 키 | `apps/web/.dev.vars` (템플릿: `.dev.vars.example`) | `wrangler secret` (템플릿: `apps/web/.prod-secrets.example`) |
