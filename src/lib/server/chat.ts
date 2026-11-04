@@ -5,8 +5,7 @@ import type { ScoredSection } from './rag';
 export const CHAT_LIMITS = {
   questionMax: 500,
   historyTurns: 6,
-  anonPerDay: 3,
-  signedInPerDay: 30,
+  perDay: 20, // 11/04 로그인 없이 IP(해시)당 하루 20턴 — docs/05-06-chat-rag.md
   defaultMonthlyTokenCap: 2_000_000,
   answerMaxTokens: 400, // 11/03 300 → 400: 마크다운 목록(최대 6항목)이 잘리지 않게
 } as const;

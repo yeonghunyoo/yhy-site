@@ -53,17 +53,13 @@ export function magicLinkEmail(locale: Locale, url: string, code: string) {
 export function letterEmail(input: {
   subject: string | null;
   body: string;
-  from: string;
   replyTo: string;
-  method: string;
   sentAt: Date;
   adminUrl: string;
 }) {
   const title = input.subject?.trim() || input.body.trim().slice(0, 40);
   const meta = [
-    `From: ${input.from}`,
     `Reply-To: ${input.replyTo}`,
-    `Sign-in: ${input.method}`,
     `Sent: ${input.sentAt.toISOString()}`,
   ];
   return {

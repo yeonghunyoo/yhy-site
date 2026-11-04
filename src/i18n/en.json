@@ -23,9 +23,8 @@
   },
   "contact": {
     "heading": "Contact",
-    "body": "Questions, or something we could build together? Send me a letter — you'll need to sign in first.",
-    "letter": "Send a letter",
-    "login": "Sign in"
+    "body": "Questions, or something we could build together? Send me a letter — no sign-in needed.",
+    "letter": "Send a letter"
   },
   "footer": {
     "privacy": "Privacy"
@@ -64,24 +63,7 @@
     "codeTooMany": "Too many wrong tries, so this code no longer works. Request a new email.",
     "sendAgain": "Send a new email"
   },
-  "menu": {
-    "label": "Account menu",
-    "signedInAs": "Signed in as",
-    "deleteAccount": "Delete account",
-    "signOut": "Sign out",
-    "admin": "Admin"
-  },
-  "account": {
-    "title": "Delete account",
-    "desc": "Your account and sign-in records will be deleted. Letters you already sent stay on record, but they'll no longer be linked to your account or reply address.",
-    "confirmLabel": "Type \"delete\" to confirm",
-    "confirmWord": "delete",
-    "submit": "Delete account"
-  },
   "toast": {
-    "signedIn": "You're signed in. Pick up where you left off.",
-    "signedOut": "Signed out.",
-    "deleted": "Your account was deleted.",
     "letterSent": "Delivered."
   },
   "letter": {
@@ -93,12 +75,11 @@
     "counter": "{n} / 2,000",
     "minHint": "Please write at least 10 characters.",
     "submit": "Send",
-    "notice": "Your sign-in email and this message will be stored.",
+    "notice": "The reply email and this message will be stored.",
     "errors": {
       "limit": "You can send up to 3 letters a day. Please try again tomorrow.",
       "links": "You can include up to 5 links, and only http(s) addresses.",
       "duplicate": "This is the same as the letter you just sent.",
-      "blocked": "This account can't send letters.",
       "invalid": "Please check what you entered."
     }
   },
@@ -113,11 +94,9 @@
     ],
     "placeholder": "Ask a question",
     "send": "Send",
-    "limitAnon": "Without signing in you can ask 3 questions a day. Sign in to keep going.",
-    "limitSignedIn": "That's it for today. Let's continue by letter.",
+    "limit": "That's it for today (20 questions a day). Let's continue by letter.",
     "error": "Couldn't get an answer. Please try again in a moment.",
     "letter": "Send a letter",
-    "login": "Sign in",
     "sources": {
       "label": "Sources",
       "resume": "Resume",
@@ -154,9 +133,9 @@
     "current": "now",
     "tagBuilder": "[builder]",
     "tagTap": "[tap to open]",
-    "tagLogin": "[after sign-in]",
+    "tagLetter": "[no sign-in]",
     "letter": "Letter →",
-    "letterNote": "Questions, or something we could build together? Sign in to send one; replies come by email.",
+    "letterNote": "Questions, or something we could build together? No sign-in needed; replies go to the email you leave.",
     "more": "Read more →"
   }
 }

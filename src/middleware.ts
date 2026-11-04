@@ -4,6 +4,7 @@ import { getAuth, isAdmin } from './lib/server/auth';
 import { report5xx } from './lib/server/errors';
 import { guarded, guardRequest } from './lib/server/request-guard';
 
+const ADMIN_LOGIN = '/admin/login';
 const isAdminPath = (p: string) => p === '/admin' || p.startsWith('/admin/') || p.startsWith('/api/admin/');
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -27,11 +28,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
       context.locals.session = result?.session ?? null;
     }
 
-    // 비관리자에게는 어드민의 존재 자체를 숨긴다(401/403이 아니라 404).
-    if (isAdminPath(pathname) && !isAdmin(context.locals.user) && !hasRagSyncToken(context.request, pathname)) {
+    // 관리자가 아니면: 어드민 화면은 로그인 화면(로그인했지만 관리자가 아니면 "권한 없음"), API는 404(11/04, docs/04-admin.md).
+    if (isAdminPath(pathname) && pathname !== ADMIN_LOGIN && !isAdmin(context.locals.user) && !hasRagSyncToken(context.request, pathname)) {
       return pathname.startsWith('/api/')
         ? Response.json({ error: 'not_found' }, { status: 404 })
-        : context.rewrite('/404');
+        : context.rewrite(ADMIN_LOGIN);
     }
 
     const response = await next();

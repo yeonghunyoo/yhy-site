@@ -1,21 +1,21 @@
 import type { ClientDirective } from 'astro';
 
 // client:demand — React 아일랜드를 필요할 때만 하이드레이트한다(초기 JS 예산 50KB).
-// - 로그인 상태이거나 로그인 복귀(?signed_in·?auth_error)·토스트 예약이 있으면 바로
-// - 아니면 [data-action] 버튼(로그인·레터)을 처음 누를 때. 누른 동작은 window.__uiPending으로 넘긴다.
+// - 토스트 예약·새로고침 재개가 있으면 바로
+// - 아니면 [data-action] 버튼(레터·챗)을 처음 누를 때. 누른 동작은 window.__uiPending으로 넘긴다.
+// 방문자 로그인이 없어(11/04) 세션은 묻지 않는다.
 
 declare global {
   interface Window {
     __uiPending?: string;
     /** 첫 클릭으로 시작해 아직 하이드레이트 중인 아일랜드 수(로딩 표시를 언제 끌지) */
     __uiHydrating?: number;
-    __sessionCheck?: Promise<boolean>;
     __staleChunkGuard?: boolean;
     __uiResumed?: boolean;
   }
 }
 
-const ACTIONS = new Set(['login', 'letter', 'chat']);
+const ACTIONS = new Set(['letter', 'chat']);
 const RESUME_KEY = 'uiResume';
 const RELOADED_KEY = 'uiReloadedAt';
 
@@ -41,7 +41,7 @@ if (typeof window !== 'undefined' && !window.__staleChunkGuard) {
 }
 
 function hasPendingState(): boolean {
-  // 오래된 파일 때문에 새로고침했다면 누르던 동작(로그인·레터·챗)을 이어간다
+  // 오래된 파일 때문에 새로고침했다면 누르던 동작(레터·챗)을 이어간다
   // (아일랜드마다 불리므로 처음 읽은 결과를 window에 남겨 모두가 바로 하이드레이트한다)
   if (window.__uiResumed) return true;
   try {
@@ -53,8 +53,6 @@ function hasPendingState(): boolean {
       return true;
     }
   } catch {}
-  const params = new URLSearchParams(location.search);
-  if (params.has('signed_in') || params.has('auth_error')) return true;
   try {
     return Boolean(sessionStorage.getItem('flashToast'));
   } catch {
@@ -91,18 +89,7 @@ const demand: ClientDirective = (load) => {
   }
 
   document.addEventListener('click', onClick, true);
-  if (hasPendingState()) {
-    void start();
-    return;
-  }
-  // 세션 쿠키는 HttpOnly라 직접 볼 수 없다 — 아일랜드끼리 한 번만 물어본다.
-  window.__sessionCheck ??= fetch('/auth/get-session', { credentials: 'same-origin' })
-    .then((r) => (r.ok ? r.json() : null))
-    .then(Boolean)
-    .catch(() => false);
-  void window.__sessionCheck.then((signedIn) => {
-    if (signedIn) void start();
-  });
+  if (hasPendingState()) void start();
 };
 
 export default demand;

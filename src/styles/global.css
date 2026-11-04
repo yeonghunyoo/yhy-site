@@ -1,7 +1,10 @@
 @import 'tailwindcss';
 @import './tokens.css';
-/* 글꼴 자체 호스팅(CSP font-src 'self'). Black Han Sans는 글자 범위별로 쪼개져 있어 쓰는 조각만 받는다. Plex Mono는 라틴만 */
+/* 글꼴 자체 호스팅(CSP font-src 'self'). Black Han Sans·Plex Sans KR은 글자 범위별로 쪼개져 있어 쓰는 조각만 받는다. Plex Mono는 라틴만 */
 @import '@fontsource/black-han-sans/400.css';
+/* 본문(11/04): IBM Plex Sans KR 400·700 — 숫자·라벨의 Plex Mono와 같은 가족 */
+@import '@fontsource/ibm-plex-sans-kr/400.css';
+@import '@fontsource/ibm-plex-sans-kr/700.css';
 @import '@fontsource/ibm-plex-mono/latin-400.css';
 @import '@fontsource/ibm-plex-mono/latin-500.css';
 /* 컴포넌트는 daisyUI(CSS 전용). 내장 테마는 끄고 tokens.css의 변수를 쓴다 */
@@ -38,7 +41,8 @@
     background: var(--color-bg);
     color: var(--color-fg);
     font-family: var(--font-sans);
-    font-size: 1rem;
+    /* 본문 15px(11/04, 16px에서 줄임). 루트는 16px 그대로라 rem 기반 버튼·입력 높이(44px)는 유지 */
+    font-size: 0.9375rem;
     line-height: 1.6;
   }
   :lang(ko) {
@@ -52,14 +56,13 @@
 }
 
 @layer components {
-  /* daisyUI 버튼 기본 글자(14px)를 본문과 같은 16px로. btn-sm 등 크기 클래스는 그대로 우선한다 */
+  /* daisyUI 버튼 기본 글자(14px)를 본문과 같은 15px로. btn-sm 등 크기 클래스는 그대로 우선한다 */
   .btn {
-    --fontsize: 1rem;
+    --fontsize: 0.9375rem;
   }
   /* 비동기 버튼(docs/01-frontend.md "로딩 상태"): aria-busy="true" 동안 글자·아이콘을 숨겨 폭을 유지하고 가운데에 스피너.
      하이드레이트 전 첫 클릭(client:demand)은 <html data-ui-pending="동작">으로 같은 모양을 낸다. */
   :is(.btn, [role='menuitem'])[aria-busy='true'],
-  html[data-ui-pending='login'] [data-action='login'],
   html[data-ui-pending='letter'] [data-action='letter'],
   html[data-ui-pending='chat'] [data-action='chat'] {
     position: relative;
@@ -72,7 +75,6 @@
     visibility: hidden;
   }
   :is(.btn, [role='menuitem'])[aria-busy='true']::after,
-  html[data-ui-pending='login'] [data-action='login']::after,
   html[data-ui-pending='letter'] [data-action='letter']::after,
   html[data-ui-pending='chat'] [data-action='chat']::after {
     content: '';

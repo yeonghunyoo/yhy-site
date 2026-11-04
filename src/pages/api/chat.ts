@@ -50,14 +50,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // 사이트 전체 일일 상한(추정 뉴런·턴)과 월 토큰 상한 — D1 로그 합계로 센다(docs/guides/cost-guard.md). 넘으면 AI를 부르지 않고 KV에도 쓰지 않는다
   if (!(await chatGate()).ok) return fixedReply(CAPPED[locale]);
 
-  // 턴 제한: 비로그인 3턴 / 로그인 30턴 (하루, KST)
+  // 턴 제한: 로그인 없이 IP(해시)당 하루 20턴 (KST, 11/04)
   const me = locals.user;
   const ipHash = await hashIp(clientIp(request), env.BETTER_AUTH_SECRET);
-  const who = me ? me.id : `ip:${ipHash}`;
-  const dayKey = `chat:${who}:${kstDate(new Date())}`;
+  const dayKey = `chat:ip:${ipHash}:${kstDate(new Date())}`;
   const used = Number((await env.KV.get(dayKey)) ?? 0);
-  const limit = me ? CHAT_LIMITS.signedInPerDay : CHAT_LIMITS.anonPerDay;
-  if (used >= limit) return Response.json({ error: 'limit', signedIn: Boolean(me) }, { status: 429 });
+  if (used >= CHAT_LIMITS.perDay) return Response.json({ error: 'limit' }, { status: 429 });
   await env.KV.put(dayKey, String(used + 1), { expirationTtl: 60 * 60 * 26 });
 
 

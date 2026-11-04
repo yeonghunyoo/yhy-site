@@ -19,17 +19,12 @@ const other = otherLocale(locale);
       <a href={`/${locale}/#project`} class="hidden min-h-11 items-center px-2 sm:flex">{dict.nav.project}</a>
       <a href={`/${locale}/#career`} class="hidden min-h-11 items-center px-2 sm:flex">{dict.nav.career}</a>
       <a href={`/${locale}/#contact`} class="hidden min-h-11 items-center px-2 sm:flex">{dict.nav.contact}</a>
-      <!-- 관리자 링크: 로그인 메뉴(AuthMenu)가 서버에 관리자인지 물어 <html data-admin>을 붙였을 때만 보인다 -->
-      <a href="/admin" class="hidden min-h-11 items-center px-2 font-semibold sm:in-data-admin:flex">{dict.menu.admin}</a>
       <a
         href={switchLocalePath(Astro.url.pathname, other)}
         hreflang={other}
         lang={other}
         class="flex min-h-11 items-center px-2">{dict.nav.language}</a
       >
-      <slot name="auth">
-        <button type="button" class="btn text-sm" data-action="login">{dict.contact.login}</button>
-      </slot>
       <!-- 모바일 메뉴: Popover API라 React 없이 열고 닫는다(바깥 탭·Esc로 닫힘) -->
       <button
         type="button"
@@ -50,7 +45,6 @@ const other = otherLocale(locale);
           <li><a href={`/${locale}/#project`} class="flex min-h-12 items-center">{dict.nav.project}</a></li>
           <li><a href={`/${locale}/#career`} class="flex min-h-12 items-center">{dict.nav.career}</a></li>
           <li><a href={`/${locale}/#contact`} class="flex min-h-12 items-center">{dict.nav.contact}</a></li>
-          <li class="hidden in-data-admin:block"><a href="/admin" class="flex min-h-12 items-center font-semibold">{dict.menu.admin}</a></li>
         </ul>
       </div>
     </nav>

@@ -6,8 +6,8 @@ title: FAQ
 
 ## How can I contact yhy?
 
-Sign in and use "Send a letter" on the site. Replies arrive by email.
+Use "Send a letter" on the site — no sign-in needed. Replies arrive at the email you leave.
 
 ## What is this site built with?
 
-An Astro static site on Cloudflare Workers, with Better Auth for sign-in and D1 and KV for data. The project "This portfolio" has the details.
+An Astro static site on Cloudflare Workers, with Better Auth for admin sign-in and D1 and KV for data. Visitors use letters and the AI chat without signing in. The project "This portfolio" has the details.

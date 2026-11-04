@@ -7,7 +7,7 @@ export const LETTER_LIMITS = {
   perDay: 3,
 } as const;
 
-export type LetterError = 'invalid' | 'links' | 'limit' | 'duplicate' | 'blocked';
+export type LetterError = 'invalid' | 'links' | 'limit' | 'duplicate';
 
 const SCHEME_RE = /\b([a-z][a-z0-9+.-]*):\/\//gi;
 

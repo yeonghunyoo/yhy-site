@@ -1,0 +1,53 @@
+---
+import '../../styles/global.css';
+import AdminLogin from '../../components/islands/AdminLogin';
+import { t } from '../../i18n';
+import { isAdmin } from '../../lib/server/auth';
+
+// 관리자 로그인(11/04, docs/04-admin.md). 미들웨어가 관리자가 아닌 /admin 화면 요청을 여기로 rewrite한다.
+// 방문자 화면에는 로그인이 없다 — 로그인은 이 화면뿐이다.
+export const prerender = false;
+
+const me = Astro.locals.user;
+if (isAdmin(me)) return Astro.redirect('/admin');
+
+const dict = t('ko');
+const params = Astro.url.searchParams;
+// 차단된 계정은 세션 생성이 거부된다(failed_to_create_session). 그 밖에는 링크 만료·재사용
+const notice = params.has('auth_error') || params.has('error')
+  ? params.get('error') === 'failed_to_create_session' ? dict.auth.blocked : dict.auth.expired
+  : null;
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>로그인 · admin</title>
+  </head>
+  <body class="grid min-h-dvh place-items-center px-4 py-10">
+    {
+      me ? (
+        <div class="w-full max-w-sm">
+          <h1 class="text-2xl font-bold">권한이 없어요</h1>
+          <p class="mt-2 break-all text-muted">{me.email}은 관리자가 아니에요.</p>
+          <button type="button" class="btn mt-6 w-full" id="sign-out">로그아웃</button>
+          <a href="/ko/" class="btn btn-ghost mt-3 w-full">사이트로</a>
+        </div>
+      ) : (
+        <AdminLogin client:load dict={dict} notice={notice} />
+      )
+    }
+    <script>
+      document.getElementById('sign-out')?.addEventListener('click', async (e) => {
+        (e.currentTarget as HTMLButtonElement).setAttribute('aria-busy', 'true');
+        await fetch('/auth/sign-out', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+        location.assign('/admin');
+      });
+    </script>
+  </body>
+</html>

@@ -14,7 +14,7 @@ This portfolio is yhy's first public project, and building it is the content. Th
 
 ## How to get in touch
 
-Sign in and use "Send a letter" on the site to message yhy directly. Replies arrive by email.
+Use "Send a letter" on the site to message yhy directly — no sign-in needed. Replies arrive at the email you leave.
 
 ## Background and interests
 

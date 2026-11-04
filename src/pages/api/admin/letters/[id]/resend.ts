@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { eq } from 'drizzle-orm';
-import { account, letters, user } from '../../../../../db/schema';
+import { letters, user } from '../../../../../db/schema';
 import { adminGuard, backTo } from '../../../../../lib/server/admin';
 import { getDb } from '../../../../../lib/server/db';
 import { sendMail } from '../../../../../lib/server/mail';
@@ -26,18 +26,13 @@ export const POST: APIRoute = async (context) => {
   if (!row || row.letter.status !== 'failed') return backTo(back, 'invalid');
 
   const { letter } = row;
-  const providers = letter.userId
-    ? await db.select({ providerId: account.providerId }).from(account).where(eq(account.userId, letter.userId))
-    : [];
   const mail = await sendMail({
     to: env.LETTER_TO,
     replyTo: letter.replyTo ?? undefined,
     ...letterEmail({
       subject: letter.subject,
       body: letter.body,
-      from: row.email ?? '(deleted account)',
       replyTo: letter.replyTo ?? '-',
-      method: providers.some((p) => p.providerId === 'google') ? 'google' : 'magic',
       sentAt: letter.createdAt,
       adminUrl: `${env.BETTER_AUTH_URL}${back}`,
     }),

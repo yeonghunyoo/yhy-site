@@ -26,8 +26,8 @@ Most portfolios list tools and job titles. That list doesn't show what was built
 - Make the portfolio itself the first project, so building it becomes the content.
 - Write the design docs before the code, and give every phase a completion bar it has to clear.
 - Keep all infrastructure on Cloudflare (Workers, D1, KV) so the monthly cost stays near zero.
-- Ship static HTML by default and use React islands only where interaction is needed, like sign-in and letters.
-- Signed-in visitors can send me a letter directly; I read and reply from a small admin.
+- Ship static HTML by default and use React islands only where interaction is needed, like letters and the AI chat.
+- Visitors can send me a letter directly without signing in; I read and reply from a small admin.
 
 ## Result
 

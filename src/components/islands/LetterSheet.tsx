@@ -7,11 +7,8 @@ interface Props {
   dict: Dict;
   locale: Locale;
   open: boolean;
-  /** 로그인 이메일 — 답장 받을 이메일 기본값 */
-  email: string;
   onClose: () => void;
   onSent: () => void;
-  onUnauthorized: () => void;
 }
 
 interface Draft {
@@ -38,8 +35,11 @@ function saveDraft(draft: Draft | null): void {
   } catch {}
 }
 
-export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnauthorized }: Props) {
+// 로그인 없이 보낸다(11/04, docs/03-letters.md). 답장 받을 이메일은 필수 칸.
+export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
   const [draft, setDraft] = useState<Draft>({ subject: '', body: '', replyTo: '' });
+  // 허니팟 — 사람에게는 안 보이는 칸. 봇이 채우면 서버가 조용히 버린다
+  const [website, setWebsite] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,10 +47,10 @@ export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnau
   useEffect(() => {
     if (!open) return;
     const saved = loadDraft();
-    setDraft({ subject: saved?.subject ?? '', body: saved?.body ?? '', replyTo: saved?.replyTo || email });
+    setDraft({ subject: saved?.subject ?? '', body: saved?.body ?? '', replyTo: saved?.replyTo ?? '' });
     setError(null);
     setBusy(false);
-  }, [open, email]);
+  }, [open]);
 
   const update = (patch: Partial<Draft>) => {
     setDraft((prev) => {
@@ -72,17 +72,18 @@ export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnau
     const res = await fetch('/api/letters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...draft, locale }),
+      body: JSON.stringify({ ...draft, website, locale }),
     }).catch(() => null);
     setBusy(false);
 
     if (res?.ok) {
       saveDraft(null);
-      setDraft({ subject: '', body: '', replyTo: email });
+      // 답장 주소는 다음 레터에도 쓰도록 남긴다
+      saveDraft({ subject: '', body: '', replyTo: draft.replyTo });
+      setDraft({ subject: '', body: '', replyTo: draft.replyTo });
       onSent();
       return;
     }
-    if (res?.status === 401) return onUnauthorized();
     // 실패해도 본문은 그대로 두고 에러만 보여준다.
     const code = ((await res?.json().catch(() => null)) as { error?: LetterError } | null)?.error;
     setError(code && code in dict.letter.errors ? dict.letter.errors[code] : dict.ui.error);
@@ -158,9 +159,15 @@ export function LetterSheet({ dict, locale, open, email, onClose, onSent, onUnau
             autoComplete="email"
             autoCapitalize="none"
             spellCheck={false}
+            required
+            placeholder={dict.auth.emailPlaceholder}
             value={draft.replyTo}
             onChange={(e) => update({ replyTo: e.target.value })}
           />
+        </div>
+        <div className="hidden" aria-hidden="true">
+          <label htmlFor="letter-website">Website</label>
+          <input id="letter-website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
         </div>
       </form>
     </Sheet>

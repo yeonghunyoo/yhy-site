@@ -21,7 +21,7 @@ interface Turn {
   /** 서버가 답변에 붙인 서명 — 다음 요청 때 이력과 함께 돌려보낸다(서명 없는 답변은 이력에서 빠진다) */
   sig?: string;
   /** 한도 초과 등 안내(서버로 보내는 대화 기록에는 넣지 않는다) */
-  notice?: 'login' | 'letter' | 'error';
+  notice?: 'letter' | 'error';
   /** 흐름도 답이면 그림 데이터(서버로 보내는 대화 기록에는 넣지 않는다) */
   diagram?: Diagram;
 }
@@ -137,11 +137,8 @@ export default function ChatDock({ dict, locale }: Props) {
         body: JSON.stringify({ message: q, history, locale }),
       });
       if (res.status === 429) {
-        const { signedIn } = (await res.json()) as { signedIn?: boolean };
-        patchLast({
-          content: signedIn ? dict.chat.limitSignedIn : dict.chat.limitAnon,
-          notice: signedIn ? 'letter' : 'login',
-        });
+        // 하루 턴 한도(IP당 20, 11/04) — 레터로 이어가기
+        patchLast({ content: dict.chat.limit, notice: 'letter' });
         return;
       }
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
@@ -269,7 +266,7 @@ export default function ChatDock({ dict, locale }: Props) {
                   {dict.chat.sources.label}: {t.sources.filter((slug) => !sourceLink(slug)).map(sourceName).join(' · ')}
                 </p>
               )}
-              {(t.sources?.some((slug) => sourceLink(slug)) || t.notice === 'login' || t.notice === 'letter' || t.content.includes('[[letter]]')) && (
+              {(t.sources?.some((slug) => sourceLink(slug)) || t.notice === 'letter' || t.content.includes('[[letter]]')) && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {t.sources?.map((slug) => {
                     const link = sourceLink(slug);
@@ -285,11 +282,6 @@ export default function ChatDock({ dict, locale }: Props) {
                       </a>
                     );
                   })}
-                  {t.notice === 'login' && (
-                    <button type="button" data-action="login" className="btn min-h-11 text-sm">
-                      {dict.chat.login}
-                    </button>
-                  )}
                   {(t.notice === 'letter' || t.content.includes('[[letter]]')) && (
                     <button type="button" data-action="letter" className="btn min-h-11 text-sm">
                       {dict.chat.letter}

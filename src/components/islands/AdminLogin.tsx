@@ -1,15 +1,11 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
-import type { Dict, Locale } from '../../i18n';
+import type { Dict } from '../../i18n';
 import { authClient } from '../../lib/auth-client';
-import { Sheet } from './Sheet';
 
 interface Props {
   dict: Dict;
-  locale: Locale;
-  open: boolean;
-  /** 시트를 열 때 보여줄 안내(링크 만료·차단 등) */
+  /** 처음 보여줄 안내(링크 만료·차단 등) */
   notice: string | null;
-  onClose: () => void;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,11 +13,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // 버튼을 끄고 이메일 링크나 외부 브라우저를 안내한다(docs/guides/browser-support.md).
 const IN_APP_BROWSER = /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|\bLine\/|NAVER\(inapp|DaumApps|; wv\)/i;
 
-// 로그인 후 같은 자리로 돌아와 하던 작업을 이어가도록 현재 경로를 싣는다.
-const callbackURL = () => `${location.pathname}?signed_in=1${location.hash}`;
-const errorCallbackURL = () => `${location.pathname}?auth_error=1`;
+// 관리자 로그인 화면(/admin, 11/04 — 방문자 화면에는 로그인이 없다). 로그인하면 /admin으로 돌아온다.
+const callbackURL = () => '/admin';
+const errorCallbackURL = () => '/admin?auth_error=1';
 
-export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
+export default function AdminLogin({ dict, notice }: Props) {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   // 진행 중인 동작(버튼마다 스피너). null이면 대기
@@ -41,14 +37,7 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
     return () => window.removeEventListener('pageshow', onShow);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    setSent(false);
-    setBusy(null);
-    setCode('');
-    setCodeDead(false);
-    setError(notice);
-  }, [open, notice]);
+  useEffect(() => setError(notice), [notice]);
 
   async function sendLink(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -77,7 +66,7 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
     setError(null);
     const { error } = await authClient.$fetch('/sign-in/email-otp', { method: 'POST', body: { email: email.trim(), otp } });
     if (!error) {
-      // 세션 쿠키가 생겼다 — 링크로 로그인했을 때와 같은 주소로 다시 불러 복귀·재개 흐름(pendingAction·토스트)을 탄다
+      // 세션 쿠키가 생겼다 — 어드민으로
       location.assign(callbackURL());
       return;
     }
@@ -106,7 +95,8 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={dict.auth.title} closeLabel={dict.ui.close}>
+    <div className="w-full max-w-sm">
+      <h1 className="text-2xl font-bold">{dict.auth.title}</h1>
       {sent ? (
         <div className="py-2">
           <div role="status">
@@ -149,7 +139,7 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
         </div>
       ) : (
         <form onSubmit={sendLink} noValidate>
-          <p className="text-muted">{dict.auth.desc}</p>
+          <p className="mt-2 text-muted">{dict.auth.desc}</p>
           {error && (
             <p className="mt-4 rounded-[var(--radius)] border border-danger/40 px-3 py-2 text-sm text-danger" role="alert">
               {error}
@@ -160,7 +150,7 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
           </label>
           <input
             id="login-email"
-            data-autofocus
+            autoFocus
             className="field mt-2"
             type="email"
             inputMode="email"
@@ -184,14 +174,8 @@ export function LoginSheet({ dict, locale, open, notice, onClose }: Props) {
             {dict.auth.google}
           </button>
           {inApp && <p className="mt-2 text-sm text-muted">{dict.auth.googleInApp}</p>}
-          <p className="mt-5 text-xs text-muted">
-            {dict.auth.notice}{' '}
-            <a href={`/${locale}/privacy/`} className="underline underline-offset-2">
-              {dict.auth.privacy}
-            </a>
-          </p>
         </form>
       )}
-    </Sheet>
+    </div>
   );
 }

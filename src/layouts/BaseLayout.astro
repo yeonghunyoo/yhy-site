@@ -3,7 +3,6 @@ import '../styles/global.css';
 import NavProgress from '../components/ui/NavProgress.astro';
 import Header from '../components/ui/Header.astro';
 import Footer from '../components/ui/Footer.astro';
-import AuthMenu from '../components/islands/AuthMenu';
 import Overlay from '../components/islands/Overlay';
 import ChatDock from '../components/islands/ChatDock';
 import { locales, t, type Locale, switchLocalePath } from '../i18n';
@@ -37,9 +36,7 @@ const path = Astro.url.pathname;
       class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-[var(--radius)] focus:bg-surface focus:px-4 focus:py-2"
       >{dict.nav.skip}</a
     >
-    <Header locale={locale}>
-      <AuthMenu slot="auth" client:demand dict={dict} />
-    </Header>
+    <Header locale={locale} />
     <main id="main" class="flex-1">
       <slot />
     </main>

@@ -26,7 +26,8 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `ml:email:{email}` | 1 | 10분 |
 | `stats:login:{YYYY-MM-DD}` (KST) | 그날 로그인(세션 생성) 수 | 31일 |
 | `notify:5xx:{YYYY-MM-DDTHH:MM}` | 5xx 알림 중복 억제 | 2분 |
-| `chat:{userId 또는 ip}:{YYYY-MM-DD}` (2차) | 턴 수 | 1일 |
+| `chat:ip:{IP 해시}:{YYYY-MM-DD}` (2차) | 턴 수(11/04 로그인 없이 IP당 20) | 1일 |
+| `letter:ip:{IP 해시}` | 레터 수(IP당 하루 3, 11/04) | 24시간 |
 | ~~`chat:month:{YYYY-MM}`~~ | (11/03 폐지 — 월 토큰은 D1 `chat_logs` 합계, [guides/cost-guard.md](guides/cost-guard.md)) | — |
 | `budget:mail:{YYYY-MM-DD}` / `budget:mail:{YYYY-MM}` (KST) | 보낸 메일 수(일·월 상한) | 26시간 / 32일 |
 | `budget:alert:{날짜}:{종류}:{단계}` | 사용량 80%·100% 알림을 하루 1번만 | 26시간 |
@@ -81,7 +82,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 - [x] Google OAuth 리디렉션 URI는 등록한 주소만 — 로컬(`localhost:8787`)과 운영(workers.dev, 도메인 연결 후 그 주소). 클라이언트는 로컬·운영 공용 1개(10/29, [02-auth.md](02-auth.md))
 - [x] 레이트리밋 키의 IP는 `CF-Connecting-IP` 사용
 - [ ] Cloudflare 무료 WAF 규칙으로 `/api/*` 국가별·봇 점수 기반 챌린지 (선택)
-- [x] 개인정보 고지: 로그인 이메일·레터 저장 사실을 레터 시트 하단에 한 줄 명시
+- [x] 개인정보 고지: 레터의 답장 이메일·내용 저장 사실을 레터 시트 하단에 한 줄 명시(11/04 방문자 로그인 없앰)
 - [x] `DELETE /api/account`는 세션 + 확인 문자열 둘 다 검증, 트랜잭션(D1 batch)으로 처리
 - [x] `/api/admin/*`는 관리자 세션 검증을 미들웨어와 핸들러 양쪽에서 수행. 예외는 `POST /api/admin/rag/reindex` 하나로, `RAG_SYNC_TOKEN` Bearer를 상수 시간 비교로 확인한다(11/04, 미들웨어·핸들러 양쪽)
 - [x] Telegram 메시지에 방문자 이메일 전체를 넣지 않는다(앞 3자 + 도메인만)

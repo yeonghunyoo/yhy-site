@@ -21,8 +21,8 @@ export const OUT_OF_SCOPE: Record<Locale, string> = {
 
 /** 연락 에이전트(지금은 고정 안내). 레터 초안 자동 작성은 다음 단계 */
 export const CONTACT_REPLY: Record<Locale, string> = {
-  ko: '로그인한 뒤 "레터 보내기"로 yhy에게 직접 메시지를 보낼 수 있어요. 답장은 메일로 와요. [[letter]]',
-  en: 'Sign in and use "Send a letter" to message yhy directly. Replies arrive by email. [[letter]]',
+  ko: '"레터 보내기"로 yhy에게 직접 메시지를 보낼 수 있어요. 로그인은 필요 없고, 답장은 적어 주신 메일로 와요. [[letter]]',
+  en: 'Use "Send a letter" to message yhy directly — no sign-in needed. Replies arrive at the email you leave. [[letter]]',
 };
 
 /** 무관한 작업 요청 — 모델 없이 거절. yhy에게 물을 일이 아니라 레터 칩은 붙이지 않는다 */
