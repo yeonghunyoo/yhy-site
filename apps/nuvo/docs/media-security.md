@@ -1,6 +1,6 @@
 # 이미지·동영상 보안 정책 — 웹·iOS·Android
 
-2026-11-04 작성. 상태: **제안(초안)** — 3·4절(iOS·Android)은 OS 정책 조사 결과를 기다리는 중이라 비어 있습니다. "제안"은 정해지기 전까지의 기본값, `[ ]`가 정할 것입니다.
+2026-11-04 작성. 상태: **제안**. OS 정책(3·4절)은 2026-11-04 조사 기준이며 출처 URL을 함께 적었습니다. "제안"은 정해지기 전까지의 기본값, `[ ]`가 정할 것입니다.
 서버 쪽 구현된 보안은 [mvp.md](mvp.md) "보안 설계", 플랫폼별 기능 규칙은 [platform-policy.md](platform-policy.md), 목표는 [service-plan.md](service-plan.md).
 
 이 문서는 **개발 단계(권한 선언·심사·비밀값)부터 서비스 이용 단계(무엇을 저장·공유·노출하는지)까지** 사진·동영상에 관한 보안과 개인정보 규칙을 플랫폼별로 적습니다. OS 정책은 바뀌니, 출시 직전에 각 절의 출처를 다시 확인합니다.
@@ -79,9 +79,11 @@
 
 ### 2.3 공유(Space·초대 링크)
 - 지금: 초대 링크 7일·10명, 역할 editor/viewer. 링크를 가진 사람은 누구나 가입 후 참여
+- **스토어 심사 요건(3.3·4.4): 사진 신고 기능, 멤버 차단, 공개 연락처, 업로드 전 약관 동의.** 가족 비공개 Space도 두 스토어 모두 UGC로 봅니다. 신고는 Space 소유자와 운영자에게 전달되고, 운영자가 확인 뒤 삭제·계정 제한을 할 수 있어야 합니다. 신고 처리 기한(예: 24시간 안 1차 확인)을 약관에 적습니다
 - 제안 추가: 소유자가 **초대 링크를 즉시 무효화**할 수 있는 버튼(지금 만료만 있음), 멤버 목록에서 **누가 어느 링크로 들어왔는지** 표시, 새 멤버 참여 시 소유자 알림(Space 피드에 이미 활동이 남는지 확인)
 - Space는 **비공개만**. 공개 링크(로그인 없이 보기, "게스트 링크")는 로드맵에서 뺀 상태를 유지하고, 넣을 때 이 문서를 먼저 고칩니다
 - 멤버가 올린 사진은 그 멤버가 나가도 Space에 남습니다(developer-guide 14). 이것을 올리기 전에 한 번 안내합니다
+- [ ] 신고·차단·공개 연락처·약관 동의 — 앱 출시 전 필수(웹에도 같이 넣음)
 - [ ] 초대 링크 즉시 무효화·참여 알림 (제안: 넣음)
 - [ ] 아동 사진이 많은 Space에 대한 추가 안내 문구 (법률 검토와 함께)
 
@@ -106,11 +108,106 @@
 
 ## 3. iOS 앱
 
-(조사 결과 반영 — 아래 채움)
+2026-11-04 조사. 기준은 App Store Review Guidelines(2026-10-16 개정) https://developer.apple.com/app-store/review/guidelines/ . **⚠️**는 2025~2026 변경 또는 불확실.
+
+### 3.1 사진 보관함 권한 (개발 단계)
+- 권한 상태는 `.authorized`(전체) / `.limited`(선택한 사진만, iOS 14+) / `.denied` 등. 반드시 접근 레벨 인자가 있는 `requestAuthorization(for:)`를 써야 `.limited`를 구분합니다. 읽기는 `NSPhotoLibraryUsageDescription`, 저장만 하면 `NSPhotoLibraryAddUsageDescription`. 키가 없으면 크래시 https://developer.apple.com/documentation/photokit/delivering-an-enhanced-privacy-experience-in-your-photos-app
+- 심사 5.1.1(iii) 데이터 최소화: "가능하면 전체 접근 대신 picker(`PHPickerViewController`, 권한 창 없음)를 쓰라". nuvo는 "내 보관함을 앱에서 보는 것"이 핵심이라 전체 접근을 정당화할 수 있지만, **권한 문구에 구체 용도**를 적고(5.1.1(ii)), **거부·limited 상태에서도 동작하는 화면**이 있어야 합니다(5.1.1(iv)) — platform-policy.md 1의 "선택한 사진만 보여주고 넓히기 안내"가 그 화면
+- limited 모드: 시스템이 앱 실행마다 "선택 변경" 알림을 자동으로 띄우니 `PHPhotoLibraryPreventAutomaticLimitedAccessAlert = YES`로 끄고, 앱 안 버튼으로 `presentLimitedLibraryPicker`를 띄웁니다
+- ⚠️ iOS 17부터 시스템이 전체 접근 앱에 **주기적으로 "유지/제한" 재확인**을 띄웁니다(Apple 개발자 문서에는 없고 지원 문서·보도로만 확인). 사용자가 limited로 바꾸면 앱이 그 전환을 처리해야 합니다 — 인덱스에서 사라진 사진은 "접근 불가"로 표시하고 서버 기록은 지우지 않습니다(제안)
+- 5.1.2(vi): 사진 API로 얻은 데이터를 마케팅·광고·데이터 마이닝에 쓰지 못합니다. 2.2의 "기기 안 분류 결과를 서버에 저장할지"를 정할 때 이 조항을 봅니다
+
+### 3.2 위치 EXIF와 프라이버시 선언 (2.1과 연결)
+- Privacy Manifest(`PrivacyInfo.xcprivacy`)에 수집 데이터 타입과 Required Reason API를 선언하고, 그걸 바탕으로 영양 라벨을 씁니다. 사진은 `NSPrivacyCollectedDataTypePhotosorVideos`. Capacitor·RN과 SDK가 쓰는 UserDefaults·파일 타임스탬프는 Required Reason 선언 필수(2024-05부터) https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api
+- 영양 라벨 정의: **Precise Location = 위·경도 소수점 3자리 이상**. 기기 안에서만 처리하면 "수집"이 아닙니다 https://developer.apple.com/app-store/app-privacy-details/
+- ⚠️ Apple은 EXIF GPS를 따로 다루지 않습니다. 원본을 그대로 백업하면 소수점 3자리 이상 좌표가 서버로 가니 **"Precise Location 수집(linked, App Functionality)"으로 신고하는 것이 안전한 해석**입니다. 피하려면 업로드 때 좌표를 지우거나 축약해야 하는데, 그건 "백업은 원본 보존"과 충돌합니다
+- 제안: iOS 백업은 원본을 보존하고 **Precise Location을 신고**합니다. Android(4.2)에서 `ACCESS_MEDIA_LOCATION`을 빼면 두 플랫폼의 신고 내용이 달라지는데, 그건 정상입니다(플랫폼마다 폼이 따로). 사용자에게 보이는 규칙은 2.1 하나로 통일
+- [ ] iOS: 원본 보존 + Precise Location 신고 (제안) / 업로드 때 좌표 제거
+
+### 3.3 심사 규정 — 로그인·계정 삭제·UGC (서비스 설계에 영향)
+- **4.8 로그인 서비스: Google·카카오로 주 계정을 만들면 Sign in with Apple을 함께 제공해야 합니다.** 예외(자사 계정만 쓰는 경우 등)는 nuvo에 해당하지 않습니다. → 앱 출시 전 **애플 로그인 추가 필수**(Better Auth가 지원). 한국 개발자는 Services ID 등록 때 **서버 간 알림 엔드포인트**(계정 변경 통지)를 넣어야 합니다
+- **5.1.1(v) 계정 삭제**: 앱 안에서 삭제를 시작할 수 있어야 하고, 설정에서 찾기 쉬워야 합니다(지금 "설정 → 계정 삭제" 있음). Sign in with Apple 사용자는 삭제 때 REST API로 토큰 폐기. 구독은 Apple 쪽 해지 안내(`showManageSubscriptions`) https://developer.apple.com/support/offering-account-deletion-in-your-app/
+- **1.2 UGC**: 가족 Space도 UGC입니다. 필수 네 가지 — 부적절 콘텐츠 **필터링 수단**, **신고 + 적시 대응**, **사용자 차단**, **공개 연락처**. ⚠️ 2026-10-16 개정으로 비동의 성적 이미지(AI 생성 포함) 삭제 의무와 "통지 후 미조치는 개발자 행동 규범 위반" 문구가 추가됐습니다. 지금 nuvo에 신고 기능이 없는 것은 Android(4.4)와 같은 공백 — **한 번 만들어 두 스토어에 씁니다**
+- 4.2 최소 기능·2.5.6 WebKit: Capacitor·RN 래퍼는 "웹사이트 재포장" 거절 위험이 있습니다. 사진 보관함 네이티브 접근, 백그라운드 업로드, 오프라인 동작이 차별 근거가 되니 심사 메모에 적습니다
+- [ ] Sign in with Apple 추가 (앱 출시 전 필수)
+- [ ] 신고·차단·공개 연락처 (iOS·Android 공통, 2.3에 반영)
+
+### 3.4 결제
+- 3.1.1: 디지털 구독은 IAP 필수. ⚠️ **미국 스토어만**(2025-05-01 Epic 판결 이후) 외부 결제 버튼·링크 허용, 수수료는 소송 중(연방대법원 2026~27 심리) — 불확실. **한국 스토어는 외부 링크 금지**가 유지됩니다
+- 웹에서 산 구독에 "로그인만" 하는 앱: Reader 앱(3.1.3(a))은 잡지·책·음악·영상으로 한정돼 사진 백업은 **해당 없음**. 대신 **3.1.3(b) 멀티플랫폼 서비스**: 웹 구독자를 앱에서 쓰게 할 수 있지만 **같은 구독을 앱 안 IAP로도 팔아야** 합니다. 앱 안에서 웹 결제 유도는 금지(미국 제외), 앱 밖(이메일 등) 안내는 가능
+- 결론: **Android는 소비 전용(앱은 로그인만)이 가능하지만 iOS는 IAP를 넣어야 합니다.** 두 플랫폼 결제 정책이 갈라지는 지점입니다. platform-policy.md 7에 반영. 가격은 IAP 수수료(소규모 15%)를 감안해 정합니다
+- [ ] iOS IAP 구독 도입 확정 (3.1.3(b) 조건)
+- [ ] 웹·iOS 가격 차이 허용 여부
+
+### 3.5 백그라운드 업로드 (자동 백업)
+- `URLSession` 백그라운드 세션: 앱이 종료돼도 시스템이 전송을 이어갑니다. 제약 — **업로드는 파일 기반(`uploadTask(fromFile:)`)만**, delegate 필수, HTTPS. 앱이 백그라운드에서 재시작될 때마다 다음 전송이 더 지연되는 **rate limiter**가 있어, 수천 개 작은 전송보다 **세션 하나에 태스크를 한 번에 많이 넣는** 쪽이 유리 https://developer.apple.com/documentation/foundation/downloading-files-in-the-background
+- `BGProcessingTaskRequest`: 충전·유휴 때 "수 분" 실행, 시점 보장 없음. ⚠️ iOS 26 `BGContinuedProcessingTask`: 사용자가 포그라운드에서 시작한 작업을 Live Activity로 진행률을 보이며 이어감 — **첫 대량 백업**에 맞습니다 https://developer.apple.com/documentation/backgroundtasks/bgcontinuedprocessingtask
+- 현실: 앱이 실행 중일 때만 사진 변경(`PHPhotoLibraryChangeObserver`)을 감지합니다. **앱이 꺼진 상태에서 "새 사진 즉시 업로드"는 불가능**합니다(iCloud 사진 같은 시스템 권한 없음). 사용자가 강제 종료하면 백그라운드 재실행도 안 됩니다. → platform-policy.md 2의 "자동 백업"은 "앱을 열 때·충전 중 유휴 때 이어서 올림"으로 문구를 맞춥니다
+- iCloud "저장 공간 최적화"로 원본이 기기에 없으면 `isNetworkAccessAllowed = true`로 내려받아야 합니다(기본 false). 셀룰러·저장 공간을 쓰니 사용자 설정과 연결 https://developer.apple.com/documentation/photos/phimagerequestoptions/isnetworkaccessallowed
+- [ ] 자동 백업 문구: "즉시"가 아니라 "앱을 열 때·충전 중"으로 (제안)
+
+### 3.6 보안 구현
+- 토큰: Keychain. **백그라운드 업로드가 잠금 중에도 토큰을 읽어야 하니 `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`**(기본 `WhenUnlocked`는 잠금 중 실패). `ThisDeviceOnly`라 다른 기기 백업 복원에서 제외됨 — 새 기기에서는 다시 로그인 https://developer.apple.com/documentation/security/restricting-keychain-item-accessibility
+- 업로드 대기 파일의 Data Protection은 앱 기본(`completeUntilFirstUserAuthentication`) 또는 `completeUnlessOpen`
+- ATS: HTTPS·TLS 1.2+ 필수. `NSAllowsArbitraryLoads`는 쓰지 않습니다. 인증서 고정은 Android와 같은 이유로 안 함(제안)
+- Live Photo: `PHAssetResource`로 `.photo` + `.pairedVideo` 두 리소스를 꺼내 **원본 바이트 그대로** 백업하고, 복원도 두 리소스를 함께 추가. HEIC·HEVC 원본은 같은 경로로 추출(변환 없이). roadmap V6의 Live Photo 모델은 이 두 리소스를 담아야 합니다
+- 화면 캡처: 사후 통지(`userDidTakeScreenshotNotification`)만 가능하고 차단은 불가. 2.4 결정(차단 안 함)과 일치
+- 사진첩에 저장(내보내기): `.addOnly` 권한 + `NSPhotoLibraryAddUsageDescription`. readWrite가 이미 있으면 불필요. 사용자가 "저장"을 누른 시점에 요청
+
+### 3.7 미성년·연령 등급
+- Kids 카테고리가 아니어도 **5.1.4(b)**: 미성년자 개인정보를 수집·전송할 수 있는 앱은 개인정보 정책 필수 + 관련 법 준수. 메타데이터에 "For Kids" 표현 금지(2.3.8)
+- ⚠️ 연령 등급 개편(2025-07-24): 4+/9+/**13+/16+/18+**, 신규 설문 필수(2026-01-31까지). UGC·공유 기능 때문에 **13+ 이상**이 나올 수 있습니다. 가족 공유는 미성년 사용자를 가정하므로 1.2.1(a)/4.7.5 연령 기반 제한 조항(2025-11-13 추가)을 봅니다 https://developer.apple.com/news/?id=ks775ehf
+- ⚠️ 미국 주법(텍사스 2026-01, 유타, 루이지애나)의 연령 확인 요구는 한국 출시만이면 직접 영향이 적습니다
+- [ ] 연령 등급 설문 답과 목표 등급 (제안: 13+ 수용)
 
 ## 4. Android 앱
 
-(조사 결과 반영 — 아래 채움)
+2026-11-04 조사. 출처는 각 항목 끝. **[스니펫]** 표시는 조사 환경에서 `support.google.com`(Play Console 도움말)이 막혀 검색 요약으로만 확인한 것 — 출시 전에 원문을 다시 봅니다.
+
+### 4.1 사진·동영상 권한 (개발 단계 — 심사 통과의 핵심)
+- Play "사진·동영상 권한" 정책: `READ_MEDIA_IMAGES`·`READ_MEDIA_VIDEO`는 **시스템 포토 피커로 대체할 수 없는 핵심 기능이 지속적으로 사진 전체에 접근해야 할 때만** 선언할 수 있습니다. 가끔 한 장 고르는 용도는 포토 피커 의무. 2025-05-28부터 전면 시행, Play Console "App content"의 **선언 폼 심사**를 통과해야 하고 스토어 설명에 그 기능이 적혀 있어야 합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/14115180
+- Google이 든 적격 예시가 **갤러리·사진 관리 앱**이라 nuvo의 "기기 사진첩을 앱에서 보기"는 통과 가능성이 높습니다. 다만 "클라우드 백업"은 공식 예시에 없습니다(불확실). 선언 폼에는 **갤러리(타임라인·중복 정리)를 핵심 기능으로** 적고 백업은 부가로 적습니다(제안)
+- Android 14+ 부분 접근: `READ_MEDIA_VISUAL_USER_SELECTED`를 함께 선언해 "일부만 선택"을 앱이 다룹니다. 권한 상태는 저장하지 말고 화면에 돌아올 때마다(`onResume`) 다시 확인 https://developer.android.com/about/versions/14/changes/partial-photo-video-access
+- `MANAGE_EXTERNAL_STORAGE`(모든 파일 접근)는 미디어 용도로 **불허**. 요청하지 않습니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/10467955
+- Capacitor·RN으로 감싸도 manifest·targetSdk·선언 폼은 똑같이 적용됩니다. 서드파티 SDK가 manifest 병합으로 권한을 끼워 넣어도 정책 대상이니 빌드 결과 manifest를 확인합니다
+
+### 4.2 위치 EXIF (2.1과 연결)
+- Android 10+는 다른 앱이 만든 사진의 **위치 EXIF를 기본으로 지워서** 줍니다. 원본 위치를 읽으려면 `ACCESS_MEDIA_LOCATION` 권한 + `MediaStore.setRequireOriginal()`이 필요합니다 https://developer.android.com/training/data-storage/shared/media
+- 제안: **`ACCESS_MEDIA_LOCATION`을 처음에는 요청하지 않습니다.** 그러면 Android 앱에서 올라가는 백업에는 위치가 없고, Data safety에서 "위치 수집"을 신고하지 않아도 됩니다. 지도 보기·여행 묶기를 앱에서 쓰려면 그때 권한을 추가하고 신고도 바꿉니다. 단, 이렇게 하면 **같은 사진이 웹 PC에서 올라가면 위치가 있고 앱에서 올라가면 없는** 차이가 생깁니다 — 사용자에게 보이는 규칙은 "위치는 내 사진함에서만, Space에는 안 감"(2.1)으로 통일합니다
+- [ ] `ACCESS_MEDIA_LOCATION` 첫 출시 제외 (제안: 제외)
+
+### 4.3 Data safety·계정 삭제·개인정보 (심사 선언)
+- Data safety 폼: 로컬 열람만이면 사진은 "수집"이 아닙니다(기기 밖으로 안 나감). **백업 업로드는 "Photos and videos" 수집**, 위치 EXIF가 올라가면 **"Precise location" 수집**으로 신고. manifest 권한과 신고 내용이 다른 것이 흔한 거절 사유 [스니펫] https://support.google.com/googleplay/android-developer/answer/10787469
+- 계정 삭제: **앱 안 삭제 경로 + 앱 밖 웹 링크** 둘 다 필수(이미 시행). 웹 페이지에 앱·개발자 이름이 보여야 하고, 비활성화는 인정 안 됨. 지금 "설정 → 계정 삭제"는 있고, **웹 삭제 페이지**가 추가로 필요합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/13327111
+- 사진·위치는 "개인·민감 정보"라 개인정보처리방침 링크(스토어 + 앱 안)와 눈에 띄는 고지·동의가 필요합니다(developer-guide 14단계와 같은 작업)
+- [ ] 계정 삭제 웹 페이지 (로그인 후 삭제 / 이메일 요청 폼)
+
+### 4.4 UGC·아동 안전 (서비스 이용 규칙에 영향)
+- UGC 정책: 다른 사람에게 보이는 콘텐츠가 있으면 — 비공개 가족 Space라도 — **업로드 전 약관 동의, 앱 안 신고 기능, 사용자 차단·삭제, 지속적 조치**가 필요합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/9876937
+  - 지금 nuvo에는 **신고 기능이 없습니다.** Space 안에서 사진 신고 → 소유자·운영자에게 전달, 멤버 차단(내보내기는 있음)을 넣어야 합니다
+- Child Safety Standards(CSAE): Play Console 카테고리를 **Social/Dating로 선언한 앱**이 대상(2025-03 시행, 2026 범위 확대 중 — 시행일 표기가 소스마다 달라 불확실). 공개 CSAE 표준 페이지·신고 메커니즘·담당 연락처가 요구됩니다. nuvo는 **"사진" 카테고리로 등록**해 범위 밖에 두되, Child Endangerment 정책(CSAM 즉시 삭제·신고)은 모든 앱에 적용되니 신고 처리 절차는 어차피 필요합니다 [스니펫] https://support.google.com/googleplay/android-developer/answer/14747720
+- [ ] 사진 신고·멤버 차단 기능 (제안: 앱 출시 전 필수)
+- [ ] 스토어 카테고리: 사진 (제안)
+
+### 4.5 결제
+- 앱 안에서 디지털 구독을 팔면 Play Billing 필수. **소비 전용 앱(웹에서 결제, 앱은 로그인만)은 허용**됩니다. 앱 안에서 외부 결제로 **직접 링크·유도는 금지**, "웹사이트에서 구독할 수 있어요" 같은 링크 없는 안내는 가능 [스니펫] https://support.google.com/googleplay/android-developer/answer/9858738
+- 지역별 대체 결제는 2025~2026에 계속 바뀌고 있습니다(미국 외부 링크 허용 → 수수료 프로그램, EEA Billing Choice, **한국은 2026-12-31 Billing Choice 적용 예정 + 2026-10-28 방미통위 아웃링크 결제 제공 명령**, 수수료 미정). 출시 시점에 다시 확인
+- 제안: 1차는 **소비 전용**(platform-policy.md 7과 같음). Billing 연동·프로그램 등록 없이 정책을 지킬 수 있습니다
+- [ ] 소비 전용으로 출시 확정
+
+### 4.6 백그라운드 업로드 (자동 백업)
+- 선택지: **WorkManager**(10분 미만 작업 단위, 충전·Wi-Fi 같은 제약 조건, 시스템이 취소·재시도) / **User-Initiated Data Transfer Job**(사용자가 시작한 전송, 진행 알림 필수, Android 14+) / 포그라운드 서비스는 최후 수단 https://developer.android.com/develop/background-work/background-tasks/data-transfer-options
+- `dataSync` 포그라운드 서비스는 Android 15+ 타겟에서 **24시간 중 6시간** 제한, 부팅 때 시작 불가, Play Console에 용도 설명 + **시연 동영상** 선언 필요(거절 사례 많음) https://developer.android.com/develop/background-work/services/fgs/service-types
+- 제안: 자동 백업은 **WorkManager + 제약 조건(Wi-Fi, 배터리 부족 아님)**으로 만들고, 사진을 작은 묶음으로 나눠 10분 안에 끝나게 합니다. 포그라운드 서비스 선언은 피합니다. platform-policy.md 2의 "Wi-Fi에서만·저전력 멈춤" 기본값과 맞습니다
+- [ ] WorkManager 방식 확정
+
+### 4.7 보안 구현
+- 토큰 보관: `EncryptedSharedPreferences`(security-crypto)는 **2025-07 전체 deprecated**. **Android Keystore를 직접** 쓰고(StrongBox 있으면 사용, 없으면 TEE), 암호화한 값을 DataStore 등에 저장 https://developer.android.com/jetpack/androidx/releases/security
+- 네트워크: API 28+는 평문 HTTP 기본 차단. Android 17(API 37)부터 Certificate Transparency·ECH 기본 활성. 인증서 고정(pinning)은 만료일·백업 핀 없이 하면 서비스가 멈출 수 있어 **하지 않음**(제안) https://developer.android.com/privacy-and-security/security-config
+- Play Integrity: 1차에는 넣지 않습니다(제안). 서버 검증이 이미 요청마다 있고, 통합 비용 대비 막는 위협(변조 앱)이 가족 사진 서비스에서 크지 않습니다
+- 화면 캡처: `FLAG_SECURE`로 차단 가능하지만 2.4 결정대로 **쓰지 않음**
+- 형식: HEIC 디코딩은 Android 9+이지만 **기기 선택 사항**(`ImageDecoder.isMimeTypeSupported`로 확인). Motion Photo는 JPEG/HEIC 뒤에 MP4가 붙은 한 파일 — 백업은 **원본 바이트 그대로** 보존해야 모션이 살아 있습니다(roadmap V6 Live Photo와 함께 다룸) https://developer.android.com/media/platform/motion-photo-format
+- targetSdk: **2026-08-31부터 신규 앱은 Android 16(API 36) 필수** — 지금 출시하면 36 https://developer.android.com/google/play/requirements/target-sdk
 
 ## 5. 웹 (브라우저)
 
@@ -141,8 +238,15 @@
 
 | | 웹 | iOS 앱 | Android 앱 |
 |---|---|---|---|
-| 기기 사진 권한 | 폴더 읽기(브라우저 권한 창) | (조사 반영) | (조사 반영) |
-| 위치 EXIF 읽기 | 파일에 있으면 그대로 읽힘 | (조사 반영) | (조사 반영) |
-| 토큰·세션 보관 | 쿠키 | (조사 반영) | (조사 반영) |
-| 심사·선언 | 없음 | (조사 반영) | (조사 반영) |
-| 결제 규칙 | PG | (조사 반영) | (조사 반영) |
+| 기기 사진 권한 | 폴더 읽기(브라우저 권한 창), 읽기 전용 | 전체 / 선택한 사진만(limited). 주기적 재확인 프롬프트. 거부·limited 대안 화면 필수 | `READ_MEDIA_IMAGES/VIDEO` + `VISUAL_USER_SELECTED`. Play 선언 폼 심사(갤러리가 핵심 기능) |
+| 위치 EXIF | 파일에 있으면 그대로 읽힘 | 원본에 그대로 → Precise Location 신고 | OS가 기본 제거. `ACCESS_MEDIA_LOCATION` 첫 출시 제외(제안) → 위치 없음 |
+| 토큰·세션 보관 | 쿠키 | Keychain `AfterFirstUnlockThisDeviceOnly` | Android Keystore 직접(security-crypto deprecated) |
+| 로그인 | 이메일·Google·카카오 | **+ Sign in with Apple 필수**(4.8) | 그대로 |
+| 계정 삭제 | 설정에서 | 앱 안 삭제(있음) + Apple 토큰 폐기 | 앱 안 삭제(있음) + **웹 삭제 페이지 필수** |
+| UGC 요구 | — | 필터·**신고·차단**·공개 연락처 | 약관 동의·**신고·차단**·조치. CSAE는 "사진" 카테고리로 범위 밖 |
+| 결제 | PG 정기결제 | **IAP 필수**(웹 구독 로그인은 3.1.3(b): 같은 상품을 IAP로도) | 소비 전용 가능(앱은 로그인만, 링크 금지). 한국 Billing Choice 2026-12-31 |
+| 자동 백업 | 탭 열려 있을 때 | 앱 열 때·충전 중 유휴. 꺼진 상태 즉시 업로드 불가 | WorkManager + 제약(Wi-Fi·배터리). FGS 선언 회피 |
+| 선언·심사 문서 | 없음 | Privacy Manifest, 영양 라벨, 연령 등급 설문(13+ 예상) | Data safety, 사진 권한 선언 폼, targetSdk 36 |
+| 화면 캡처 | 불가 | 사후 통지만 | `FLAG_SECURE` 가능하나 안 씀 |
+
+**두 스토어 공통으로 앱 출시 전에 필요한 것(지금 없음):** 사진 **신고** 기능과 멤버 **차단**, 공개 연락처(지원 이메일), 업로드 전 약관 동의, 개인정보처리방침(developer-guide 14단계). 여기에 iOS는 Sign in with Apple과 IAP, Android는 웹 계정 삭제 페이지가 더해집니다.
