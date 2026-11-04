@@ -77,7 +77,7 @@ Better Auth를 Workers에서 돌리고, 세션은 D1, 메일은 Resend, 소셜�
 **개인정보처리방침 + 계정 삭제**
 
 - `/ko/privacy`, `/en/privacy` 정적 페이지: 수집 항목(이메일, 레터 본문, 로그인 방식), 목적, 보관 기간(계정 삭제 시까지 / 챗 로그 90일), 삭제 방법, 연락처. 레터 시트 하단과 푸터에서 링크
-- 계정 삭제: 아바타 메뉴 → 확인 시트에서 "삭제" 입력 → `DELETE /api/account`
+- 계정 삭제: 아바타 메뉴 → 확인 시트에서 "삭제" 입력 → `DELETE /api/account` — **11/04 삭제**(방문자 계정이 없어 엔드포인트도 없앰. 레터 삭제는 방침 페이지대로 레터로 요청, 관리자 계정 정리는 어드민 사용자 화면·D1에서)
 - 삭제 처리(트랜잭션): `session`·`account`·`verification` 삭제 → `letters`·`letter_replies`의 `user_id`를 NULL, `reply_to`를 NULL로 비움(본문은 내 기록으로 유지) → `chat_logs.user_id` NULL → `user` 삭제 → 쿠키 제거 → 홈으로
 - 삭제 사실은 Telegram으로 나에게 알림(이메일 없이 "계정 1건 삭제"만)
 
