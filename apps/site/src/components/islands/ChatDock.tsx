@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type SubmitEvent } from 'react';
 import type { Dict, Locale } from '../../i18n';
 import type { Diagram } from '../../lib/diagram';
+import followupSet from '../../content/rag/followups.json';
 import { ChatMarkdown } from './chat-markdown';
 import { visibleAnswer } from './chat-text';
 import { lockScroll } from './scroll-lock';
@@ -28,6 +29,26 @@ interface Turn {
 
 const HISTORY_KEY = 'chatHistory';
 const MAX_QUESTION = 500;
+// client:demand의 이어가기 키(src/directives/demand.ts) — 다음 페이지에서 챗을 바로 연다
+const RESUME_KEY = 'uiResume';
+const FOLLOWUP_MAX = 3;
+
+type FollowupSet = Record<string, Partial<Record<Locale, string[]>>>;
+const sameQuestion = (a: string, b: string) => a.replace(/[\s?？.!]/g, '').toLowerCase() === b.replace(/[\s?？.!]/g, '').toLowerCase();
+
+/** 마지막 답 아래 "이어서 물어보기" — 출처 slug 순서대로 모으고 이미 물은 질문은 뺀다(docs/05-06-chat-rag.md "답 아래 표시 세 종류") */
+function followups(sources: string[] | undefined, asked: string[], locale: Locale): string[] {
+  const set = followupSet as unknown as FollowupSet;
+  const keys = sources?.length ? [...sources, 'default'] : ['default'];
+  const out: string[] = [];
+  for (const key of keys) {
+    for (const q of set[key]?.[locale] ?? []) {
+      if (out.length >= FOLLOWUP_MAX) return out;
+      if (!out.some((o) => sameQuestion(o, q)) && !asked.some((a) => sameQuestion(a, q))) out.push(q);
+    }
+  }
+  return out;
+}
 
 function load(): Turn[] {
   try {
@@ -186,9 +207,20 @@ export default function ChatDock({ dict, locale }: Props) {
   const sourceName = (slug: string) =>
     ({ resume: dict.chat.sources.resume, 'handoff-agent': 'handoff-agent', forest: 'Forest', faq: dict.chat.sources.faq })[slug] ?? slug;
   // 같은 페이지 안 링크(#intro 등)는 패널을 닫아야 이동한 자리가 보인다(모바일은 패널이 화면 전체).
+  // 다른 페이지로 갈 때 데스크톱은 이동한 페이지에서 패널을 다시 연다(페이지 옆에 떠 있어 내용을 가리지 않는다).
+  // 모바일은 화면 전체를 덮으므로 다시 열지 않는다 — 대화는 sessionStorage에 남아 독 버튼으로 이어진다.
   const followSource = (href: string) => {
-    if (href.split('#')[0] === location.pathname) setOpen(false);
+    if (href.split('#')[0] === location.pathname) {
+      setOpen(false);
+      return;
+    }
+    if (window.innerWidth >= 768) {
+      try {
+        sessionStorage.setItem(RESUME_KEY, 'chat');
+      } catch {}
+    }
   };
+  const asked = turns.filter((t) => t.role === 'user').map((t) => t.content);
 
   if (!open) {
     return (
@@ -230,7 +262,14 @@ export default function ChatDock({ dict, locale }: Props) {
         {turns.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {dict.chat.chips.map((chip) => (
-              <button key={chip} type="button" className="btn min-h-11 text-sm font-normal" disabled={busy} onClick={() => void ask(chip)}>
+              <button
+                key={chip}
+                type="button"
+                className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent/10 px-3 text-left text-sm text-fg"
+                disabled={busy}
+                onClick={() => void ask(chip)}
+              >
+                <span className="text-accent" aria-hidden="true">↳</span>
                 {chip}
               </button>
             ))}
@@ -266,29 +305,62 @@ export default function ChatDock({ dict, locale }: Props) {
                   {dict.chat.sources.label}: {t.sources.filter((slug) => !sourceLink(slug)).map(sourceName).join(' · ')}
                 </p>
               )}
-              {(t.sources?.some((slug) => sourceLink(slug)) || t.notice === 'letter' || t.content.includes('[[letter]]')) && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {t.sources?.map((slug) => {
-                    const link = sourceLink(slug);
-                    if (!link) return null;
-                    return (
-                      <a
-                        key={slug}
-                        href={link.href}
-                        onClick={() => followSource(link.href)}
-                        className="inline-flex min-h-11 items-center rounded-full border border-border px-3 text-sm"
-                      >
-                        {link.label}
-                      </a>
-                    );
-                  })}
-                  {(t.notice === 'letter' || t.content.includes('[[letter]]')) && (
-                    <button type="button" data-action="letter" className="btn min-h-11 text-sm">
-                      {dict.chat.letter}
-                    </button>
-                  )}
+              {(t.notice === 'letter' || t.content.includes('[[letter]]')) && (
+                <div className="mt-2">
+                  <button type="button" data-action="letter" className="btn min-h-11 text-sm">
+                    {dict.chat.letter}
+                  </button>
                 </div>
               )}
+              {/* 관련 페이지(이동) — 테두리 알약 + ↗. 누르면 페이지를 옮긴다 */}
+              {t.sources?.some((slug) => sourceLink(slug)) && (
+                <nav className="mt-2" aria-label={dict.chat.pages}>
+                  <p className="mb-1 px-1 text-xs text-quiet">{dict.chat.pages}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {t.sources.map((slug) => {
+                      const link = sourceLink(slug);
+                      if (!link) return null;
+                      return (
+                        <a
+                          key={slug}
+                          href={link.href}
+                          onClick={() => followSource(link.href)}
+                          aria-label={`${link.label} — ${dict.chat.goTo}`}
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-3 text-sm text-muted"
+                        >
+                          {link.label}
+                          <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                            <path d="M6 3h7v7M13 3 4 12" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </nav>
+              )}
+              {/* 이어서 물어보기 — 마지막 답 아래에만. 채운 연한 강조색 알약 + ↳. 누르면 그 질문을 보낸다 */}
+              {i === turns.length - 1 && !busy && !t.notice && visibleAnswer(t.content) && (() => {
+                const next = followups(t.sources, asked, locale);
+                if (!next.length) return null;
+                return (
+                  <div className="mt-3">
+                    <p className="mb-1 px-1 text-xs text-quiet">{dict.chat.followups}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {next.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => void ask(q)}
+                          className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent/10 px-3 text-left text-sm text-fg"
+                        >
+                          <span className="text-accent" aria-hidden="true">↳</span>
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ),
         )}

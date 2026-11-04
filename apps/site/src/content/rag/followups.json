@@ -1,0 +1,51 @@
+{
+  "_comment": "챗 답 아래 '이어서 물어보기' 질문(docs/05-06-chat-rag.md '답 아래 표시 세 종류'). 답의 출처 slug마다 한/영 질문. 문서로 답이 나오는 질문만 넣는다. 출처가 없으면 default.",
+  "default": {
+    "ko": ["어떤 프로젝트를 만들었나요?", "실무에서 쓴 기술은요?", "지금 어디서 일하나요?"],
+    "en": ["What projects have you built?", "What tools were used at work?", "Where does Yeonghun work now?"]
+  },
+  "about": {
+    "ko": ["주로 어떤 일을 하나요?", "원격 근무가 가능한가요?", "어떤 프로젝트를 만들었나요?"],
+    "en": ["What does Yeonghun mainly do?", "Is remote work possible?", "What projects have you built?"]
+  },
+  "faq": {
+    "ko": ["코드는 어디서 볼 수 있나요?", "이력서를 받을 수 있나요?", "원격 근무가 가능한가요?"],
+    "en": ["Where can I see the code?", "Can I get a resume?", "Is remote work possible?"]
+  },
+  "stack": {
+    "ko": ["실무에서 쓴 기술은요?", "개인 프로젝트에서는 무엇을 썼나요?", "Flutter는 어디서 썼나요?"],
+    "en": ["What tools were used at work?", "What was used in personal projects?", "Where was Flutter used?"]
+  },
+  "resume": {
+    "ko": ["지금 어디서 일하나요?", "홀리츠에서는 무엇을 했나요?", "트립에이드에서는 무엇을 했나요?"],
+    "en": ["Where does Yeonghun work now?", "What did Yeonghun do at holich?", "What did Yeonghun do at Tripaid?"]
+  },
+  "handoff-agent": {
+    "ko": ["handoff-agent로 토큰을 얼마나 줄였나요?", "handoff-agent 동작 흐름을 그려 주세요", "시크릿은 어떻게 다루나요?"],
+    "en": ["How many tokens did handoff-agent save?", "Draw the handoff-agent workflow", "How are secrets handled?"]
+  },
+  "projects/handoff-agent": {
+    "ko": ["handoff-agent로 토큰을 얼마나 줄였나요?", "handoff-agent 동작 흐름을 그려 주세요", "시크릿은 어떻게 다루나요?"],
+    "en": ["How many tokens did handoff-agent save?", "Draw the handoff-agent workflow", "How are secrets handled?"]
+  },
+  "forest": {
+    "ko": ["Forest에는 어떤 기능이 있나요?", "Forest 백엔드는 왜 Cloudflare인가요?", "Forest는 어떻게 iOS·Android를 같이 만드나요?"],
+    "en": ["What features does Forest have?", "Why is the Forest backend on Cloudflare?", "How is Forest built for iOS and Android together?"]
+  },
+  "projects/forest": {
+    "ko": ["Forest에는 어떤 기능이 있나요?", "Forest 백엔드는 왜 Cloudflare인가요?", "Forest는 어떻게 iOS·Android를 같이 만드나요?"],
+    "en": ["What features does Forest have?", "Why is the Forest backend on Cloudflare?", "How is Forest built for iOS and Android together?"]
+  },
+  "projects/nuvo": {
+    "ko": ["nuvo는 어떤 기술로 만들었나요?", "nuvo는 중복 사진을 어떻게 정리하나요?", "nuvo 구조를 그려 주세요"],
+    "en": ["What is nuvo built with?", "How does nuvo handle duplicate photos?", "Draw the nuvo architecture"]
+  },
+  "projects/this-portfolio": {
+    "ko": ["이 사이트의 챗은 어떻게 동작하나요?", "이 사이트 구조를 그려 주세요", "비용은 어떻게 0에 가깝게 유지하나요?"],
+    "en": ["How does the chat on this site work?", "Draw this site's architecture", "How is the cost kept near zero?"]
+  },
+  "site-architecture": {
+    "ko": ["이 사이트의 챗은 어떻게 동작하나요?", "이 사이트 구조를 그려 주세요", "레터는 어떻게 전달되나요?"],
+    "en": ["How does the chat on this site work?", "Draw this site's architecture", "How are letters delivered?"]
+  }
+}
