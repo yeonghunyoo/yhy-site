@@ -5,6 +5,7 @@
 흩어진 사진을 한곳에 모아 보고, 가족·친구와 함께 쌓아가는 프라이빗 사진 서비스.
 
 - [docs/decisions.md](docs/decisions.md): **결정 기록** — 무엇을 정했고, 어떤 선택지를 봤고, 왜, 어떤 자료로. 결정이 생기거나 바뀌면 여기에 덧붙입니다
+- [docs/work-plan.md](docs/work-plan.md): **개발 작업 계획** — 1차 웹(서버) 항목별 체크리스트(사람/코드 구분), 시작 순서
 - [docs/service-plan.md](docs/service-plan.md): **목표** — 모바일 앱 중심(구독·백업·가족 공유, 결제는 앱 스토어만), 웹은 확장(큰 화면 감상·관리). 개인 10GB 선택 구독. 개발은 웹(서버) 먼저 → 모바일 (11/04 재조정)
 - [docs/pricing.md](docs/pricing.md): 구독 가격 — 손익분기 계산, 타 서비스 비교, 가격 안 A/B/C (미결정)
 - [docs/mvp.md](docs/mvp.md): 현재 구현 기록 — 범위, 아키텍처, 보안 설계, 검색 노출(기본 noindex), 한계

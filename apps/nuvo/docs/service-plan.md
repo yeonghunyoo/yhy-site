@@ -84,7 +84,7 @@
 | **2차 모바일** | ① Capacitor 감싸기 + 사진첩 보기 + 초대받은 Space 보기(구독 없이) ② iOS IAP·Google Play 결제 + 서버 영수증 검증·통지 ③ 백업(골라서 → 자동) ④ 스토어 심사 문서(Privacy Manifest, Data safety, 권한 선언 폼, 연령 등급) |
 | **3차** | 동영상·자동 분류([roadmap-video-classification.md](roadmap-video-classification.md)), 무료 범위 조정 |
 
-1차가 끝나면 **구독자가 없는 상태의 완성된 서비스**입니다(운영자가 수동으로 켠 계정만 업로드 가능). 2차가 끝나야 돈을 받습니다.
+항목별 체크리스트와 사람/코드 구분은 [work-plan.md](work-plan.md). 1차가 끝나면 **구독자가 없는 상태의 완성된 서비스**입니다(운영자가 수동으로 켠 계정만 업로드 가능). 2차가 끝나야 돈을 받습니다.
 
 ## 정할 것
 
