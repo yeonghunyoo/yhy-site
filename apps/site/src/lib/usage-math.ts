@@ -1,4 +1,7 @@
 // 사용량 계산 — 런타임(env) 없이 동작하는 순수 함수(docs/guides/cost-guard.md). 로컬 테스트가 그대로 불러 쓴다.
+// 두 앱 공용인 것(usageLevel·capFrom·WindowLimiter·sameOrigin·botReason)은 @yhy/cf-kit에 있다. 여기는 사이트 전용 규칙.
+
+export { capFrom, usageLevel, type Level } from '@yhy/cf-kit/budget';
 
 /** 무료 한도(2026-11 기준). day = UTC 하루, month = 한 달 */
 export const FREE_LIMITS = {
@@ -53,47 +56,6 @@ export function estimateNeurons(turns: number, tokensIn: number, tokensOut: numb
   return turns * NEURONS_FIXED_PER_TURN + tokensIn * GEMMA_IN_PER_TOKEN + tokensOut * GEMMA_OUT_PER_TOKEN;
 }
 
-export type Level = 'ok' | 'warn' | 'over';
-
-/** 사용률(0~∞)과 단계: 80% 이상 warn, 100% 이상 over */
-export function usageLevel(used: number, limit: number): { ratio: number; level: Level } {
-  const ratio = limit > 0 ? used / limit : 0;
-  return { ratio, level: ratio >= 1 ? 'over' : ratio >= 0.8 ? 'warn' : 'ok' };
-}
-
-/** 환경변수 상한: 양의 정수면 그 값, 아니면 기본값 */
-export function capFrom(value: unknown, fallback: number): number {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
-}
-
-/**
- * 고정 창 카운터(isolate 메모리). 허용이면 true. 창이 바뀌면 다시 센다.
- * `violations`는 같은 창에서 상한을 넘은 횟수 — 반복되면 부르는 쪽이 차단 목록에 올린다.
- */
-export class WindowLimiter {
-  private hits = new Map<string, { window: number; count: number; violations: number }>();
-  constructor(
-    private readonly limit: number,
-    private readonly windowMs: number,
-    private readonly maxKeys = 5_000,
-  ) {}
-
-  check(key: string, now = Date.now()): { allowed: boolean; violations: number } {
-    const window = Math.floor(now / this.windowMs);
-    let entry = this.hits.get(key);
-    if (!entry || entry.window !== window) {
-      if (this.hits.size >= this.maxKeys) this.hits.clear(); // 메모리 상한 — 한 번에 비운다
-      entry = { window, count: 0, violations: 0 };
-      this.hits.set(key, entry);
-    }
-    entry.count++;
-    if (entry.count <= this.limit) return { allowed: true, violations: entry.violations };
-    entry.violations++;
-    return { allowed: false, violations: entry.violations };
-  }
-}
-
 /** 경로별 허용 메서드. 목록에 없는 /api 경로는 GET·POST */
 export function allowedMethods(pathname: string): string[] {
   if (pathname.startsWith('/auth/')) return ['GET', 'POST'];
@@ -104,33 +66,4 @@ export function allowedMethods(pathname: string): string[] {
   return ['GET', 'POST'];
 }
 
-/** 상태를 바꾸는 요청의 출처가 사이트와 같은지(Origin, 없으면 Referer) */
-export function sameOrigin(siteOrigin: string, origin: string | null, referer: string | null): boolean {
-  if (origin) return origin === siteOrigin;
-  if (referer) {
-    try {
-      return new URL(referer).origin === siteOrigin;
-    } catch {
-      return false;
-    }
-  }
-  return false;
-}
-
-// 봇 신호(docs/guides/cost-guard.md "2. 비정상 요청 방어" 7) — 로그인 없이 열린 POST /api/letters·/api/chat에만 쓴다.
-const BOT_UA =
-  /curl|wget|python|httpie|go-http|java\/|okhttp|axios|node-fetch|undici|libwww|scrapy|headlesschrome|phantomjs|selenium|puppeteer|playwright|bot\b|spider|crawl/i;
-
 export const botChecked = (method: string, pathname: string) => method === 'POST' && (pathname === '/api/letters' || pathname === '/api/chat');
-
-/** 브라우저라면 반드시 보내는 신호가 빠졌으면 이유, 아니면 null */
-export function botReason(headers: Headers): string | null {
-  const ua = headers.get('user-agent') ?? '';
-  if (!ua) return 'no_ua';
-  if (BOT_UA.test(ua)) return 'tool_ua';
-  if (headers.get('sec-fetch-site') !== 'same-origin') return 'fetch_site';
-  const mode = headers.get('sec-fetch-mode');
-  if (mode !== 'cors' && mode !== 'same-origin') return 'fetch_mode';
-  if (!headers.get('accept-language')) return 'no_lang';
-  return null;
-}

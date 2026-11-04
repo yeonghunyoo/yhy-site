@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  // TS 6으로 검사한다(site와 같은 버전). nuvo가 원본을 TS 7로 한 번 더 검사한다 — 둘 다 통과해야 한다
+  "compilerOptions": { "lib": ["ES2023", "DOM"], "types": [] },
+  "include": ["src"]
+}

@@ -28,6 +28,7 @@
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/ibm-plex-sans-kr": "^5.3.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@yhy/cf-kit": "workspace:*",
     "astro": "^7.4.2",
     "better-auth": "^1.7.14",
     "drizzle-orm": "^0.45.4",

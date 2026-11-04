@@ -1,0 +1,20 @@
+{
+  "name": "@yhy/cf-kit",
+  "private": true,
+  "type": "module",
+  "description": "portfolio-web·nuvo가 같이 쓰는 Cloudflare Workers 서버 모듈 (docs/monorepo.md)",
+  "exports": {
+    "./mail": "./src/mail.ts",
+    "./budget": "./src/budget.ts",
+    "./guard": "./src/guard.ts",
+    "./notify": "./src/notify.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

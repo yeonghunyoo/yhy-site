@@ -1,7 +1,8 @@
 import { env } from 'cloudflare:workers';
 import { count, gte, sql } from 'drizzle-orm';
 import { chatLogs, letters } from '../../db/schema';
-import { capFrom, DEFAULT_CAPS, estimateNeurons, usageLevel, type Level } from '../usage-math';
+import { alertOnceKv, capFrom, createCountBudget, kvCounterStore, usageLevel, type Alert } from '@yhy/cf-kit/budget';
+import { DEFAULT_CAPS, estimateNeurons } from '../usage-math';
 import { getDb } from './db';
 import { kstDate, kstDayStart } from './dates';
 import { notify } from './notify';
@@ -76,13 +77,7 @@ export function lettersToday(fresh = false) {
 }
 
 /** 80%·100% 알림은 종류·단계마다 하루 1번(KV 플래그 1회 쓰기) */
-async function alertOnce(kind: string, level: Level, text: string) {
-  if (level === 'ok') return;
-  const key = `budget:alert:${kstDate(new Date())}:${kind}:${level}`;
-  if (await env.KV.get(key)) return;
-  await env.KV.put(key, '1', { expirationTtl: 60 * 60 * 26 });
-  notify(level === 'over' ? `🧯 차단기 작동: ${text}` : `⚠️ 사용량 80%: ${text}`);
-}
+const alertOnce: Alert = (kind, level, text) => alertOnceKv(env.KV, notify)(kind, level, text);
 
 export type ChatGate = { ok: true } | { ok: false; reason: 'neurons' | 'turns' | 'tokens' };
 
@@ -100,39 +95,20 @@ export async function chatGate(): Promise<ChatGate> {
   return over ? { ok: false, reason: over.reason } : { ok: true };
 }
 
-// 메일(Resend): 보낸 메일만 센다 — 일·월 KV 카운터
-const mailKeys = () => {
-  const day = kstDate(new Date());
-  return { day: `budget:mail:${day}`, month: `budget:mail:${day.slice(0, 7)}` };
-};
-
-export async function mailCounts(): Promise<{ day: number; month: number }> {
-  const k = mailKeys();
-  const [day, month] = await Promise.all([env.KV.get(k.day), env.KV.get(k.month)]);
-  return { day: Number(day ?? 0), month: Number(month ?? 0) };
-}
-
-/** 메일을 더 보내도 되는지(일·월 상한). 80%·100% 알림 포함 */
-export async function mailAllowed(): Promise<boolean> {
+// 메일(Resend): 보낸 메일만 센다 — 일·월 KV 카운터(budget:mail:{일|월}, 보낸 메일 1통당 쓰기 2회)
+export function mailBudget() {
   const c = caps();
-  const n = await mailCounts();
-  const d = usageLevel(n.day, c.mailDay);
-  const m = usageLevel(n.month, c.mailMonth);
-  await Promise.all([
-    alertOnce('mail-day', d.level, `메일 ${n.day} / ${c.mailDay}통(오늘)`),
-    alertOnce('mail-month', m.level, `메일 ${n.month} / ${c.mailMonth}통(이번 달)`),
-  ]);
-  return d.level !== 'over' && m.level !== 'over';
+  return createCountBudget({
+    name: 'mail',
+    caps: { day: c.mailDay, month: c.mailMonth },
+    store: kvCounterStore(env.KV),
+    label: '메일',
+    unit: '통',
+    alert: alertOnce,
+  });
 }
 
-export async function recordMail(): Promise<void> {
-  const k = mailKeys();
-  const n = await mailCounts();
-  await Promise.all([
-    env.KV.put(k.day, String(n.day + 1), { expirationTtl: 60 * 60 * 26 }),
-    env.KV.put(k.month, String(n.month + 1), { expirationTtl: 60 * 60 * 24 * 32 }),
-  ]);
-}
+export const mailCounts = () => mailBudget().counts();
 
 /** 레터를 더 받아도 되는지(사이트 전체 일일 상한) */
 export async function lettersAllowed(): Promise<boolean> {

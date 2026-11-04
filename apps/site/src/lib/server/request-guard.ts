@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
-import { allowedMethods, botChecked, botReason, sameOrigin, WindowLimiter } from '../usage-math';
+import { botReason, sameOrigin, WindowLimiter } from '@yhy/cf-kit/guard';
+import { allowedMethods, botChecked } from '../usage-math';
 import { hashIp } from './chat';
 import { notify } from './notify';
 import { clientIp } from './ratelimit';
