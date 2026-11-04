@@ -60,3 +60,9 @@ Astro SSR 페이지 + `middleware.ts`에서 `/admin` 접두 경로 가드. 차�
 
 - 관리자 계정으로 로그인하면 헤더 계정 메뉴 맨 위에 "관리자" 링크(`/admin`)가 보인다. 페이지는 정적이라 메뉴가 열릴 때(로그인 계정이 바뀔 때 한 번) `GET /api/account`가 `{ admin: boolean }`만 돌려준다 — `ADMIN_EMAILS`와 같은 `isAdmin()` 판정, 비관리자·비로그인은 `false`. `/admin`·`/api/admin/*`의 404 보호는 그대로
 - (11/03) 계정 메뉴 말고도 헤더에 "관리자" 링크를 둔다 — 데스크톱은 헤더 내비, 모바일은 ☰ 메뉴. 헤더는 정적 HTML이라 링크를 미리 숨겨 두고, 계정 메뉴가 관리자로 확인되면 `<html data-admin>`을 붙여 보이게 한다(`in-data-admin:` 클래스). 링크만 숨기는 것이고 보호는 서버 404
+
+## 로컬 테스트 어드민 (11/04)
+
+- 로컬 전용 테스트 관리자 `admin@test.local` — 실제 메일함이 없는 주소. `.dev.vars.example`의 `ADMIN_EMAILS` 기본값
+- 로그인: `pnpm preview` → 로그인 시트에서 `admin@test.local`로 이메일 로그인 → `RESEND_API_KEY`가 비어 있어 메일 대신 터미널(wrangler dev 로그)에 `[mail:dev]`로 로그인 링크·6자리 코드가 찍힌다 → 링크를 열거나 코드를 넣으면 `/admin` 진입(11/04 확인: `/admin` 200, 비로그인 404)
+- 운영에는 넣지 않는다. 운영 관리자 이메일은 여전히 미결정(overview "미결정 사항")이고, 운영은 메일이 나가지 않아 이 주소로는 로그인할 수 없다

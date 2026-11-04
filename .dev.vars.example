@@ -8,7 +8,8 @@ RESEND_API_KEY=
 # 도메인 전에는 onboarding@resend.dev (Resend 가입 이메일로만 발송) — docs/guides/resend-setup.md
 MAIL_FROM=
 LETTER_TO=
-ADMIN_EMAILS=
+# 로컬 테스트 관리자 — 메일 대신 터미널에 로그인 링크가 찍힌다(docs/04-admin.md "로컬 테스트 어드민"). 운영에 쓰지 않는다
+ADMIN_EMAILS=admin@test.local
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 # 2차: 챗 + RAG. CHAT_ENABLED=1일 때만 /api/chat이 열린다. 모델은 Workers AI(`AI` 바인딩)라 키가 없다.
