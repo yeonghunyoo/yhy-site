@@ -6,12 +6,6 @@ metric: { value: 39, unit: '%', label: '토큰 절감 · iOS·Android 각 8회' 
 period: 2026.09 ~
 stack: [Claude Code 플러그인, Python MCP 서버]
 order: 1
-images:
-  - { src: ./handoff-agent/01-home.jpg, alt: "정합성 비교 — Forest 홈 화면 세 구현" }
-  - { src: ./handoff-agent/02-onboarding.jpg, alt: "정합성 비교 — Forest 온보딩 화면 세 구현" }
-  - { src: ./handoff-agent/03-sounds.jpg, alt: "정합성 비교 — Forest 사운드 목록 화면 세 구현" }
-  - { src: ./handoff-agent/04-timer.jpg, alt: "정합성 비교 — Forest 재생 화면 타이머 드롭다운 세 구현" }
-  - { src: ./handoff-agent/05-mix-sheet.jpg, alt: "정합성 비교 — Forest 믹스 볼륨 시트 세 구현" }
 ---
 
 ## 문제
