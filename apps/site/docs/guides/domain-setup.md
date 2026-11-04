@@ -50,7 +50,7 @@
 겪은 일(11/04):
 - MX·규칙이 생기기 전에 `@bettercurl.dev`로 보낸 메일은 Cloudflare가 `Recipient not found`로 거절했고, Resend가 그 주소(`hello@`·`letters@`)를 **Suppressions**에 자동으로 넣었다. 그 뒤로는 규칙이 있어도 Resend가 보내지 않는다(로그 "Recipient was suppressed"). Resend 대시보드 Suppressions에서 지워서 풀었다. 처음 연동할 때는 Email Routing을 켜고 규칙까지 만든 **뒤에** 시험 메일을 보낸다
 - 풀린 뒤 첫 메일은 Resend 로그가 한동안 `Sent`(Delivered 아님)로 남다가 몇 분 뒤 도착했다(재시도로 보임)
-- `_dmarc.bettercurl.dev`가 없어 Resend가 "No DMARC record found"를 띄운다. 전달 경로에서 Gmail이 인증을 엄하게 보므로 `TXT _dmarc` `v=DMARC1; p=none;`을 둔다(감시만, `mail.`에도 적용). 클라우드 세션에서는 DNS 변경이 권한 검사에 막혀 사용자가 대시보드에서 넣는다
+- `_dmarc.bettercurl.dev`가 없어 Resend가 "No DMARC record found"를 띄운다. 전달 경로에서 Gmail이 인증을 엄하게 보므로 `TXT _dmarc` `v=DMARC1; p=none;`을 둔다(감시만, `mail.`에도 적용). 11/04 사용자 요청으로 Claude가 API로 추가함(처음 시도는 권한 검사에 막혔고, 사용자가 명시적으로 맡긴 뒤 됨)
 
 Claude가 하려면 토큰에 **Zone → DNS Edit, Zone → Email Routing Rules Edit, Account → Email Routing Addresses Edit**(영역은 `bettercurl.dev`만)을 더한다. 대상 주소 인증 클릭은 그래도 사용자가 한다.
 
