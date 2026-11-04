@@ -136,7 +136,7 @@ pnpm exec wrangler secret put BETTER_AUTH_URL      # 예: https://nuvo.example.c
 
 ### 10-1. 메일 발송 (Resend) — 이메일 로그인에 필요
 운영에서는 **Resend 키가 있어야 이메일 가입·로그인이 켜집니다.** 없으면 화면에 이메일 입력란이 나오지 않습니다.
-1. [ ] [resend.com](https://resend.com) 가입 (무료: 월 3,000통, 하루 100통)
+1. [ ] [resend.com](https://resend.com)에 **nuvo 전용 계정**을 만듭니다 (무료: 월 3,000통, 하루 100통). portfolio-web의 Resend 계정을 같이 쓰면 두 앱 상한 합계가 무료 한도를 넘습니다 (루트 `docs/monorepo.md` "Cloudflare·Resend 계정")
 2. [ ] Domains → **Add Domain**: 메일 전용 하위 도메인을 권장합니다 (예: `mail.도메인`). 리전은 Tokyo(ap-northeast-1)
 3. [ ] 화면에 나온 DNS 레코드(DKIM·SPF·MX)를 넣습니다. 도메인이 Cloudflare에 있으면 Resend의 **Auto configure(Cloudflare)** 버튼으로 자동 등록됩니다.
    - 상태가 **Verified**가 될 때까지 기다립니다 (보통 몇 분).
@@ -260,6 +260,7 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 | `ENVIRONMENT` | `wrangler.jsonc` vars (`production`) / `.dev.vars` (`development`) | — | `development`일 때만 이메일 로그인 |
 | `PERSONAL_QUOTA_GB` / `SPACE_QUOTA_GB` | `wrangler.jsonc` vars | — | MVP 2 / 5 (무료 운영). 바꿔도 이미 만든 사진함에는 반영되지 않음 |
 | `STORAGE_CAP_GB` | `wrangler.jsonc` vars | — | 서비스 전체 저장 상한, MVP 8 (R2 무료 10GB는 portfolio-web과 계정 공용, [mvp.md](mvp.md) "계정 공용 한도"). 0이면 상한 없음 |
+| `MAIL_DAILY_CAP` / `MAIL_MONTHLY_CAP` | `wrangler.jsonc` vars | — | 서비스 전체 메일 상한 80 / 2,800 (Resend 무료 100 / 3,000 아래, [mvp.md](mvp.md) "메일 상한") |
 | Hyperdrive `id` | `wrangler.jsonc` | 8단계 | |
 
 ## 결정이 필요한 것

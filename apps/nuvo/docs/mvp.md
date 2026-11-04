@@ -37,7 +37,9 @@ MVP는 클라우드 무료 사용량 안에서 운영합니다. 유료 플랜은
 
 ### 계정 공용 한도 (2026-11-04)
 
-Cloudflare 무료 한도는 Worker마다가 아니라 **계정 전체**에 걸립니다. 같은 계정의 portfolio-web(yhy-site)과 나눠 씁니다. 같은 표가 yhy-site `docs/guides/cost-guard.md` "계정 공용 한도"에 있으니, 바꿀 때는 두 곳을 같이 고칩니다. Resend 메일은 배분 대상에서 뺐습니다.
+Cloudflare 무료 한도는 Worker마다가 아니라 **계정 전체**에 걸립니다. 같은 계정의 portfolio-web(yhy-site)과 나눠 씁니다. 같은 표가 `apps/site/docs/guides/cost-guard.md` "계정 공용 한도"에 있으니, 바꿀 때는 두 곳을 같이 고칩니다. **임시 배분**입니다: nuvo를 새 Cloudflare 계정으로 옮기면(루트 `docs/monorepo.md`) 이 표를 지우고 `STORAGE_CAP_GB`를 9로 되돌립니다.
+
+**Resend**도 지금은 portfolio-web과 같은 계정입니다. 두 앱 상한(각 하루 80통)을 합치면 무료 100통을 넘으므로, **Resend 계정을 나누기 전에는 운영에 `RESEND_API_KEY`를 넣지 않습니다.**
 
 | 자원 | 계정 무료 한도 | nuvo | portfolio-web | 여유 |
 |---|---|---|---|---|
@@ -48,6 +50,15 @@ Cloudflare 무료 한도는 Worker마다가 아니라 **계정 전체**에 걸�
 
 - nuvo가 Workers AI·D1·KV를 쓰기 시작하면 이 표부터 고칩니다.
 - R2 사용량은 대시보드 R2 개요에서 계정 합계로 봅니다 (portfolio-web `/admin/usage`도 계정 합계).
+
+### 메일 상한 (2026-11-04)
+
+Resend 무료는 하루 100통·월 3,000통입니다. 서비스 전체로 **하루 80통·월 2,800통**에서 멈춥니다 (`MAIL_DAILY_CAP`·`MAIL_MONTHLY_CAP`, `wrangler.jsonc` vars).
+
+- 공용 모듈 `@yhy/cf-kit/budget`(portfolio-web과 같은 코드)에 카운터는 Postgres `usage_counter` 표(`worker/lib/usage.ts`). upsert라 동시에 와도 정확히 셉니다
+- Resend로 **실제로 보낸 메일만** 셉니다. 로컬 보관함(outbox)과 발송 실패는 세지 않습니다
+- 상한에 닿으면: 이메일 가입은 미리 429 `MAIL_BUDGET`("메일 발송 한도에 닿았어요")으로 막아 인증 메일 없이 계정만 생기지 않게 합니다. 비밀번호 재설정·인증 메일 재발송은 응답을 바꾸지 않고 보내지 않습니다(응답 차이로 가입 여부를 드러내지 않게). Google·카카오 로그인은 그대로
+- 80%·100%는 Workers 로그에 `[budget]`으로 남습니다 (알림 채널 없음)
 
 ## 아키텍처
 
@@ -117,7 +128,7 @@ activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한
 
 | 명령 | 내용 |
 |---|---|
-| `pnpm nuvo test` | 단위 12개: 중복 묶기(비둘기집 밴드), 타임라인 합치기·행 나누기, 서명·영수증 |
+| `pnpm nuvo test` | 단위 12개: 중복 묶기(비둘기집 밴드), 타임라인 합치기·행 나누기, 서명·영수증. `DATABASE_URL`이 있으면 메일 상한 카운터 3개 추가 |
 | `pnpm nuvo:smoke` | API 58개 시나리오: 가입·이메일 인증·인증 전 로그인 차단·비밀번호 재설정(기존 세션 로그아웃), 업로드, 중복 건너뛰기, 서명 URL, 위조·XSS 차단, 썸네일 존재 조회 차단, Space, 초대, 권한(관리자 강등 차단, 동시 소유권 이전), 내보낸 멤버 실시간 차단, 피드(지운 사진 제외), Blob 참조·R2 삭제, 용량, 계정 삭제 |
 | `pnpm nuvo e2e` | 브라우저 6개: 이메일 가입 인증·비밀번호 재설정 화면, 랜딩 셰이더, 테마 유지, 로그인 없이 로컬 폴더(HEIC 포함), 업로드·중복 정리·로컬 합치기·백업·3D, Space 초대·실시간·권한 |
 

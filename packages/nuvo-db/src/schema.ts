@@ -223,3 +223,13 @@ export const r2Gc = pgTable(
   },
   (t) => [primaryKey({ columns: [t.sha256, t.owner] }), index("r2_gc_due_idx").on(t.dueAt)],
 );
+
+/**
+ * 사용량 카운터(일·월 상한). 키 = budget:{이름}:{YYYY-MM-DD | YYYY-MM} (KST). worker/lib/usage.ts
+ * 하루에 몇 행만 생겨서 지우지 않는다. expires_at이 지난 행은 0으로 본다.
+ */
+export const usageCounter = pgTable("usage_counter", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  expiresAt: ts("expires_at").notNull(),
+});

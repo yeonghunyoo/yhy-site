@@ -1,7 +1,9 @@
 import { libraries, schema, type Db } from "@nuvo/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { mailEnabled, resetPasswordMail, sendMail, verifyEmailMail, type Mail } from "./lib/mail";
+import { mailBudget } from "./lib/usage";
 
 const GB = 1024 ** 3;
 
@@ -32,8 +34,10 @@ export function createAuth(env: Env, db: Db, origin: string, defer: Defer) {
     socialProviders.google = { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET, prompt: "select_account" };
   if (enabled.kakao) socialProviders.kakao = { clientId: env.KAKAO_CLIENT_ID, clientSecret: env.KAKAO_CLIENT_SECRET };
 
+  const budget = mailBudget(env, db);
   const deliver = async (to: string, mail: Omit<Mail, "to">, kind: string) => {
-    const job = sendMail(env, { to, ...mail }).then((r) => {
+    // 상한을 넘으면 cf-kit이 보내지 않고 mail_budget으로 실패한다. 재설정·재발송은 응답을 바꾸지 않는다(가입 여부를 드러내지 않게)
+    const job = sendMail(env, { to, ...mail }, budget).then((r) => {
       if (!r.ok) console.error(`[mail] ${kind} 발송 실패: ${r.error}`);
     });
     if (prod) defer(job);
@@ -86,6 +90,15 @@ export function createAuth(env: Env, db: Db, origin: string, defer: Defer) {
         "/request-password-reset": { window: 600, max: 3 },
         "/send-verification-email": { window: 600, max: 3 },
       },
+    },
+    // 메일 상한(worker/lib/usage.ts)에 닿았으면 가입을 미리 막는다 — 인증 메일 없이 계정만 생기지 않게
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-up/email" || !mailEnabled(env)) return;
+        if (!(await budget.allowed())) {
+          throw new APIError("TOO_MANY_REQUESTS", { message: "메일 발송 한도에 닿았어요. 잠시 후 다시 시도해 주세요", code: "MAIL_BUDGET" });
+        }
+      }),
     },
     // Cloudflare가 넣어 주는 실제 접속 IP
     advanced: { ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] } },

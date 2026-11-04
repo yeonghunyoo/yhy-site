@@ -15,7 +15,10 @@
     "PERSONAL_QUOTA_GB": "2",
     "SPACE_QUOTA_GB": "5",
     // 서비스 전체 저장 상한. R2 무료 10GB는 계정 공용이라 portfolio-web(1GB 안)과 나눈다 (docs/mvp.md "계정 공용 한도"). 0이면 상한 없음
-    "STORAGE_CAP_GB": "8"
+    "STORAGE_CAP_GB": "8",
+    // 서비스 전체 메일 상한(Resend 무료 하루 100통·월 3,000통 아래). Resend로 실제 보낼 때만 센다 (worker/lib/usage.ts)
+    "MAIL_DAILY_CAP": "80",
+    "MAIL_MONTHLY_CAP": "2800"
   },
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "nuvo-media" }],
   "hyperdrive": [

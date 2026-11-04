@@ -24,7 +24,9 @@
 
 ### 계정 공용 한도 (11/04)
 
-위 무료 한도는 Worker마다가 아니라 **Cloudflare 계정 전체**에 걸린다. 같은 계정의 nuvo(사진 서비스, 별도 레포 `yeonghunyoo/nuvo`)와 나눠 쓴다. 같은 표가 nuvo `docs/mvp.md` "계정 공용 한도"에 있다 — 바꿀 때는 두 곳을 같이 고친다. Resend 메일은 배분 대상에서 뺐다(이 사이트 상한은 위 표 그대로).
+위 무료 한도는 Worker마다가 아니라 **Cloudflare 계정 전체**에 걸린다. 같은 계정의 nuvo(사진 서비스, 이 모노레포의 `apps/nuvo`)와 나눠 쓴다. 같은 표가 `apps/nuvo/docs/mvp.md` "계정 공용 한도"에 있다 — 바꿀 때는 두 곳을 같이 고친다. **임시 배분**이다: nuvo를 새 Cloudflare 계정으로 옮기면(루트 `docs/monorepo.md` "Cloudflare·Resend 계정") 이 표를 지운다.
+
+**Resend**도 같은 계정이다. 두 앱 상한(각 하루 80통)을 합치면 무료 100통을 넘으므로, **Resend 계정을 나누기 전에는 nuvo 운영에 `RESEND_API_KEY`를 넣지 않는다**(nuvo는 키가 없으면 이메일 가입이 꺼지고 Google·카카오만 쓴다).
 
 | 자원 | 계정 무료 한도 | portfolio-web | nuvo | 여유 |
 | --- | --- | --- | --- | --- |

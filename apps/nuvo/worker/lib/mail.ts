@@ -1,15 +1,10 @@
 /**
- * 메일 발송. 운영은 Resend(HTTP API), 로컬은 메모리 보관함(outbox) + 콘솔 출력.
- * 인터페이스는 portfolio-web의 sendMail과 같게 맞춰 두었다 (나중에 공용 패키지로 뺄 수 있게).
+ * 메일 발송. 운영은 Resend(HTTP API, @yhy/cf-kit/mail), 로컬은 메모리 보관함(outbox) + 콘솔 출력.
+ * 실제로 Resend로 보낼 때만 서비스 전체 상한(worker/lib/usage.ts)을 거친다 — 로컬 보관함은 세지 않는다.
  */
-export interface Mail {
-  to: string;
-  subject: string;
-  text: string;
-  html: string;
-}
+import { createMailer, type Mail, type MailBudget, type MailResult } from "@yhy/cf-kit/mail";
 
-export type MailResult = { ok: true; id: string } | { ok: false; error: string };
+export type { Mail, MailResult };
 
 /** 로컬 개발 전용 보관함: 테스트가 인증·재설정 링크를 읽어 간다 (GET /api/dev/outbox) */
 const outbox: (Mail & { at: number })[] = [];
@@ -20,26 +15,22 @@ export function devOutbox(to?: string) {
 
 export const mailEnabled = (env: Env) => Boolean(env.RESEND_API_KEY && env.EMAIL_FROM);
 
-export async function sendMail(env: Env, mail: Mail): Promise<MailResult> {
-  if (!mailEnabled(env)) {
-    if (env.ENVIRONMENT === "production") return { ok: false, error: "메일 발송이 설정되지 않았어요" };
-    outbox.push({ ...mail, to: mail.to.toLowerCase(), at: Date.now() });
-    if (outbox.length > 200) outbox.shift();
-    console.log(`[mail:dev] to=${mail.to} subject=${mail.subject}\n${mail.text}`);
-    return { ok: true, id: `dev-${crypto.randomUUID()}` };
-  }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: env.EMAIL_FROM, to: [mail.to], subject: mail.subject, text: mail.text, html: mail.html }),
-    });
-    const data = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
-    if (!res.ok || !data.id) return { ok: false, error: data.message ?? `HTTP ${res.status}` };
-    return { ok: true, id: data.id };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
-  }
+export function sendMail(env: Env, mail: Mail, budget?: MailBudget): Promise<MailResult> {
+  const enabled = mailEnabled(env);
+  return createMailer({
+    apiKey: enabled ? env.RESEND_API_KEY : undefined,
+    from: env.EMAIL_FROM,
+    // 운영에서 키가 없으면 보내지 않고 실패(mail_not_configured)
+    dev:
+      env.ENVIRONMENT === "production"
+        ? undefined
+        : (m) => {
+            outbox.push({ ...m, to: m.to.toLowerCase(), at: Date.now() });
+            if (outbox.length > 200) outbox.shift();
+            console.log(`[mail:dev] to=${m.to} subject=${m.subject}\n${m.text}`);
+          },
+    budget: enabled ? budget : undefined,
+  })(mail);
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);

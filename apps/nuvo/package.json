@@ -19,6 +19,7 @@
     "@react-three/fiber": "^9.8.2",
     "@tanstack/react-query": "^5.105.2",
     "@tanstack/react-virtual": "^3.14.25",
+    "@yhy/cf-kit": "workspace:*",
     "better-auth": "^1.7.15",
     "blurhash": "^2.0.5",
     "drizzle-orm": "^0.45.4",

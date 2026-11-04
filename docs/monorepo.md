@@ -85,7 +85,7 @@ yhy-site/
 
 ## nuvo 메일 상한 (11/04)
 
-nuvo는 운영에 `RESEND_API_KEY`를 넣으면 이메일 가입이 켜지는데, 서비스 전체 상한이 없었다. cf-kit `budget`으로 하루 80통·월 2,800통(site와 같은 기본값, Resend 계정을 나누는 전제)을 건다. 카운터는 Postgres `usage_counter` 표(upsert라 동시 요청에도 정확하다). 넘으면 인증·재설정 메일을 보내지 않고 429 `mail_budget`.
+nuvo는 운영에 `RESEND_API_KEY`를 넣으면 이메일 가입이 켜지는데, 서비스 전체 상한이 없었다. cf-kit `budget`으로 하루 80통·월 2,800통(site와 같은 기본값, Resend 계정을 나누는 전제)을 건다. 카운터는 Postgres `usage_counter` 표(upsert라 동시 요청에도 정확하다). 넘으면 이메일 가입은 429 `MAIL_BUDGET`, 재설정·재발송은 응답을 바꾸지 않고 보내지 않는다(가입 여부를 드러내지 않게). Resend 계정을 나누기 전에는 nuvo 운영에 `RESEND_API_KEY`를 넣지 않는다(두 앱 합계가 무료 100통을 넘는다).
 
 ## 이전 절차 (11/04)
 
