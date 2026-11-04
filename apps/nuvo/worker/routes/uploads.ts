@@ -13,6 +13,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requireUser, type AppEnv } from "../context";
 import { accessibleLibraryIds, requireLibrary } from "../lib/access";
+import { assertServiceCapacity } from "../lib/capacity";
 import { assetColumns, recordSpaceActivity, toCloudAsset } from "../lib/assets";
 import { lockShas, PENDING_UPLOAD_TTL_MS } from "../lib/gc";
 import { r2Key, signReceipt, verifyReceipt } from "../lib/sign";
@@ -62,6 +63,11 @@ export const uploads = new Hono<AppEnv>()
       return link.has(f.sha256) ? { sha256: f.sha256, action: "link" } : { sha256: f.sha256, action: "upload" };
     });
     if (lib.usedBytes + need > lib.quotaBytes) throw quotaError(lib.usedBytes, lib.quotaBytes, need);
+    // 새로 R2에 쓰는 원본만 서비스 상한에 넣는다 (link는 기존 Blob을 공유하므로 저장량이 늘지 않음)
+    const newBytes = files
+      .filter((f, i) => results[i]!.action === "upload" && files.findIndex((g) => g.sha256 === f.sha256) === i)
+      .reduce((s, f) => s + f.size, 0);
+    await assertServiceCapacity(db, c.env, newBytes);
 
     return c.json({ results, usedBytes: lib.usedBytes, quotaBytes: lib.quotaBytes });
   })
@@ -96,6 +102,7 @@ export const uploads = new Hono<AppEnv>()
     if (lib.usedBytes + Number(pending) + len > lib.quotaBytes) {
       throw quotaError(lib.usedBytes + Number(pending), lib.quotaBytes, len);
     }
+    if (!existing) await assertServiceCapacity(db, c.env, len);
     const row = { sha256: sha, owner: user.id, bytes: len, dueAt: new Date(now.getTime() + PENDING_UPLOAD_TTL_MS) };
     await db
       .insert(r2Gc)

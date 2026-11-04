@@ -162,10 +162,12 @@ async function run(job: Job) {
     }
     const msg = e instanceof ApiError || e instanceof Error ? e.message : "업로드 실패";
     update(id, { status: "error", error: msg });
-    if (e instanceof ApiError && e.status === 413) {
-      // 용량 초과 (서버는 용량 부족에만 413을 쓴다): 남은 같은 라이브러리 작업 중단
+    if (e instanceof ApiError && (e.status === 413 || e.status === 507)) {
+      // 413: 이 라이브러리 용량 초과 → 같은 라이브러리 작업 중단
+      // 507: 서비스 전체 저장 공간이 가득 참 → 남은 작업 모두 중단
+      const all = e.status === 507;
       for (let i = jobs.length - 1; i >= 0; i--) {
-        if (jobs[i]!.item.libraryId === libraryId) {
+        if (all || jobs[i]!.item.libraryId === libraryId) {
           update(jobs[i]!.item.id, { status: "error", error: msg });
           jobs.splice(i, 1);
         }
