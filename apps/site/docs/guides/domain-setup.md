@@ -26,7 +26,7 @@
 | 5 | Google OAuth: 승인된 리디렉션 URI에 `https://bettercurl.dev/auth/callback/google`, 승인된 JavaScript 원본에 `https://bettercurl.dev` 추가 | 사용자(Google Cloud 콘솔) | |
 | 6 | 운영 비밀: `MAIL_FROM=letters@mail.bettercurl.dev`, `LETTER_TO=letters@bettercurl.dev`, (새 키면) `RESEND_API_KEY` — `.prod.vars`에 넣고 배포 또는 `wrangler secret put` | 사용자 | |
 | 7 | 배포 `pnpm site deploy` → `https://bettercurl.dev` 열림, 인증서 자동 | 사용자(클라우드 세션은 배포가 권한 검사에 막힌다) | |
-| 8 | RAG 운영 반영(`rag:build:remote` + `rag:reindex:api`) — 연락처 바뀐 이력서 | Claude | 완료(11/04) |
+| 8 | RAG 운영 반영(`pnpm rag:build:remote` → `pnpm rag:reindex:api`) — 연락처 바뀐 이력서. 안 하면 챗이 옛 연락처(개인 Gmail)를 답한다 | 사용자(클라우드 세션에서 11/04 권한 검사에 막힘) 또는 허용 후 Claude | |
 | 9 | 확인: 아래 "확인" | 함께 | |
 
 ## Email Routing (3) — 대시보드
