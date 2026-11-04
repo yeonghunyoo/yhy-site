@@ -4,19 +4,19 @@ title: 이 포트폴리오 사이트의 구조
 
 ## 사이트 구조 개요
 
-이 사이트는 빌더·개발자 yhy의 한/영 포트폴리오다. 정적 페이지로 프로젝트를 보여 주고, 로그인한 방문자는 레터(메시지)를 보낼 수 있고, 관리자는 /admin에서 레터를 읽고 답한다. 2차 기능으로 포트폴리오 문서를 근거로 답하는 챗(RAG)이 붙어 있다. 3D·셰이더는 아직 만들지 않은 2차 이후 기능이고, 브랜드·도메인·세계관 디자인은 미정이다.
+이 사이트는 빌더·개발자 yhy의 한/영 포트폴리오다. 정적 페이지로 프로젝트를 보여 주고, 방문자는 로그인 없이 레터(메시지)를 보낼 수 있고, 관리자는 /admin에서 로그인해 레터를 읽고 답한다. 방문자 사이트에는 로그인이 없다. 2차 기능으로 포트폴리오 문서를 근거로 답하는 챗(RAG)이 붙어 있다. 3D·셰이더는 아직 만들지 않은 2차 이후 기능이고, 브랜드·도메인·세계관 디자인은 미정이다.
 
-한 줄 구조: 방문자 브라우저 → Cloudflare Worker 하나(정적 자산 + 동적 코드) → D1·KV·R2·Vectorize·Workers AI, 그리고 외부 서비스 Resend(메일)·Google(로그인)·Telegram(알림).
+한 줄 구조: 방문자 브라우저 → Cloudflare Worker 하나(정적 자산 + 동적 코드) → D1·KV·R2·Vectorize·Workers AI, 그리고 외부 서비스 Resend(메일)·Google(관리자 로그인)·Telegram(알림).
 
 만든 순서는 0 인프라 → 1 프론트+반응형 → 2 인증 → 3 레터 → 4 어드민(MVP) → 5–6 챗+RAG → 7 3D이며, 각 단계는 앞 단계의 완료 기준을 통과한 뒤 시작했다.
 
 ## 기술 스택과 고른 이유
 
 - Astro 7: 정적 우선 사이트. 대부분 페이지는 빌드 때 HTML로 만들고, 동적 경로(/, /admin, /api, /auth, /media)만 서버에서 렌더한다
-- React 19 아일랜드: 로그인·레터·계정 시트, 계정 메뉴, 챗 독만 React다. 나머지는 JS 없는 HTML이다
+- React 19 아일랜드: 방문자 사이트에서는 레터 시트·토스트(Overlay)와 챗 독(ChatDock)만, 어드민에서는 관리자 로그인(AdminLogin)이 React다. 나머지는 JS 없는 HTML이다
 - Tailwind CSS v4 + daisyUI 5: 순수 CSS 컴포넌트라 JS가 0KB이고 CSP와 충돌하지 않는다. 디자인 토큰은 src/styles/tokens.css 한 곳에 있다
 - Cloudflare 단일 인프라: Workers·D1·KV·R2·Vectorize·Workers AI를 한 계정에서 써서 월 비용을 0에 가깝게 유지한다. 10/28 Pages에서 Workers로 옮겼다(Astro 어댑터가 Pages 지원을 끝냄)
-- Better Auth: 비밀번호 없는 로그인(매직링크·인증 코드·Google), D1 어댑터
+- Better Auth: 관리자 전용 비밀번호 없는 로그인(매직링크·인증 코드·Google), D1 어댑터
 - Drizzle ORM: D1 스키마와 마이그레이션
 - Resend(메일), Telegram 봇(운영 알림)
 - 런타임 Node 24, 패키지 매니저 pnpm, 타입 검사 TypeScript 6
@@ -27,7 +27,7 @@ Worker 하나(portfolio-web)가 정적 자산과 동적 요청을 함께 받는�
 
 Worker가 쓰는 바인딩:
 - DB → D1: 사용자·세션·레터·챗 로그·RAG 섹션과 청크
-- KV → KV: 레이트리밋 카운터, 일별 로그인 수, 챗 턴·월 토큰, 알림 중복 억제, 벡터 id 목록
+- KV → KV: 레이트리밋 카운터(로그인 메일·레터 IP), 일별 관리자 로그인 수, IP별 챗 턴·월 토큰, 알림 중복 억제, 벡터 id 목록
 - R2 → R2 버킷 portfolio-rag: RAG 원본 파일(비공개)과 문서 이미지(/media로 공개)
 - VEC → Vectorize 인덱스 portfolio-rag: 1024차원 코사인, 청크 벡터
 - AI → Workers AI: 답변·슈퍼바이저·임베딩·유해 검사 모델
@@ -40,7 +40,7 @@ Worker가 쓰는 바인딩:
 2. 루트 /는 동적 페이지다. Accept-Language를 보고 /ko 또는 /en으로 302 보낸다
 3. 동적 경로(/admin, /api/*, /auth/*, /media/*)는 Worker 코드로 간다. 먼저 미들웨어(src/middleware.ts)가 실행된다
 4. 미들웨어는 /admin·/api 요청이면 Better Auth로 세션을 읽어 locals.user에 넣는다
-5. /admin·/api/admin 요청인데 관리자가 아니면 미들웨어가 404를 돌려준다(존재 자체를 숨김)
+5. /admin 화면 요청인데 로그인하지 않았으면 미들웨어가 /admin/login으로 rewrite한다(로그인했지만 관리자가 아니면 "권한이 없어요"). /api/admin 요청인데 관리자가 아니면 404를 돌려준다(존재 자체를 숨김)
 6. 핸들러가 응답한다. 5xx가 나면 미들웨어가 Telegram으로 알린다(1분 1회)
 
 보안 헤더: 페이지마다 CSP를 <meta>로 넣고, 인라인 스크립트는 Astro가 해시로 허용한다. 그래서 HTML의 style="" 속성은 쓰지 않는다.
@@ -48,36 +48,36 @@ Worker가 쓰는 바인딩:
 ## 화면 구조: Astro 페이지와 React 아일랜드
 
 - 언어: /ko와 /en을 src/pages/[locale]/로 따로 만든다. 문자열은 src/i18n/ko.json·en.json, 긴 본문은 content collection의 {slug}.ko.md·.en.md다. Astro 내장 i18n 라우팅은 쓰지 않는다
-- 아일랜드 로딩: React 아일랜드는 커스텀 지시어 client:demand로 붙는다. 비로그인 방문자는 처음엔 React를 받지 않고, [data-action] 버튼을 처음 누를 때 하이드레이트한 뒤 그 클릭을 이어 처리한다. 초기 JS 예산은 50KB이고 11/03 측정은 7.2KB다
-- Overlay 아일랜드가 로그인·레터·계정 시트와 토스트를 띄우고, AuthMenu가 계정 메뉴를, ChatDock이 챗 독을 맡는다
+- 아일랜드 로딩: React 아일랜드는 커스텀 지시어 client:demand로 붙는다. 방문자는 처음엔 React를 받지 않고, [data-action] 버튼을 처음 누를 때(또는 토스트·새로고침 재개가 있을 때)만 하이드레이트한 뒤 그 클릭을 이어 처리한다. 세션 확인은 하지 않는다. 초기 JS 예산은 50KB이고 11/03 측정은 7.2KB다
+- Overlay 아일랜드가 레터 시트와 토스트를 띄우고, ChatDock이 챗 독을 맡는다. 방문자 사이트에는 로그인 버튼·계정 메뉴·로그인 시트·계정 삭제 시트가 없다
 - 배포 전에 열어 둔 탭이 지워진 JS를 부르면 demand 지시어가 한 번 새로고침한 뒤 누른 기능을 다시 연다
 - 모바일 우선: 기본 스타일이 모바일이고 md 이상에서 넓힌다. 터치 타깃 44px, 100dvh, safe-area를 쓴다
 - 키보드 대응: 챗 독과 시트는 visualViewport를 매 프레임 읽어 높이·위치를 DOM에 바로 맞춘다(viewport.ts). 열려 있는 동안 배경 스크롤을 잠그고 허용 영역 밖 터치 스크롤을 막는다(scroll-lock.ts)
 - 로딩 상태: 비동기 버튼은 진행 중 disabled + aria-busy, 스피너는 global.css가 그린다
 
-## 로그인: Better Auth, 매직링크, 인증 코드, Google
+## 관리자 로그인: Better Auth, 매직링크, 인증 코드, Google
 
-로그인 핸들러는 /auth/*(src/pages/auth/[...all].ts)이고 설정은 src/lib/server/auth.ts에 있다. 비밀번호는 받지 않는다.
+로그인은 관리자만 쓴다. 방문자는 로그인하지 않는다. 로그인하지 않은 채 /admin 화면을 열면 미들웨어가 /admin/login(src/pages/admin/login.astro + React 아일랜드 AdminLogin.tsx)으로 rewrite한다. 로그인 핸들러는 /auth/*(src/pages/auth/[...all].ts)이고 설정은 src/lib/server/auth.ts에 있다. 비밀번호는 받지 않는다.
 
 이메일 로그인 흐름:
-1. 로그인 시트에서 이메일 입력 → POST /auth/sign-in/magic-link
+1. /admin/login에서 이메일 입력 → POST /auth/sign-in/magic-link
 2. hooks.before가 레이트리밋을 검사한다(IP당 10분 3회, 같은 이메일 10분 1회, KV)
 3. sendMagicLink가 링크 토큰을 D1 verification에 저장하고, 같은 메일에 넣을 6자리 코드를 createVerificationOTP로 만든다(해시로 저장, 15분, 3번 틀리면 무효)
 4. Resend가 링크와 코드가 든 메일 한 통을 보낸다
-5. 사용자가 같은 브라우저에서 링크를 열면 바로 세션이 생긴다. 링크가 메일 앱 안 브라우저나 다른 기기에서 열리면, 원래 브라우저의 시트에 코드를 넣는다 → POST /auth/sign-in/email-otp(IP당 10분 10회) → 세션
-6. 로그인 후 원래 경로(?signed_in=1)로 돌아와, 하던 동작(pendingAction)이 있으면 그 시트를 다시 연다
+5. 같은 브라우저에서 링크를 열면 바로 세션이 생긴다. 링크가 메일 앱 안 브라우저나 다른 기기에서 열리면, 원래 브라우저의 로그인 화면에 코드를 넣는다 → POST /auth/sign-in/email-otp(IP당 10분 10회) → 세션
+6. 로그인 후 /admin으로 돌아온다. 로그인했지만 관리자가 아니면 "권한이 없어요"와 로그아웃 버튼이 보인다
 
 Google 로그인은 OAuth로 같은 세션을 만든다. 카카오톡 같은 앱 안 브라우저에서는 Google이 막으므로 버튼을 끄고 안내한다. 세션은 D1, 쿠키 HttpOnly·Secure·SameSite=Lax, 30일이다. 차단된 사용자(user.is_blocked)는 세션 생성이 거부된다.
 
 ## 레터: 보내기, 메일, 알림, 답장
 
-레터는 로그인한 방문자가 yhy에게 보내는 메시지다.
+레터는 방문자가 로그인 없이 yhy에게 보내는 메시지다.
 
-1. 방문자가 레터 시트를 연다. 비로그인이면 로그인 시트가 먼저 뜨고, 로그인 후 레터 시트가 자동으로 다시 열린다
-2. 시트가 POST /api/letters를 부른다
-3. 서버가 세션을 확인하고 제한을 검사한다: 하루 3통(최근 24시간 D1 count), 본문 2,000자, 링크 5개, 직전 레터와 같은 본문 거부, 차단 사용자 거부
-4. 서버가 D1 letters에 저장한다
-5. 서버가 Resend로 yhy의 메일함에 보낸다(reply_to = 방문자 이메일). 실패하면 status = failed로 남고 관리자가 재전송한다
+1. 방문자가 레터 시트를 열고 제목(선택, 80자), 본문(필수, 10~2,000자, 링크 5개 이하), 답장 받을 이메일(필수, 방문자가 직접 입력, 인증하지 않음)을 쓴다
+2. 시트가 POST /api/letters를 부른다. 이 API는 세션을 읽지 않는다
+3. 서버가 제한을 검사한다: IP 해시당 24시간 3통(KV letter:ip:{해시}), 사이트 전체 하루 상한 LETTER_DAILY_CAP, 같은 답장 주소의 직전 레터와 같은 본문이면 409. 봇 방어로 숨긴 함정 필드 website가 채워져 있으면 저장·발송 없이 성공으로 답한다. 스팸이 보이면 Turnstile을 나중에 붙일 수 있다
+4. 서버가 D1 letters에 저장한다(user_id는 null)
+5. 서버가 Resend로 yhy의 메일함에 보낸다(reply_to = 방문자가 쓴 이메일, 메일에는 Reply-To 줄만 있고 From·로그인 줄은 없다). 실패하면 status = failed로 남고 관리자가 재전송한다
 6. 서버가 Telegram으로 새 레터를 알린다(발신자 마스킹, 응답과 분리된 waitUntil)
 7. 관리자가 /admin/letters/{id}에서 답장을 쓰면 POST /api/admin/letters/{id}/reply → D1 letter_replies 저장 → Resend로 방문자에게 발송 → letters.status = replied
 
@@ -85,12 +85,12 @@ Google 로그인은 OAuth로 같은 세션을 만든다. 카카오톡 같은 앱
 
 ## 관리자 화면: /admin
 
-/admin은 서버 렌더 페이지이고, 세션 이메일이 환경변수 ADMIN_EMAILS 허용목록에 있고 이메일이 인증된 경우에만 열린다. 아니면 미들웨어가 404를 돌려준다. /api/admin/*는 미들웨어와 핸들러가 양쪽에서 확인하고, 폼 POST의 Origin도 같은 출처인지 본다.
+/admin은 서버 렌더 페이지이고, 이메일이 인증된 관리자만 연다. 관리자는 환경변수 ADMIN_EMAILS(최고 관리자) 또는 D1 user.is_admin(/admin/users에서 지정)이다. 로그인하지 않았으면 /admin/login이 뜨고, 로그인했지만 관리자가 아니면 "권한이 없어요"와 로그아웃 버튼이 뜬다. /api/admin/*는 비관리자에게 404이고, 미들웨어와 핸들러가 양쪽에서 확인하고, 폼 POST의 Origin도 같은 출처인지 본다.
 
 화면:
-- /admin 지표: 가입자 수, 최근 7일(KST) 일별 레터 수·로그인 수. 차트는 라이브러리 없이 SVG 막대
+- /admin 지표: 가입자 수, 최근 7일(KST) 일별 레터 수·로그인 수(가입·로그인은 이제 관리자 로그인만 반영). 차트는 라이브러리 없이 SVG 막대
 - /admin/letters: 상태 필터(전체·안 읽음·답장함·실패), 상세에서 읽음 기록·답장·재전송
-- /admin/users: 가입일·방식·마지막 로그인, 차단 토글(차단하면 그 사용자의 세션을 모두 지운다)
+- /admin/users: 계정(관리자) 목록, 가입일·방식·마지막 로그인, 차단 토글(차단하면 그 사용자의 세션을 모두 지운다), 관리자 지정 토글
 - /admin/chat: 챗 질문 로그(답변 본문 없음), 경로·가드 판정·토큰, 청크 수와 벡터 수, 벡터 갱신, 기준 질문 평가, 공격 질문 점검
 
 쓰기 동작은 JS 없는 HTML 폼 POST → /api/admin/… → 303으로 원래 화면이다.
@@ -100,7 +100,7 @@ Google 로그인은 OAuth로 같은 세션을 만든다. 카카오톡 같은 앱
 챗 독은 우하단에 접혀 있다가 열린다. 질문 하나는 이렇게 처리된다.
 
 1. 챗 독이 POST /api/chat에 질문과 서명된 이력을 보낸다
-2. /api/chat이 CHAT_ENABLED, 턴 제한(비로그인 3턴·로그인 30턴, KST 하루), 월 토큰 상한을 확인한다
+2. /api/chat이 CHAT_ENABLED, 턴 제한(로그인 없이 IP 해시당 KST 하루 20턴), 사이트 전체 하루 턴 상한, 월 토큰 상한을 확인한다. 넘으면 "오늘은 여기까지예요(하루 20번). 레터로 이어가요."와 레터 버튼을 보여 준다
 3. 파이프라인(chat-pipeline.ts)이 주입 정규식으로 질문을 검사한다. 걸리면 모델 없이 거절한다
 4. Llama Guard 유해 검사와 슈퍼바이저 판단이 동시에 실행된다
 5. 유해 판정이 먼저 적용된다(자해는 도움 안내)
@@ -163,14 +163,14 @@ Google 로그인은 OAuth로 같은 세션을 만든다. 카카오톡 같은 앱
 ## 데이터 저장소: D1 테이블, KV 키, R2
 
 D1 테이블:
-- user·session·account·verification: Better Auth가 관리. user에 is_blocked 추가. verification에 매직링크 토큰과 해시된 인증 코드
-- letters: 레터 본문·답장 주소·언어·상태(sent·read·replied·failed)
+- user·session·account·verification: Better Auth가 관리. user에 is_blocked·is_admin 추가. verification에 매직링크 토큰과 해시된 인증 코드. 로그인은 관리자만 한다
+- letters: 레터 제목·본문·답장 주소(방문자가 입력)·언어·상태(sent·read·replied·failed)
 - letter_replies: 관리자 답장
 - chat_logs: 질문·재작성 질문·출처·검색 기록·가드 판정(flag)·경로(route)·토큰. 답변 본문 없음, IP는 해시, 90일
 - rag_sections: 부모 섹션(모델에 넣는 단위), 쪽 번호·이미지 URL 포함
 - rag_chunks: 자식 청크(검색 단위) + FTS5 색인. id가 Vectorize id
 
-KV 키: ml:ip·ml:email(로그인 메일 요청 제한), otp:ip(코드 입력 제한), stats:login:{날짜}(일별 로그인 수), chat:{사용자}:{날짜}(턴 수), chat:month:{월}(누적 토큰), notify:*(알림 중복 억제), rag:vector-ids·rag:vector-synced(벡터 동기화 기록).
+KV 키: ml:ip·ml:email(로그인 메일 요청 제한), otp:ip(코드 입력 제한), stats:login:{날짜}(일별 관리자 로그인 수), letter:ip:{해시}(IP별 레터 수), chat:ip:{해시}:{날짜}(IP별 턴 수), chat:month:{월}(누적 토큰), notify:*(알림 중복 억제), rag:vector-ids·rag:vector-synced(벡터 동기화 기록).
 
 R2 portfolio-rag: sources/{해시}(원본, 비공개), media/{해시}(이미지, /media로 공개).
 
@@ -179,9 +179,9 @@ R2 portfolio-rag: sources/{해시}(원본, 비공개), media/{해시}(이미지,
 ## 비용과 한도
 
 - Workers AI는 하루 10,000뉴런까지 무료다. 포트폴리오 질문 1턴은 유해 검사 + 슈퍼바이저 + 임베딩 + 답변이고, 잡담·연락·무관 작업은 답변 호출이 없다. 슈퍼바이저는 1회 약 10뉴런(11/03 실측)
-- 앱 자체 상한: 비로그인 하루 3턴, 로그인 하루 30턴, 월 토큰 상한 기본 2,000,000(CHAT_MONTHLY_TOKEN_CAP). 상한에 닿으면 "오늘은 쉬어요" + 레터 버튼, Telegram 알림
+- 앱 자체 상한: IP 해시당 하루 20턴(넘으면 "오늘은 여기까지예요(하루 20번). 레터로 이어가요." + 레터 버튼), 사이트 전체 하루 턴 상한, 월 토큰 상한 기본 2,000,000(CHAT_MONTHLY_TOKEN_CAP). 상한에 닿으면 "오늘은 쉬어요" + 레터 버튼, Telegram 알림
 - Workers AI 호출이 한도·오류로 실패해도 같은 고정 응답으로 끝난다
-- 레터: 하루 3통. 로그인 메일: IP당 10분 3회, 같은 이메일 10분 1회
+- 레터: IP 해시당 24시간 3통, 사이트 전체 하루 상한 LETTER_DAILY_CAP. 관리자 로그인 메일: IP당 10분 3회, 같은 이메일 10분 1회
 - 그 밖의 서비스(D1·KV·R2·Vectorize)는 이 규모에서 무료 범위다
 
 ## 개발과 운영 방식
@@ -190,7 +190,7 @@ R2 portfolio-rag: sources/{해시}(원본, 비공개), media/{해시}(이미지,
 - 단계 완료 기준: 각 단계 문서의 완료 기준을 통과해야 다음 단계로 간다
 - 1인 운영: PR 없이 main에 커밋하고, 푸시 전 로컬 pnpm build가 통과해야 한다
 - 배포: 로컬 wrangler CLI로만(pnpm run deploy). 챗 독 노출은 빌드 플래그 PUBLIC_CHAT_ENABLED, API 열기는 Worker 시크릿 CHAT_ENABLED
-- 운영 알림: 새 레터, 메일 실패, 계정 삭제, 5xx, 챗 상한·가드 차단을 Telegram으로 받는다. 모니터링은 Cloudflare 기본 로그
+- 운영 알림: 새 레터, 메일 실패, 5xx, 챗 상한·가드 차단을 Telegram으로 받는다. 모니터링은 Cloudflare 기본 로그
 - 구현은 Claude Code가 하고, yhy는 프로세스를 이해하고 판단한다
 
 ## 브라우저 지원
