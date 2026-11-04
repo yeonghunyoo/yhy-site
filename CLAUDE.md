@@ -22,7 +22,7 @@
 - 3D·챗은 지연 로드 아일랜드로 격리하고 저사양·reduced-motion 폴백을 둔다
 - 디자인 토큰은 `src/styles/tokens.css`에만. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI. 테마는 11/03 확정(나이트 한 가지, Black Han Sans + IBM Plex Mono — `docs/01-frontend.md` "홈"). 색·글꼴을 바꿀 때는 docs를 먼저 고친다. daisyUI 컴포넌트 이름(`hero`·`label`·`timeline` 등)과 겹치는 클래스명은 쓰지 않는다
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
-- `/admin`과 `/api/admin/*`는 관리자 이메일 허용목록(`ADMIN_EMAILS`) 검증, 비관리자는 404
+- `/admin`과 `/api/admin/*`는 관리자만, 비관리자는 404. 관리자 = 이메일 인증된 계정 중 `ADMIN_EMAILS`(최고 관리자, 비밀) 또는 D1 `user.is_admin`(어드민 사용자 화면에서 지정, 11/04)
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
 - 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. 푸시 전 로컬 `pnpm build`가 통과해야 한다
 - 비용(docs/guides/cost-guard.md): 새로 부르는 유료·한도 자원(Workers AI·메일·R2 쓰기 등)은 `src/lib/server/budget.ts`의 일일 상한을 거친다. 상한에 닿으면 기능을 끄는 쪽(고정 문구·429·503)으로 실패한다

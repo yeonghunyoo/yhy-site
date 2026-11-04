@@ -44,7 +44,7 @@ Astro SSR 페이지 + `middleware.ts`에서 `/admin` 접두 경로 가드. 차�
 
 - 쓰기 동작(답장·재전송·차단)은 JS 없는 HTML 폼 POST → `/api/admin/…` → 303으로 원래 화면(`?flash=`)
 - `/api/admin/*`는 미들웨어와 핸들러(`adminGuard`) 양쪽에서 관리자 확인, 폼 POST의 `Origin`도 같은 출처인지 본다
-- 관리자 판별: 세션 이메일이 `ADMIN_EMAILS`에 있고 `emailVerified`가 참일 때
+- 관리자 판별: `emailVerified`가 참이고, 세션 이메일이 `ADMIN_EMAILS`에 있거나 D1 `user.is_admin`이 1일 때(11/04, 아래 "관리자 지정")
 - 로그인 수는 KV `stats:login:{KST 날짜}`(31일 보관). 사용자 화면의 "마지막 로그인"은 남아 있는 세션 기준이라 로그아웃하면 비어 보인다
 - 차트: 단일 계열 SVG 막대 2개(레터·로그인 — 단위가 달라 한 차트에 합치지 않음), 막대 툴팁 + "표로 보기"
 - 레터 상세의 답장 폼은 첫 답장 전까지 모바일 하단 고정, 답장 뒤에는 고정을 푼다
@@ -61,8 +61,15 @@ Astro SSR 페이지 + `middleware.ts`에서 `/admin` 접두 경로 가드. 차�
 - 관리자 계정으로 로그인하면 헤더 계정 메뉴 맨 위에 "관리자" 링크(`/admin`)가 보인다. 페이지는 정적이라 메뉴가 열릴 때(로그인 계정이 바뀔 때 한 번) `GET /api/account`가 `{ admin: boolean }`만 돌려준다 — `ADMIN_EMAILS`와 같은 `isAdmin()` 판정, 비관리자·비로그인은 `false`. `/admin`·`/api/admin/*`의 404 보호는 그대로
 - (11/03) 계정 메뉴 말고도 헤더에 "관리자" 링크를 둔다 — 데스크톱은 헤더 내비, 모바일은 ☰ 메뉴. 헤더는 정적 HTML이라 링크를 미리 숨겨 두고, 계정 메뉴가 관리자로 확인되면 `<html data-admin>`을 붙여 보이게 한다(`in-data-admin:` 클래스). 링크만 숨기는 것이고 보호는 서버 404
 
+## 관리자 지정 (11/04)
+
+- 관리자는 두 층이다. **최고 관리자** = `ADMIN_EMAILS`(운영 비밀) — 잠김 방지용이라 화면에서 해제할 수 없다. **지정 관리자** = D1 `user.is_admin = 1`
+- `/admin/users`의 각 사용자에 "관리자 지정 / 해제" 버튼(`POST /api/admin/users/{id}/admin`, 필드 `admin=1|0`). 자기 자신·최고 관리자·차단된 사용자는 바꿀 수 없다. 지정 관리자도 다른 사람을 지정할 수 있다(1인 운영 전제)
+- 지정·해제마다 Telegram `👑 관리자 지정/해제 {가린 이메일}`. 해제하면 그 사용자의 세션을 지워 바로 로그아웃
+- 가입 전인 주소는 지정할 수 없다(사용자 행이 있어야 한다). 테스트용은 운영 D1에 사용자 행을 미리 넣어도 된다(`email_verified = 1`) — 로그인은 여전히 매직링크·Google로만
+
 ## 로컬 테스트 어드민 (11/04)
 
 - 로컬 전용 테스트 관리자 `admin@test.local` — 실제 메일함이 없는 주소. `.dev.vars.example`의 `ADMIN_EMAILS` 기본값
 - 로그인: `pnpm preview` → 로그인 시트에서 `admin@test.local`로 이메일 로그인 → `RESEND_API_KEY`가 비어 있어 메일 대신 터미널(wrangler dev 로그)에 `[mail:dev]`로 로그인 링크·6자리 코드가 찍힌다 → 링크를 열거나 코드를 넣으면 `/admin` 진입(11/04 확인: `/admin` 200, 비로그인 404)
-- 운영에는 넣지 않는다. 운영 관리자 이메일은 여전히 미결정(overview "미결정 사항")이고, 운영은 메일이 나가지 않아 이 주소로는 로그인할 수 없다
+- 운영: D1에 `admin@test.local` 사용자 행(`is_admin = 1`)을 둔다(11/04). Resend 전에는 운영도 메일 대신 Worker 로그에 링크가 찍히므로 `wrangler tail --search mail:dev`로 받아 로그인한다. Resend를 붙이면 이 주소로는 로그인할 수 없으니 그때 지정을 해제한다

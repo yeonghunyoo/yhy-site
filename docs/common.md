@@ -6,7 +6,7 @@
 
 Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(1차 2개, 2차 3개). 마이그레이션은 Drizzle Kit, `wrangler d1 migrations apply`로 적용.
 
-**Better Auth 관리**: `user`, `session`, `account`(Google 연결), `verification`(매직링크 토큰). 스키마는 라이브러리 CLI가 생성하며 손대지 않는다. `user`에 `is_blocked INTEGER DEFAULT 0`만 추가 컬럼으로 둔다.
+**Better Auth 관리**: `user`, `session`, `account`(Google 연결), `verification`(매직링크 토큰). 스키마는 라이브러리 CLI가 생성하며 손대지 않는다. `user`에 `is_blocked INTEGER DEFAULT 0`과 `is_admin INTEGER DEFAULT 0`(11/04, 지정 관리자 — [04-admin.md](04-admin.md) "관리자 지정")만 추가 컬럼으로 둔다.
 
 **서비스 테이블**
 
@@ -77,6 +77,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 - [x] 레터 본문은 HTML 이스케이프 후 메일 템플릿에 삽입 (XSS·메일 인젝션 방지)
 - [x] CSP: `default-src 'self'`, 폰트·이미지 출처 명시. 정적 페이지라 nonce 대신 Astro `security.csp`의 해시를 `<meta>`로
 - [x] `/admin` 미인가는 404 (401/403 아님)
+- [x] 관리자 지정(`is_admin`)은 관리자만, 자기 자신·최고 관리자(`ADMIN_EMAILS`)는 바꿀 수 없고, 지정·해제마다 Telegram 알림(11/04)
 - [x] Google OAuth 리디렉션 URI는 등록한 주소만 — 로컬(`localhost:8787`)과 운영(workers.dev, 도메인 연결 후 그 주소). 클라이언트는 로컬·운영 공용 1개(10/29, [02-auth.md](02-auth.md))
 - [x] 레이트리밋 키의 IP는 `CF-Connecting-IP` 사용
 - [ ] Cloudflare 무료 WAF 규칙으로 `/api/*` 국가별·봇 점수 기반 챌린지 (선택)

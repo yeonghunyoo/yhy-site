@@ -2,6 +2,7 @@
 import { desc, max } from 'drizzle-orm';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { account, session, user } from '../../db/schema';
+import { isRootAdmin } from '../../lib/server/auth';
 import { getDb } from '../../lib/server/db';
 import { formatKst } from '../../lib/server/dates';
 
@@ -29,14 +30,27 @@ const me = Astro.locals.user?.id;
             <div class="min-w-0">
               <p class="font-semibold break-all">{u.email}</p>
               {u.isBlocked && <p class="mt-1 text-sm text-danger">⛔ 차단됨</p>}
+              {isRootAdmin(u.email) ? (
+                <p class="mt-1 text-sm text-muted">👑 최고 관리자</p>
+              ) : (
+                u.isAdmin && <p class="mt-1 text-sm text-muted">👑 관리자</p>
+              )}
             </div>
             {u.id !== me && (
+              <div class="flex shrink-0 flex-col items-end gap-2">
+              {!u.isBlocked && !isRootAdmin(u.email) && (
+                <form method="post" action={`/api/admin/users/${u.id}/admin`}>
+                  <input type="hidden" name="admin" value={u.isAdmin ? '0' : '1'} />
+                  <button class="btn btn-outline shrink-0 text-sm whitespace-nowrap">{u.isAdmin ? '관리자 해제' : '관리자 지정'}</button>
+                </form>
+              )}
               <form method="post" action={`/api/admin/users/${u.id}/block`}>
                 <input type="hidden" name="blocked" value={u.isBlocked ? '0' : '1'} />
                 <button class:list={['btn shrink-0 text-sm whitespace-nowrap', !u.isBlocked && 'btn-outline btn-error']}>
                   {u.isBlocked ? '차단 해제' : '차단'}
                 </button>
               </form>
+              </div>
             )}
           </div>
           <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">

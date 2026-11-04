@@ -40,6 +40,8 @@ function createAuth() {
     user: {
       additionalFields: {
         isBlocked: { type: 'boolean', defaultValue: false, input: false },
+        // 지정 관리자(docs/04-admin.md "관리자 지정"). 가입·프로필 수정으로는 못 바꾼다(input: false)
+        isAdmin: { type: 'boolean', defaultValue: false, input: false },
       },
     },
     socialProviders: google,
@@ -123,11 +125,18 @@ export function getAuth() {
 
 export type SessionUser = ReturnType<typeof createAuth>['$Infer']['Session']['user'];
 
-export function isAdmin(u: { email: string; emailVerified: boolean } | null | undefined): boolean {
-  if (!u?.emailVerified) return false;
+/** 최고 관리자 — ADMIN_EMAILS(운영 비밀). 잠김 방지용이라 화면에서 해제할 수 없다. */
+export function isRootAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
   const admins = (env.ADMIN_EMAILS ?? '')
     .split(',')
-    .map((e) => e.trim().toLowerCase())
+    .map((e: string) => e.trim().toLowerCase())
     .filter(Boolean);
-  return admins.includes(u.email.toLowerCase());
+  return admins.includes(email.toLowerCase());
+}
+
+/** 관리자 = 이메일 인증된 계정 중 최고 관리자 또는 D1 user.is_admin(지정 관리자, docs/04-admin.md "관리자 지정"). */
+export function isAdmin(u: { email: string; emailVerified: boolean; isAdmin?: boolean | null } | null | undefined): boolean {
+  if (!u?.emailVerified) return false;
+  return isRootAdmin(u.email) || u.isAdmin === true;
 }

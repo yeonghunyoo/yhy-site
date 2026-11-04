@@ -11,7 +11,7 @@ Better Auth를 Workers에서 돌리고, 세션은 D1, 메일은 Resend, 소셜�
 | 소셜 | Google OAuth | 콜백 `/auth/callback/google` |
 | 세션 | DB 세션, 쿠키 `HttpOnly; Secure; SameSite=Lax` | 만료 30일, 활동 시 갱신 |
 | 메일 발송 | Resend | 무료 3,000통/월, Workers fetch로 호출, 발신 도메인 DKIM 설정 필요 |
-| 관리자 판별 | `ADMIN_EMAILS` 환경변수 허용목록 | 역할 테이블 없음, 1인 운영 전제 |
+| 관리자 판별 | `ADMIN_EMAILS` 허용목록(최고 관리자) 또는 D1 `user.is_admin` | 11/04 DB 지정 추가 — 비밀을 바꾸지 않고 어드민 화면에서 관리자를 더하고 뺀다. 역할 테이블 없이 열 하나 |
 
 ## 매직링크 + 인증 코드 흐름 (11/03)
 
