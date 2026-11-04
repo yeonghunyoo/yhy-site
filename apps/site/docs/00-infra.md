@@ -59,7 +59,7 @@
 | 구분 | 주소 |
 | --- | --- |
 | workers.dev | `https://portfolio-web.yeonghun-yoo.workers.dev` |
-| 커스텀 도메인 | `yeong.dev` (11/04 정함, 구매 전) |
+| 커스텀 도메인 | 미정 (`overview.md` 결정 표의 후보, 구매 후) |
 
 ## 0단계 작업 순서
 
@@ -78,6 +78,7 @@
 
 ## 본인이 직접 할 일
 
-- [ ] 도메인 구매(Cloudflare 계정 결제 수단 등록) — `yeong.dev`(11/04 정함). 사이트 Cloudflare 계정에서 산다(nuvo 계정과 따로, `docs/monorepo.md`)
+- [ ] 도메인 구매(Cloudflare 계정 결제 수단 등록). 사이트 Cloudflare 계정에서 산다(nuvo 계정과 따로, `docs/monorepo.md`)
+  - 등록 가능 여부·가격 조회(11/04 확인): `POST /accounts/{id}/registrar/domain-check` 본문 `{"domains": ["a.dev", …]}` → 도메인마다 `registrable`, `tier`(standard/premium), `reason`, `pricing`(첫해·갱신). 이름으로 넓게 찾기는 `GET /accounts/{id}/registrar/domain-search?q=이름`. 토큰에 Registrar 권한이 필요하다. `GET /registrar/domains/{도메인}`은 지원 확장자 여부만 알려 준다(가능 여부 아님)
 - [x] GitHub 레포 생성 (`yeonghunyoo/yhy-site`)
 - [x] Cloudflare 계정 생성, `wrangler login`, workers.dev 서브도메인 등록
