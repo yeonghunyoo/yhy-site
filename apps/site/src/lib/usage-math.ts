@@ -100,7 +100,6 @@ export function allowedMethods(pathname: string): string[] {
   if (pathname.startsWith('/media/')) return ['GET', 'HEAD'];
   if (pathname === '/api/chat') return ['POST'];
   if (pathname === '/api/letters') return ['POST'];
-  if (pathname === '/api/account') return ['GET', 'DELETE'];
   if (pathname.startsWith('/api/admin/')) return ['GET', 'POST'];
   return ['GET', 'POST'];
 }
