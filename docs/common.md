@@ -60,6 +60,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `KILL_LOGIN_MAIL` · `KILL_LETTERS` | 긴급 차단 스위치(1이면 중지) | 11/03 |
 | `CF_ANALYTICS_TOKEN` · `CF_ACCOUNT_ID` | `/admin/usage`의 Cloudflare 통계(분석 읽기 전용 토큰) | 11/03 |
 | `CHAT_ENABLED` | `1`이면 `/api/chat` 열림 | 2차 |
+| `RAG_SYNC_TOKEN` | 벡터 갱신 API(`POST /api/admin/rag/reindex`)를 관리자 세션 없이 부르는 토큰(32바이트 이상 무작위). 운영 비밀 + 로컬 `.prod.vars`(배포·`rag:sync:remote`가 읽는다). 비우면 세션으로만 | 11/04 |
 | `CHAT_MODEL` | 답변 모델 덮어쓰기(비우면 `src/lib/server/ai.ts` 기본값) — 모델 비교용 | 2차, 선택 |
 | `PUBLIC_CHAT_ENABLED` | 빌드 플래그 — `1`이면 챗 독 노출(`.env` 또는 배포 명령 앞). `pnpm run deploy`는 기본 `1`, 끄려면 `0` | 2차 |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | 레터·에러·삭제 알림 | 예 |
@@ -81,7 +82,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 - [ ] Cloudflare 무료 WAF 규칙으로 `/api/*` 국가별·봇 점수 기반 챌린지 (선택)
 - [x] 개인정보 고지: 로그인 이메일·레터 저장 사실을 레터 시트 하단에 한 줄 명시
 - [x] `DELETE /api/account`는 세션 + 확인 문자열 둘 다 검증, 트랜잭션(D1 batch)으로 처리
-- [x] `/api/admin/*`는 관리자 세션 검증을 미들웨어와 핸들러 양쪽에서 수행
+- [x] `/api/admin/*`는 관리자 세션 검증을 미들웨어와 핸들러 양쪽에서 수행. 예외는 `POST /api/admin/rag/reindex` 하나로, `RAG_SYNC_TOKEN` Bearer를 상수 시간 비교로 확인한다(11/04, 미들웨어·핸들러 양쪽)
 - [x] Telegram 메시지에 방문자 이메일 전체를 넣지 않는다(앞 3자 + 도메인만)
 - [x] (2차) 챗 가드레일: 이력 서명, 태그 이스케이프, 주입 검사, Llama Guard 유해 검사(자해는 도움 안내), 범위 판단, 출력 검사 — [05-06-chat-rag.md](05-06-chat-rag.md) "보안·가드레일"
 - [ ] (2차, 선택) Cloudflare WAF 속도 제한 규칙으로 `/api/chat` IP당 분당 요청 제한

@@ -19,3 +19,9 @@ export PUBLIC_CHAT_ENABLED="${PUBLIC_CHAT_ENABLED:-1}"
 
 astro build
 wrangler deploy "$@"
+
+# RAG 문서 운영 반영(docs/05-06-chat-rag.md 넣기 7) — 토큰이 있을 때만. 바뀐 게 없으면 D1은 건드리지 않는다.
+# 실패해도 배포는 끝난 것이라 경고만 남긴다. 건너뛰려면 RAG_SYNC=0 pnpm run deploy
+if [ "${RAG_SYNC:-1}" = 1 ] && { [ -n "$RAG_SYNC_TOKEN" ] || grep -q '^RAG_SYNC_TOKEN=' .prod.vars 2>/dev/null; }; then
+  node scripts/rag-sync.mjs || echo '⚠️ RAG 동기화 실패 — pnpm rag:sync:remote로 다시 돌린다' >&2
+fi

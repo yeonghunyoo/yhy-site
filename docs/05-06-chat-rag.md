@@ -92,6 +92,7 @@ PDF는 레이아웃만 있고 구조(제목·문단)가 없어서 바로 넣지 
 4. **id = 내용 해시**: 부모·자식 id를 텍스트 해시로 만든다. 문서를 고쳐도 바뀐 청크만 새 id가 된다
 5. **D1 저장**: `rag_sections`(부모), `rag_chunks`(자식, FTS5 동기화). 스크립트는 전체를 지우고 다시 넣는다
 6. **벡터 갱신**: 배포된 Worker의 `/admin/chat` → "벡터 갱신"(`POST /api/admin/rag/reindex`). D1의 자식 id와 Vectorize의 id를 비교해 **없는 것만 임베딩하고 사라진 것만 지운다**. `/admin/chat`에 자식 수 / 벡터 수 / 마지막 갱신 시각을 보여 줘 어긋남을 바로 알 수 있게 한다
+7. **자동 동기화(11/04)**: `pnpm rag:sync:remote`가 5·6을 한 번에 한다 — 로컬 문서의 자식 id와 운영 D1 id가 다를 때만 `rag:build:remote`를 돌리고, 이어서 같은 `POST /api/admin/rag/reindex`를 `Authorization: Bearer {RAG_SYNC_TOKEN}`으로 부른다(관리자 세션 대신). 임베딩·KV 기록은 Worker의 같은 코드가 하므로 버튼과 결과가 같다. `pnpm run deploy`는 배포 뒤 `RAG_SYNC_TOKEN`이 있으면(환경변수 또는 `.prod.vars`) 이 동기화를 자동으로 돌린다. 토큰이 맞지 않으면 지금처럼 404
 
 ### 질문 파이프라인 (`/api/chat`, WeKnora `rag_stream` 대응)
 

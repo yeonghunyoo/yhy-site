@@ -49,7 +49,7 @@
 - [ ] FAQ `src/content/rag/faq.{ko,en}.md` — 자주 받을 질문과 답
 - [x] 기준 질문 세트 `src/content/rag/eval.json` — 질문과 나와야 할 slug(11/03, 22개)
 - [ ] 추천 칩 문구(`src/i18n/*.json`의 `chat.chips`)와 인사말, 페르소나·거절 규칙(`src/lib/server/chat.ts`의 `systemPrompt`)
-- [ ] 문서를 고칠 때마다 `pnpm rag:build`(로컬) / `pnpm rag:build:remote`(운영) → `/admin/chat` 벡터 갱신
+- [x] 문서를 고칠 때마다 운영 반영 — 11/04부터 `pnpm run deploy`가 자동으로 하거나 `pnpm rag:sync:remote` 한 번(D1 넣기 + 벡터 갱신). 로컬은 `pnpm rag:build`
 
 ## 2. Cloudflare 설정
 

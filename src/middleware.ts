@@ -1,4 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
+import { hasRagSyncToken } from './lib/server/admin';
 import { getAuth, isAdmin } from './lib/server/auth';
 import { report5xx } from './lib/server/errors';
 import { guarded, guardRequest } from './lib/server/request-guard';
@@ -27,7 +28,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     // 비관리자에게는 어드민의 존재 자체를 숨긴다(401/403이 아니라 404).
-    if (isAdminPath(pathname) && !isAdmin(context.locals.user)) {
+    if (isAdminPath(pathname) && !isAdmin(context.locals.user) && !hasRagSyncToken(context.request, pathname)) {
       return pathname.startsWith('/api/')
         ? Response.json({ error: 'not_found' }, { status: 404 })
         : context.rewrite('/404');

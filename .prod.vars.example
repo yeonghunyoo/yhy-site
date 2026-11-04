@@ -17,3 +17,5 @@
 # CHAT_ENABLED=
 # ANTHROPIC_API_KEY=
 # CHAT_MONTHLY_TOKEN_CAP=
+# 벡터 갱신 자동화(배포·pnpm rag:sync:remote) — openssl rand -hex 32
+# RAG_SYNC_TOKEN=

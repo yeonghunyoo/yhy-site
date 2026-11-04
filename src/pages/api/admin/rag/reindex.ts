@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { ragChunks } from '../../../../db/schema';
-import { adminGuard, backTo } from '../../../../lib/server/admin';
+import { adminGuard, backTo, hasRagSyncToken } from '../../../../lib/server/admin';
 import { embed } from '../../../../lib/server/ai';
 import { getDb } from '../../../../lib/server/db';
 import { hasVectorSearch } from '../../../../lib/server/rag';
@@ -17,9 +17,13 @@ export const VECTOR_SYNCED_KEY = 'rag:vector-synced';
  * Vectorize에는 id 목록 API가 없어, 넣어 둔 id를 KV에 적어 두고 비교한다.
  */
 export const POST: APIRoute = async (context) => {
-  const denied = adminGuard(context);
-  if (denied) return denied;
-  if (!hasVectorSearch()) return backTo('/admin/chat', 'no_vector');
+  // 자동 동기화(scripts/rag-sync.mjs)는 관리자 세션 대신 토큰으로 오고, 결과를 JSON으로 받는다.
+  const bySync = hasRagSyncToken(context.request, context.url.pathname);
+  if (!bySync) {
+    const denied = adminGuard(context);
+    if (denied) return denied;
+  }
+  if (!hasVectorSearch()) return bySync ? Response.json({ error: 'no_vector' }, { status: 503 }) : backTo('/admin/chat', 'no_vector');
   const VEC = (env as unknown as { VEC: VectorizeIndex }).VEC;
 
   const chunks = await getDb().select().from(ragChunks);
@@ -39,5 +43,6 @@ export const POST: APIRoute = async (context) => {
 
   await env.KV.put(VECTOR_IDS_KEY, JSON.stringify([...current]));
   await env.KV.put(VECTOR_SYNCED_KEY, JSON.stringify({ at: Date.now(), added: added.length, removed: stale.length }));
+  if (bySync) return Response.json({ chunks: current.size, added: added.length, removed: stale.length });
   return backTo('/admin/chat', 'reindexed');
 };

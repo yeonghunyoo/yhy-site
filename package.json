@@ -18,6 +18,7 @@
     "check": "astro check",
     "rag:build": "node scripts/rag-build.mjs",
     "rag:build:remote": "node scripts/rag-build.mjs --remote",
+    "rag:sync:remote": "node scripts/rag-sync.mjs",
     "rag:import": "node scripts/ingest/index.mjs"
   },
   "dependencies": {
