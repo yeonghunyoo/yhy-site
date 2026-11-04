@@ -94,7 +94,7 @@ flowchart LR
 - [x] 브랜드/닉네임과 도메인 — **`bettercurl.dev` 구매(11/04)**, 연동은 `guides/domain-setup.md`. 보조 도메인(실명 `yeonghun.dev`, 오타 대비 `curlyeong.dev`·`callyeong.dev`)을 살지, 사이트 이름 "yhy"를 바꿀지는 따로 정한다
 - [x] 디자인 톤·테마(11/03) — 글자·숫자 중심 미니멀, 나이트. 브랜드·도메인은 여전히 미정
 - [x] CSS 라이브러리 — daisyUI 5, UI 레퍼런스는 Mobbin (10/29)
-- [x] 레터 수신 메일 주소와 관리자 이메일 — 레터 수신 `letters@bettercurl.dev`, 사이트 연락처 `hello@bettercurl.dev`(둘 다 Cloudflare Email Routing → 개인 메일), 발신 `letters@bettercurl.dev`(Resend). 관리자는 개인 메일 그대로(11/04)
+- [x] 레터 수신 메일 주소와 관리자 이메일 — 레터 수신 `letters@bettercurl.dev`, 사이트 연락처 `hello@bettercurl.dev`(둘 다 Cloudflare Email Routing → 개인 메일), 발신 `letters@mail.bettercurl.dev`(Resend). 관리자는 개인 메일 그대로(11/04)
 
 **2차 디테일 (해당 단계에서 질의로 채움)**
 

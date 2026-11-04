@@ -14,7 +14,7 @@
 ## 2026-11-04
 
 ### S-006 · 확정 · 메일 주소 체계 — 받기는 Cloudflare Email Routing, 보내기는 Resend 하위 도메인
-- 결정: 사이트·챗에 보이는 연락처 `hello@bettercurl.dev`, 레터 수신 `letters@bettercurl.dev`(둘 다 Email Routing → 개인 메일로 전달), 발신 `letters@bettercurl.dev`(Resend, 루트 도메인으로 인증 — 처음 계획한 하위 도메인 `mail.` 대신. 반송 레코드가 `send.`에 있어 받는 MX와 겹치지 않는다). 관리자 로그인 이메일은 개인 메일 그대로
+- 결정: 사이트·챗에 보이는 연락처 `hello@bettercurl.dev`, 레터 수신 `letters@bettercurl.dev`(둘 다 Email Routing → 개인 메일로 전달), 발신 `letters@mail.bettercurl.dev`(Resend 하위 도메인. 11/04 루트 `bettercurl.dev`가 먼저 인증돼 잠시 루트 주소로 바꿨다가, 평판 분리·나중의 루트 메일함을 위해 `mail.`로 되돌림). 관리자 로그인 이메일은 개인 메일 그대로
 - 본 것: 개인 Gmail을 사이트·레터에 그대로 / 루트 도메인에서 발신(`letters@bettercurl.dev`) / Google Workspace 메일함(유료)
 - 이유: 개인 메일을 공개하지 않고, 주소를 나중에 바꿔도 사이트는 그대로. Email Routing은 무료, 받는 MX(루트)와 Resend의 보내는 MX(`send.mail.`)가 겹치지 않는다. Resend는 보내기 전용 하위 도메인을 권한다
 - 보탬(11/04): `MAIL_FROM`·`LETTER_TO`는 비밀값에서 `wrangler.jsonc` `vars`로 옮김 — 공개 주소라 숨길 이유가 없고, 코드에 있어야 클라우드·로컬 어디서 배포해도 같은 값. `RESEND_API_KEY`만 운영 Secret(대시보드)

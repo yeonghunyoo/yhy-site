@@ -18,7 +18,7 @@
     // 운영 주소. 로컬은 .dev.vars 값이 우선한다(11/04 도메인 연결 — docs/guides/domain-setup.md)
     "BETTER_AUTH_URL": "https://bettercurl.dev",
     // 메일 주소(11/04, docs/guides/domain-setup.md). 공개 주소라 비밀이 아니다 — 대시보드에서 바꾸지 말고 여기서 바꾼다(배포가 덮어쓴다)
-    "MAIL_FROM": "letters@bettercurl.dev",
+    "MAIL_FROM": "letters@mail.bettercurl.dev",
     "LETTER_TO": "letters@bettercurl.dev"
   },
   // 커스텀 도메인(11/04). 배포하면 DNS 레코드와 인증서가 자동으로 생긴다. workers.dev 주소도 남는다

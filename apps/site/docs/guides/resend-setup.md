@@ -1,6 +1,6 @@
 # Resend 설정 가이드 (메일 열기)
 
-작성 2026-11-01. 도메인을 사고 사이트에 연결한 뒤 진행한다. **11/04 도메인 `bettercurl.dev` — 발신은 루트 도메인 `letters@bettercurl.dev`로 인증했다(11/04, 아래 1의 하위 도메인 안 대신). 전체 순서는 [domain-setup.md](domain-setup.md).** 이 작업이 끝나면 레터의 내 메일 전달, 어드민 답장 메일(방문자 주소로), 관리자 이메일 로그인이 다른 주소로도 열린다. 11/04부터 방문자 로그인은 없다. 설계는 [02-auth.md](../02-auth.md)·[03-letters.md](../03-letters.md), 비밀값 목록은 [common.md](../common.md).
+작성 2026-11-01. 도메인을 사고 사이트에 연결한 뒤 진행한다. **11/04 도메인 `bettercurl.dev` — 발신은 하위 도메인 안 `letters@mail.bettercurl.dev`(아래 1). 루트 `bettercurl.dev`도 먼저 인증돼 있다. 전체 순서는 [domain-setup.md](domain-setup.md).** 이 작업이 끝나면 레터의 내 메일 전달, 어드민 답장 메일(방문자 주소로), 관리자 이메일 로그인이 다른 주소로도 열린다. 11/04부터 방문자 로그인은 없다. 설계는 [02-auth.md](../02-auth.md)·[03-letters.md](../03-letters.md), 비밀값 목록은 [common.md](../common.md).
 
 코드는 이미 준비돼 있다(`src/lib/server/mail.ts`). `RESEND_API_KEY`가 비어 있으면 메일을 로그로만 남기고, 채우면 Resend API로 보낸다. 그래서 이 가이드는 **계정·DNS·비밀값 작업만** 다룬다.
 
