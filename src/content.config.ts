@@ -10,7 +10,7 @@ const projects = defineCollection({
     // 기본 id는 점을 지워 slug화하므로 locale 구분이 사라진다 — 파일명을 그대로 쓴다.
     generateId: ({ entry }) => entry.replace(/\.md$/, ''),
   }),
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     summary: z.string(),
     stack: z.array(z.string()),
@@ -20,6 +20,8 @@ const projects = defineCollection({
     metric: z.object({ value: z.number(), unit: z.string().default(''), label: z.string() }).optional(),
     period: z.string().optional(),
     changelog: z.array(z.object({ date: z.string(), text: z.string() })).default([]),
+    // 상세 페이지 이미지(11/04): 파일은 src/content/projects/{slug}/, 경로는 이 마크다운 기준(./{slug}/01.png)
+    images: z.array(z.object({ src: image(), alt: z.string() })).default([]),
   }),
 });
 

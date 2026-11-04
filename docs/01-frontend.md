@@ -70,6 +70,16 @@ src/
 - 클래스 이름: daisyUI 컴포넌트(`hero`·`label`·`timeline` 등)와 겹치면 레이아웃이 깨진다 — 홈은 `intro`·`big-label`·`career-line`
 - 초기 JS: 홈 스크립트 gzip 3.7KB(11/03 측정)
 
+## 프로젝트 상세 — 이미지 (11/04)
+
+상세 페이지 제목·요약 아래에 프로젝트 이미지를 보여 준다. 구현은 `src/components/ui/ProjectGallery.astro`(마크업) + `src/lib/gallery.ts`(뷰어, React 없음).
+
+- 원본: `src/content/projects/{slug}/` 폴더에 두고, 언어별 마크다운 frontmatter `images: [{ src: ./{slug}/01.png, alt: … }]`로 순서·대체 텍스트를 적는다(alt는 언어마다). 없으면 갤러리를 그리지 않는다
+- 최적화: 빌드 때 Astro 이미지(`imageService: 'compile'`)가 WebP로 줄인다 — 목록용 480/960/1440px srcset, 크게 보기용 긴 변 2400px 이하 한 장. 같은 출처라 CSP `img-src 'self'` 그대로
+- 목록: 가로 scroll-snap 슬라이드(스크립트 없이도 넘어간다). 높이 고정(모바일 18rem, `md` 28rem), 폭은 이미지 비율대로. 여러 장이면 "1 / N" 카운터, 마우스 기기(`pointer: fine`)에는 이전·다음 버튼(44px)
+- 크게 보기: 이미지를 누르면 전체 화면 `<dialog>`. 두 손가락 핀치·휠로 확대(최대 4배), 확대 중 한 손가락 끌기 = 이동, 두 번 탭 = 맞춤 ↔ 2.5배, 맞춤 상태에서 좌우 밀기 = 이전·다음, 아래로 밀기 = 닫기. 키보드 ←/→·+/−/0·Esc. 열 때 히스토리를 하나 쌓아 Android 뒤로 가기로 닫힌다. 처음엔 목록 이미지를 보여 주고 큰 이미지가 오면 바꾼다(현재·양옆만 미리 받는다). 닫으면 목록도 보던 장으로 맞춘다
+- 배경 스크롤 잠금은 공용 `scroll-lock.ts`. `prefers-reduced-motion`이면 넘김·닫기 전환 없이 바로
+
 ## 반응형·모바일 UX
 
 레이아웃은 모바일 퍼스트로 잡고, 데스크톱은 확장형으로 본다. 아래는 구현 시 전부 체크리스트로 검증한다.

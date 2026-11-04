@@ -19,7 +19,16 @@
     "more": "Read more",
     "stack": "Stack",
     "changelog": "Changelog",
-    "back": "← Home"
+    "back": "← Home",
+    "gallery": {
+      "label": "Project images",
+      "open": "View larger",
+      "prev": "Previous image",
+      "next": "Next image",
+      "close": "Close",
+      "viewer": "Image viewer",
+      "hint": "Pinch to zoom · double-tap to zoom/fit"
+    }
   },
   "contact": {
     "heading": "Contact",

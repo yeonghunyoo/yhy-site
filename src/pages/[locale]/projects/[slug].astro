@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectGallery from '../../../components/ui/ProjectGallery.astro';
 import { locales, t, type Locale } from '../../../i18n';
 import { getProjects } from '../../../lib/projects';
 
@@ -27,6 +28,7 @@ const { Content } = await render(project);
     >
     <h1 class="mt-4 font-display text-4xl leading-tight md:text-6xl">{project.data.title}</h1>
     <p class="prose-body mt-4 text-lg text-muted">{project.data.summary}</p>
+    <ProjectGallery images={project.data.images} dict={dict} />
 
     <div class="mt-10 grid gap-12 lg:grid-cols-[minmax(0,65ch)_1fr]">
       <div class="prose-body">
