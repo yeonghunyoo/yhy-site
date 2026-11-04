@@ -1,6 +1,8 @@
 # portfolio-web — Claude Code 작업 지침
 
-설계도는 `docs/`에 있다. 작업 전에 `docs/overview.md`를 읽고, 해당 단계 문서(`docs/NN-*.md`)를 기준으로 구현한다.
+이 앱은 모노레포의 `apps/site/`다(11/04, 레포 전체 규칙은 루트 `CLAUDE.md`·`docs/monorepo.md`). 아래 경로는 모두 `apps/site/` 기준이고, 명령은 이 폴더에서 실행하거나 루트에서 `pnpm site <스크립트>`로 부른다.
+
+설계도는 `docs/`(= `apps/site/docs/`)에 있다. 작업 전에 `docs/overview.md`를 읽고, 해당 단계 문서(`docs/NN-*.md`)를 기준으로 구현한다.
 설계와 코드가 어긋나면 코드를 임의로 바꾸지 말고 먼저 `docs/`를 갱신하자고 제안한다. 이 레포의 `docs/`가 설계의 기준이다.
 
 ## 한 줄 요약
@@ -24,11 +26,12 @@
 - 비밀값은 절대 커밋하지 않는다. 로컬은 `.dev.vars`, 운영은 Cloudflare 환경변수. 목록은 `docs/common.md`
 - `/admin`과 `/api/admin/*`는 관리자만. 로그인 안 된 `/admin` 화면은 로그인 화면, 로그인한 비관리자는 "권한 없음", `/api/admin/*`는 404. 관리자 = 이메일 인증된 계정 중 `ADMIN_EMAILS`(최고 관리자, 비밀) 또는 D1 `user.is_admin`(어드민 사용자 화면에서 지정, 11/04)
 - 단계 문서의 "완료 기준"을 통과해야 다음 단계로 간다
-- 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. 푸시 전 로컬 `pnpm build`가 통과해야 한다
+- 1인 작업: PR 없이 `main`에 바로 커밋·병합하고 푸시한다. 푸시 전 루트 `pnpm build`가 통과해야 한다(모든 앱)
+- 서버 공용 모듈(메일·예산 상한·요청 방어·알림)은 `@yhy/cf-kit`(`packages/cf-kit`)에 있다. 사이트 전용 규칙(경로·상한 기본값)은 `src/lib/`에 둔다
 - 비용(docs/guides/cost-guard.md): 새로 부르는 유료·한도 자원(Workers AI·메일·R2 쓰기 등)은 `src/lib/server/budget.ts`의 일일 상한을 거친다. 상한에 닿으면 기능을 끄는 쪽(고정 문구·429·503)으로 실패한다
 - KV 쓰기(무료 하루 1천 회)는 요청마다 하지 않는다. 사이트 전체 집계는 D1 로그에서 센다
 - `/api/*`·`/auth/*`·`/media/*`는 미들웨어의 요청 방어(`request-guard.ts`)를 거친다. 새 API는 `usage-math.ts`의 `allowedMethods`에 메서드를 등록한다
-- 배포: GitHub 푸시로는 배포되지 않는다. 운영 배포는 로컬 `pnpm run deploy`(`pnpm deploy` 아님)로만 하고, 사용자가 요청할 때만 실행한다
+- 배포: GitHub 푸시로는 배포되지 않는다. 운영 배포는 이 폴더에서 `pnpm run deploy`(또는 루트 `pnpm site deploy`)로만 하고(`pnpm deploy` 아님), 사용자가 요청할 때만 실행한다
 
 ## 단계 순서
 0 인프라 → 1 프론트+반응형 → 2 인증 → 3 레터 → 4 어드민(MVP 공개) → 5–6 챗+RAG → 7 3D

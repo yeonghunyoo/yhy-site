@@ -47,9 +47,9 @@ yhy-site/
 | `pnpm build` | 모든 앱 빌드. **푸시 전 통과 필수** |
 | `pnpm check` | site `astro check` + nuvo·패키지 `typecheck` |
 | `pnpm test` | 단위 테스트(cf-kit, nuvo) |
-| `pnpm site:dev` / `pnpm nuvo:dev` | 앱별 개발 서버 |
-| `pnpm run site:deploy` / `pnpm run nuvo:deploy` | 앱별 운영 배포. 사용자가 요청할 때만 |
-| `pnpm site:<스크립트>` / `pnpm nuvo:<스크립트>` | 앱 스크립트를 루트에서. 예: `pnpm site:db:migrate:remote` |
+| `pnpm site <스크립트>` / `pnpm nuvo <스크립트>` | 앱 스크립트를 루트에서. 예: `pnpm site dev`, `pnpm site db:migrate:remote`, `pnpm nuvo e2e` |
+| `pnpm site deploy` / `pnpm nuvo deploy` | 앱별 운영 배포. 사용자가 요청할 때만 |
+| `pnpm nuvo-db <스크립트>`, `pnpm nuvo-db:up`, `pnpm nuvo:smoke` | nuvo DB(Drizzle)·로컬 Postgres·API 스모크 |
 
 루트에 `deploy`라는 이름은 두지 않는다(`pnpm deploy`는 pnpm 내장 명령). 앱 폴더 안에서는 지금처럼 `pnpm run deploy`.
 
@@ -91,7 +91,7 @@ nuvo는 운영에 `RESEND_API_KEY`를 넣으면 이메일 가입이 켜지는데
 
 1. 이 문서 커밋
 2. site 파일을 `apps/site/`로 `git mv` (이 문서와 `.claude/`는 루트에 남긴다)
-3. nuvo `main`을 subtree 방식으로 `nuvo-import/`에 합친 뒤(`--allow-unrelated-histories`, 기록 유지) 최종 위치로 `git mv`
+3. nuvo `main`의 기록을 `git filter-branch --index-filter`로 최종 경로(`apps/nuvo`·`packages/nuvo-*`)로 다시 쓴 뒤 `--allow-unrelated-histories`로 합친다. 루트 설정 파일만 바꾼 커밋은 빠진다(원본은 보관된 `yeonghunyoo/nuvo`에 남는다)
 4. 루트 설정(`package.json`·`pnpm-workspace.yaml`·`.gitignore`·`.nvmrc`·`CLAUDE.md`), 경로 참조 갱신, `pnpm install`, `pnpm build`·`check`·`test`
 5. cf-kit 추출: mail → budget → guard → notify
 6. nuvo 메일 상한

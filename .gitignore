@@ -1,11 +1,23 @@
+# 모든 하위 폴더에 적용된다 (apps/*, packages/*)
 node_modules/
 dist/
 .astro/
 .wrangler/
+.DS_Store
+worker-configuration.d.ts
+
+# 비밀값 — 템플릿(.example)만 커밋한다 (docs/monorepo.md "Cloudflare·Resend 계정")
 .dev.vars
 .prod.vars
 .env
 .env.*
-.DS_Store
-worker-configuration.d.ts
+!.env.example
+*.local
+
+# site: RAG 원본 작업 폴더
 rag-sources/
+
+# nuvo: 테스트 산출물
+test-results
+playwright-report
+apps/nuvo/e2e/.fixtures

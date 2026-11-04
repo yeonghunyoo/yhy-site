@@ -9,7 +9,7 @@
 
 ## 색 토큰
 
-값은 OKLCH이고 정의는 `apps/web/src/index.css`에 있습니다. Tailwind에서는 `bg-bg`, `text-muted`, `border-line`처럼 씁니다.
+값은 OKLCH이고 정의는 `apps/nuvo/src/index.css`에 있습니다. Tailwind에서는 `bg-bg`, `text-muted`, `border-line`처럼 씁니다.
 
 | 토큰 | 용도 | 밝은 테마 | 대비* | 어두운 테마 | 대비* |
 |---|---|---|---|---|---|

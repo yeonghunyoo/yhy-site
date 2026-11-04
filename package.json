@@ -1,0 +1,19 @@
+{
+  "name": "yhy-site",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "check": "pnpm --filter portfolio-web run check && pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "site": "pnpm --filter portfolio-web run",
+    "nuvo": "pnpm --filter @nuvo/web run",
+    "nuvo-db": "pnpm --filter @nuvo/db run",
+    "nuvo-db:up": "docker start nuvo-db 2>/dev/null || docker run -d --name nuvo-db -e POSTGRES_USER=nuvo -e POSTGRES_PASSWORD=nuvo -e POSTGRES_DB=nuvo -p 5432:5432 -v nuvo-db:/var/lib/postgresql/data postgres:17",
+    "nuvo:smoke": "node apps/nuvo/scripts/smoke.mjs"
+  }
+}

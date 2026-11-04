@@ -30,24 +30,24 @@
 ### 2. 로컬 DB
 ```sh
 colima start          # Docker 데몬이 꺼져 있을 때
-pnpm db:up            # Postgres 17 컨테이너 (nuvo-db)
-pnpm db:migrate       # 스키마 적용
+pnpm nuvo-db:up          # Postgres 17 컨테이너 (nuvo-db)
+pnpm nuvo-db migrate  # 스키마 적용
 ```
 - 확인: `docker ps`에 `nuvo-db`가 보이면 완료.
 
 ### 3. 로컬 비밀값
 ```sh
-cp apps/web/.dev.vars.example apps/web/.dev.vars
+cp apps/nuvo/.dev.vars.example apps/nuvo/.dev.vars
 ```
 - 기본값으로 바로 동작합니다. 소셜 로그인을 로컬에서 시험하려면 12~13단계의 값을 여기에 채웁니다.
 
 ### 4. 실행과 테스트
 ```sh
-pnpm dev                                              # http://localhost:5173
-pnpm smoke                                            # API 시나리오 (개발 서버 실행 중일 때)
-pnpm test                                             # 단위 테스트
+pnpm nuvo dev                                          # http://localhost:5173
+pnpm nuvo:smoke                                          # API 시나리오 (개발 서버 실행 중일 때)
+pnpm nuvo test                                          # 단위 테스트
 pnpm --filter @nuvo/web exec playwright install chromium   # 처음 한 번
-pnpm e2e                                              # 브라우저 E2E
+pnpm nuvo e2e                                          # 브라우저 E2E
 ```
 - 확인: smoke "모두 통과"(58개), test 12개 통과, e2e 6개 통과.
 
@@ -67,7 +67,7 @@ pnpm e2e                                              # 브라우저 E2E
 ```sh
 pnpm --filter @nuvo/web exec wrangler r2 bucket create nuvo-media
 ```
-- 이름을 바꾸면 `apps/web/wrangler.jsonc`의 `bucket_name`도 같이 바꿉니다.
+- 이름을 바꾸면 `apps/nuvo/wrangler.jsonc`의 `bucket_name`도 같이 바꿉니다.
 - 버킷은 **공개(Public access)로 열지 않습니다.** 사진은 서명 URL로만 나갑니다.
 
 ### 7. 운영 DB (Neon)
@@ -77,11 +77,11 @@ npx -y neonctl@latest login                       # 브라우저가 열림 (계�
 npx -y neonctl@latest projects create --name nuvo --region-id aws-ap-southeast-1 --pg-version 17
 #   조직이 있으면 --org-id org-... 를 붙입니다. 리전은 싱가포르 (한국·일본 리전 없음)
 
-cd apps/web
+cd apps/nuvo
 # 접속 주소(비밀번호 포함)를 화면에 출력하지 않고 git 제외 파일로만 저장
 (umask 077; npx -y neonctl@latest connection-string --project-id <프로젝트 id> | tr -d '\n' > .neon-url.local)
 cd ../..
-DATABASE_URL="$(cat apps/web/.neon-url.local)" pnpm db:migrate
+DATABASE_URL="$(cat apps/nuvo/.neon-url.local)" pnpm nuvo-db migrate
 ```
 - `connection-string`의 기본값은 **직접 연결**(`-pooler` 없음)입니다. Hyperdrive가 연결 풀을 대신 관리하므로 이게 맞습니다.
 - 접속 주소는 채팅·커밋·이슈에 남기지 마세요. `.neon-url.local`은 `.gitignore`(`*.local`)로 제외됩니다.
@@ -90,17 +90,17 @@ DATABASE_URL="$(cat apps/web/.neon-url.local)" pnpm db:migrate
 
 ### 8. Hyperdrive (Worker ↔ DB 연결 풀)
 ```sh
-cd apps/web
+cd apps/nuvo
 pnpm exec wrangler hyperdrive create nuvo-db --connection-string="$(cat .neon-url.local)" --caching-disabled
 ```
 - **`--caching-disabled`는 꼭 넣습니다.** Hyperdrive는 기본으로 읽기 결과를 60초 캐시합니다. 켜 두면 내보낸 멤버의 권한 확인이나 삭제 직후 타임라인이 최대 1분 늦게 반영됩니다.
   이미 만들었다면: `pnpm exec wrangler hyperdrive update <id> --caching-disabled`
-- 출력된 `id`를 `apps/web/wrangler.jsonc`의 `hyperdrive[0].id`에 넣습니다. 이 id는 비밀값이 아닙니다 (이 Cloudflare 계정의 Worker만 쓸 수 있음). 저장소를 포크해서 쓰는 경우에는 자기 계정에서 만든 id로 바꿉니다.
+- 출력된 `id`를 `apps/nuvo/wrangler.jsonc`의 `hyperdrive[0].id`에 넣습니다. 이 id는 비밀값이 아닙니다 (이 Cloudflare 계정의 Worker만 쓸 수 있음). 저장소를 포크해서 쓰는 경우에는 자기 계정에서 만든 id로 바꿉니다.
 
 ### 9. 운영 비밀값
 **권장 방법: 비밀값 파일로 첫 배포 때 함께 등록**
 ```sh
-cd apps/web
+cd apps/nuvo
 cp .prod-secrets.example .prod-secrets.local && chmod 600 .prod-secrets.local
 # 무작위 값 채우기
 sed -i '' "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n')|; s|^MEDIA_SIGNING_KEY=.*|MEDIA_SIGNING_KEY=$(openssl rand -base64 48 | tr -d '\n')|" .prod-secrets.local
@@ -108,14 +108,14 @@ sed -i '' "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 48
 pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local
 ```
 - `.prod-secrets.local`은 git에서 제외됩니다 (`*.local`). **비밀번호 관리자에도 백업**해 두세요.
-- 한 번 등록한 비밀값은 이후 `pnpm deploy`에서도 유지됩니다.
+- 한 번 등록한 비밀값은 이후 `pnpm nuvo deploy`에서도 유지됩니다.
 - `MEDIA_SIGNING_KEY`를 잃어버리면 새로 만들면 됩니다. 사진은 안전하고, 기존 사진 URL만 바뀝니다.
 - 도메인을 연결하면 `BETTER_AUTH_URL`을 새 주소로 바꾸고 다시 등록합니다.
 - 확인: `pnpm exec wrangler secret list`에 세 이름이 `secret_text`로 보이면 완료.
 
 하나씩 직접 넣을 때의 방법 (로컬 값을 재사용하지 마세요):
 ```sh
-cd apps/web
+cd apps/nuvo
 openssl rand -base64 32 | pnpm exec wrangler secret put BETTER_AUTH_SECRET
 openssl rand -base64 32 | pnpm exec wrangler secret put MEDIA_SIGNING_KEY
 pnpm exec wrangler secret put BETTER_AUTH_URL      # 예: https://nuvo.example.com (10단계 도메인)
@@ -124,7 +124,7 @@ pnpm exec wrangler secret put BETTER_AUTH_URL      # 예: https://nuvo.example.c
 
 ### 10. 도메인 연결
 - [ ] **결정 필요:** 서비스 도메인 (예: `nuvo.app`, 구매 가능 여부 확인)
-- [ ] 도메인을 Cloudflare에 추가한 뒤 `apps/web/wrangler.jsonc`에 추가:
+- [ ] 도메인을 Cloudflare에 추가한 뒤 `apps/nuvo/wrangler.jsonc`에 추가:
   ```jsonc
   "routes": [{ "pattern": "nuvo.example.com", "custom_domain": true }]
   ```
@@ -143,10 +143,10 @@ pnpm exec wrangler secret put BETTER_AUTH_URL      # 예: https://nuvo.example.c
 4. [ ] API Keys → **Create API Key**: 권한 `Sending access`, 도메인은 2번 도메인만
 5. [ ] 키를 화면·채팅에 남기지 않고 파일에 넣습니다 (클립보드에 복사한 뒤 프롬프트에 입력):
    ```
-   ! sh apps/web/scripts/set-secret.sh RESEND_API_KEY
+   ! sh apps/nuvo/scripts/set-secret.sh RESEND_API_KEY
    ```
-   보내는 주소도 같은 방법으로 넣습니다 (`nuvo <noreply@mail.도메인>`을 복사한 뒤): `! sh apps/web/scripts/set-secret.sh EMAIL_FROM`
-6. [ ] `cd apps/web && pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local`
+   보내는 주소도 같은 방법으로 넣습니다 (`nuvo <noreply@mail.도메인>`을 복사한 뒤): `! sh apps/nuvo/scripts/set-secret.sh EMAIL_FROM`
+6. [ ] `cd apps/nuvo && pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local`
 - 확인: `/api/auth-config`가 `"password":true`를 주고, 가입하면 인증 메일이 도착하면 완료.
 - 같은 Resend 계정과 도메인을 다른 서비스(예: portfolio-web)와 함께 써도 됩니다. 보내는 주소(`EMAIL_FROM`)와 API 키만 서비스마다 따로 둡니다.
 
@@ -182,11 +182,11 @@ pnpm deploy
     - `http://localhost:5173/api/auth/callback/google` (로컬 시험용)
 - [ ] 클라이언트 ID와 보안 비밀번호를 파일에 넣습니다. 화면·채팅에 남기지 않도록 하나씩 복사해서 프롬프트에 입력:
   ```
-  ! sh apps/web/scripts/set-secret.sh GOOGLE_CLIENT_ID
-  ! sh apps/web/scripts/set-secret.sh GOOGLE_CLIENT_SECRET
+  ! sh apps/nuvo/scripts/set-secret.sh GOOGLE_CLIENT_ID
+  ! sh apps/nuvo/scripts/set-secret.sh GOOGLE_CLIENT_SECRET
   ```
-  로컬에서도 시험하려면 `apps/web/.dev.vars`의 같은 이름에 넣습니다.
-- [ ] `cd apps/web && pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local`
+  로컬에서도 시험하려면 `apps/nuvo/.dev.vars`의 같은 이름에 넣습니다.
+- [ ] `cd apps/nuvo && pnpm build && pnpm exec wrangler deploy --secrets-file .prod-secrets.local`
 - 확인: 로그인 화면에 "Google로 계속하기" 버튼이 보이고, 로그인이 되면 완료.
 
 ### 13. 카카오 로그인
@@ -243,8 +243,8 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 - [ ] GitHub 저장소 연결 후 둘 중 하나:
   - Cloudflare Workers Builds (대시보드에서 저장소 연결)
   - GitHub Actions + 비밀값 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
-- 준비됨: `pnpm typecheck`는 `.dev.vars` 없이도 통과합니다. 비밀값 타입을 `.dev.vars.example`에서 만들기 때문입니다.
-  CI에서는 `pnpm install --frozen-lockfile && pnpm typecheck && pnpm test && pnpm build`만 돌리면 됩니다 (DB 필요 없음).
+- 준비됨: `pnpm check`는 `.dev.vars` 없이도 통과합니다. 비밀값 타입을 `.dev.vars.example`에서 만들기 때문입니다.
+  CI에서는 `pnpm install --frozen-lockfile && pnpm check && pnpm test && pnpm build`만 돌리면 됩니다 (DB 필요 없음).
 
 ---
 
