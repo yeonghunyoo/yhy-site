@@ -9,13 +9,15 @@ const lerp = (a, b, t) => a + (b - a) * t;
 /** 1스텝이 끝나는 진행도. 0~STEP1 = 1스텝, STEP1~1 = 2스텝 */
 export const STEP1 = 0.55;
 
+/** 픽셀이 다 맺히는 진행도. 처음 조금만 스크롤해도 최대 해상도까지 부드럽게 올라가고 그 뒤로 유지한다(11/05) */
+export const RESOLVE = 0.08;
+
 /** 스크롤 진행도(0~1)에 따른 픽셀 연출. 프레임 렌더와 실시간이 같은 곡선을 쓴다. cols = 가장 고운 격자 */
 export function look(p, cols) {
-  const min = Math.max(12, Math.round(cols * 0.3)); // 시작은 고운 격자의 30%(최소 12칸 — 형체는 보이게)
-  const s1 = p / STEP1;
-  let c = lerp(min, cols, smooth(0, 1, s1)); // 1스텝: 거친 픽셀 → 고운 픽셀
-  if (p > STEP1) c = lerp(cols * 0.6, cols, smooth(STEP1, STEP1 + 0.12, p)); // 2스텝 컷: 잠깐 거칠어졌다 다시 맺힘
-  return { cols: Math.round(c), blur: 0.55 * (1 - smooth(0, 0.8, s1)) }; // 시작 블러를 줄여 처음부터 형체가 보이게
+  const min = Math.max(12, Math.round(cols * 0.3)); // 시작은 고운 격자의 30%(최소 12칸)
+  const t = smooth(0, RESOLVE, p);
+  // 거친 픽셀·약한 블러 → 최대 해상도(cell 기준, 1280px에서 80칸)로 맺힌 뒤 끝까지 유지 — 카메라 앵글이 잘 보이게
+  return { cols: Math.round(lerp(min, cols, t)), blur: 0.55 * (1 - t) };
 }
 
 /** 인물이 바라보는 방향(도). 0 = 화면 정면, − = 화면 왼쪽. 11/05: 시작 때 화면 왼쪽 대각선을 본다 */
