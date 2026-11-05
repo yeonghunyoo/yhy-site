@@ -232,3 +232,36 @@ html[data-fab='hidden'] .chat-fab {
     transition: none;
   }
 }
+
+/* 누르는 느낌(11/05): 챗 버튼·홈 버튼·프로젝트 블록 — 마우스를 올리면 살짝 뜨고, 누르면 눌린다 */
+.chat-fab:hover {
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.6);
+  translate: 0 -2px;
+}
+.chat-fab:active {
+  translate: 0 0;
+  scale: 0.97;
+}
+.chat-fab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+.home-btn {
+  transition: background-color 0.15s, color 0.15s, scale 0.15s;
+}
+.home-btn:active,
+.home-work:active {
+  scale: 0.98;
+}
+.home-work {
+  transition: scale 0.15s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-fab:hover,
+  .chat-fab:active,
+  .home-btn:active,
+  .home-work:active {
+    translate: none;
+    scale: none;
+  }
+}

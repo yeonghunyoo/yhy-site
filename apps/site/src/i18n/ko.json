@@ -97,9 +97,9 @@
     }
   },
   "chat": {
-    "open": "포트폴리오 에이전트에게 묻기",
-    "title": "포트폴리오 에이전트",
-    "greeting": "저는 yhy의 포트폴리오 에이전트예요. 프로젝트나 쓴 기술, 연락 방법을 물어보세요.",
+    "open": "Better-curl-dev Agent에게 묻기",
+    "title": "Better-curl-dev Agent",
+    "greeting": "저는 Better-curl-dev Agent예요. yhy의 프로젝트나 쓴 기술, 연락 방법을 물어보세요.",
     "chips": [
       "어떤 프로젝트를 만들었나요?",
       "어떤 기술을 써 봤나요?",

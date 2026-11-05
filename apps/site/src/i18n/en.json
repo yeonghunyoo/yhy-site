@@ -97,9 +97,9 @@
     }
   },
   "chat": {
-    "open": "Ask the portfolio agent",
-    "title": "Portfolio agent",
-    "greeting": "I'm yhy's portfolio agent. Ask me about projects, the tools used, or how to get in touch.",
+    "open": "Ask Better-curl-dev Agent",
+    "title": "Better-curl-dev Agent",
+    "greeting": "I'm Better-curl-dev Agent. Ask me about yhy's projects, the tools used, or how to get in touch.",
     "chips": [
       "What projects have you built?",
       "What tools have you used?",

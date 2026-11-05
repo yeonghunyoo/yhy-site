@@ -416,7 +416,7 @@ export default function ChatDock({ dict, locale }: Props) {
           <button
             type="button"
             onClick={switchMode}
-            className="hidden size-11 place-items-center rounded-full text-muted hover:text-fg md:grid"
+            className="hidden size-11 place-items-center rounded-full text-muted hover:bg-bg hover:text-fg md:grid transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             aria-label={mode === 'widget' ? dict.chat.mode.bar : dict.chat.mode.widget}
             title={mode === 'widget' ? dict.chat.mode.bar : dict.chat.mode.widget}
           >
@@ -433,7 +433,7 @@ export default function ChatDock({ dict, locale }: Props) {
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className="hidden size-11 place-items-center rounded-full text-muted hover:text-fg md:grid"
+            className="hidden size-11 place-items-center rounded-full text-muted hover:bg-bg hover:text-fg md:grid transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             aria-label={collapsed ? dict.chat.expand : dict.chat.minimize}
             aria-expanded={!collapsed}
             title={collapsed ? dict.chat.expand : dict.chat.minimize}
@@ -442,7 +442,8 @@ export default function ChatDock({ dict, locale }: Props) {
               {collapsed ? <path d="M6 14l6-6 6 6" /> : <path d="M6 12h12" />}
             </svg>
           </button>
-          <button type="button" onClick={closePanel} className="grid size-11 place-items-center rounded-full text-xl text-muted hover:text-fg" aria-label={dict.ui.close} title={dict.ui.close}>
+          {/* 닫기(×)는 모바일 풀스크린에서만 — 데스크톱은 최소화(–)가 같은 역할이라 뺐다(11/05). Esc는 어디서나 닫기 */}
+          <button type="button" onClick={closePanel} className={`grid size-11 place-items-center rounded-full text-xl text-muted hover:bg-bg hover:text-fg md:hidden transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`} aria-label={dict.ui.close} title={dict.ui.close}>
             ×
           </button>
         </div>
@@ -450,7 +451,8 @@ export default function ChatDock({ dict, locale }: Props) {
 
       {/* 내용: 안쪽 여백을 넉넉히, 위·아래 끝은 흐리게 사라져 머리(도구바)와 겹쳐 보이지 않는다(11/05) */}
       <div ref={listRef} data-chat-inner data-scroll-allow hidden={collapsed} className="chat-list min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 pt-4 pb-3" aria-live="polite">
-        <p className="rounded-2xl bg-bg px-4 py-2.5">{dict.chat.greeting}</p>
+        {/* 말풍선은 내용 크기에 맞게(최대 85%), 보낸 쪽은 오른쪽·받은 쪽은 왼쪽(11/05) */}
+        <p className="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-bg px-4 py-2.5">{dict.chat.greeting}</p>
         {/* 개인정보 고지 — 입력란 아래에서 옮겼다(11/03, 입력 영역을 좁게) */}
         <p className="px-1 text-xs text-muted">{dict.chat.notice}</p>
         {turns.length === 0 && (
@@ -459,7 +461,7 @@ export default function ChatDock({ dict, locale }: Props) {
               <button
                 key={chip}
                 type="button"
-                className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent/10 px-3 text-left text-sm text-fg"
+                className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent/10 px-3 text-left text-sm text-fg hover:bg-accent/20 disabled:opacity-50 transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 disabled={busy}
                 onClick={() => void ask(chip)}
               >
@@ -471,13 +473,13 @@ export default function ChatDock({ dict, locale }: Props) {
         )}
         {turns.map((t, i) =>
           t.role === 'user' ? (
-            <p key={i} className="ml-8 rounded-2xl rounded-br-md bg-accent px-4 py-2.5 break-words text-accent-fg">
+            <p key={i} className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent px-4 py-2.5 break-words text-accent-fg">
               {t.content}
             </p>
           ) : (
-            <div key={i} className="mr-8">
+            <div key={i} className="max-w-[85%]">
               {/* 답은 작은 마크다운(목록·굵게)으로 그린다 — HTML로 해석하지 않는다(chat-markdown.tsx) */}
-              <div className={`rounded-2xl rounded-bl-md bg-bg px-4 py-2.5 break-words ${t.notice === 'error' ? 'text-danger' : ''}`}>
+              <div className={`w-fit max-w-full rounded-2xl rounded-bl-md bg-bg px-4 py-2.5 break-words ${t.notice === 'error' ? 'text-danger' : ''}`}>
                 {(visibleAnswer(t.content) && <ChatMarkdown text={visibleAnswer(t.content)} />) ||
                   (busy && i === turns.length - 1 ? (
                     // 슈퍼바이저 판단(약 1초) → 검색 → 첫 글자까지 걸리는 동안
@@ -501,7 +503,7 @@ export default function ChatDock({ dict, locale }: Props) {
               )}
               {(t.notice === 'letter' || t.content.includes('[[letter]]')) && (
                 <div className="mt-2">
-                  <button type="button" data-action="letter" className="btn min-h-11 text-sm">
+                  <button type="button" data-action="letter" className="btn min-h-11 text-sm transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                     {dict.chat.letter}
                   </button>
                 </div>
@@ -520,7 +522,7 @@ export default function ChatDock({ dict, locale }: Props) {
                           href={link.href}
                           onClick={() => followSource(link.href)}
                           aria-label={`${link.label} — ${dict.chat.goTo}`}
-                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-3 text-sm text-muted"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-3 text-sm text-muted hover:border-accent hover:text-fg transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                         >
                           {link.label}
                           <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -545,7 +547,7 @@ export default function ChatDock({ dict, locale }: Props) {
                           key={q}
                           type="button"
                           onClick={() => void ask(q)}
-                          className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent/10 px-3 text-left text-sm text-fg"
+                          className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent/10 px-3 text-left text-sm text-fg hover:bg-accent/20 disabled:opacity-50 transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                         >
                           <span className="text-accent" aria-hidden="true">↳</span>
                           {q}
@@ -590,7 +592,7 @@ export default function ChatDock({ dict, locale }: Props) {
             }}
             aria-label={dict.chat.placeholder}
           />
-          <button type="submit" className="btn btn-primary h-11 min-h-11 shrink-0 rounded-xl" disabled={busy || !input.trim()} aria-busy={busy}>
+          <button type="submit" className="btn btn-primary h-11 min-h-11 shrink-0 rounded-xl transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" disabled={busy || !input.trim()} aria-busy={busy}>
             {dict.chat.send}
           </button>
         </div>
