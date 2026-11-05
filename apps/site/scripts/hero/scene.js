@@ -183,7 +183,20 @@ export function createHero(canvas, options = {}) {
   postScene.add(quad);
   const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+  // 픽셀 결과는 격자 크기(예: 104×58)의 작은 타깃에 한 번만 계산하고, 화면에는 칸을 그대로 키워 옮긴다.
+  // 셰이더(블러 25탭·디더)를 화면 픽셀마다 돌리지 않아 가볍다(11/05: 스크롤 버벅임)
+  const pixelRT = new THREE.WebGLRenderTarget(opts.cols, 90, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  const blit = new THREE.ShaderMaterial({
+    vertexShader: VERT,
+    fragmentShader: 'uniform sampler2D tPixel; varying vec2 vUv; void main() { gl_FragColor = texture2D(tPixel, vUv); }',
+    uniforms: { tPixel: { value: pixelRT.texture } },
+    depthTest: false,
+  });
+  const blitScene = new THREE.Scene();
+  blitScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blit));
+
   let progress = 0;
+  let drawn = -1; // 마지막으로 그린 진행도 — 같으면 다시 그리지 않는다
   let width = 1;
   let height = 1;
 
@@ -195,17 +208,18 @@ export function createHero(canvas, options = {}) {
     width = Math.max(1, w);
     height = Math.max(1, h);
     renderer.setSize(width, height, false);
+    drawn = -1;
     render();
   }
 
-  function render() {
+  /** 장면 → 저해상도 → 픽셀(pixelRT). 화면에는 옮기지 않는다 */
+  function paint() {
     const a = aspect();
     const l = look(progress, opts);
-    const cols = l.cols;
-    const rows = Math.max(1, Math.round(cols / a));
-    // 장면은 가장 고운 격자 크기로 한 번 그리고, 지금 격자로 칸을 맞춰 뽑는다
+    const rows = Math.max(1, Math.round(l.cols / a));
     const fineRows = Math.max(1, Math.round(opts.cols / a));
     if (rt.width !== opts.cols || rt.height !== fineRows) rt.setSize(opts.cols, fineRows);
+    if (pixelRT.width !== opts.cols || pixelRT.height !== fineRows) pixelRT.setSize(opts.cols, fineRows);
 
     const pos = path.getPointAt(Math.min(1, progress));
     camera.position.copy(pos).lerp(new THREE.Vector3(0.05, 1.6, 2.9), l.zoom); // 얼굴이 화면을 채우는 거리
@@ -216,31 +230,26 @@ export function createHero(canvas, options = {}) {
 
     renderer.setRenderTarget(rt);
     renderer.render(scene, camera);
-    renderer.setRenderTarget(null);
-
-    post.uniforms.uGrid.value.set(cols, rows);
+    post.uniforms.uGrid.value.set(l.cols, rows);
     post.uniforms.uBlur.value = l.blur;
+    renderer.setRenderTarget(pixelRT);
     renderer.render(postScene, postCam);
+    renderer.setRenderTarget(null);
+    return fineRows;
   }
 
-  /** 프레임 캡처: 가장 고운 격자 크기의 결과를 픽셀 배열로 돌려준다(frames.mjs) */
+  function render() {
+    if (drawn === progress) return;
+    drawn = progress;
+    paint();
+    renderer.render(blitScene, postCam);
+  }
+
+  /** 프레임 캡처: 격자 크기 결과를 픽셀 배열로(frames.mjs) */
   function snapshot() {
-    const a = aspect();
-    const fineRows = Math.max(1, Math.round(opts.cols / a));
-    const out = new THREE.WebGLRenderTarget(opts.cols, fineRows);
-    const w = width;
-    const h = height;
-    resize(opts.cols, fineRows);
-    renderer.setRenderTarget(out);
-    const l = look(progress, opts);
-    post.uniforms.uGrid.value.set(l.cols, Math.max(1, Math.round(l.cols / a)));
-    post.uniforms.uBlur.value = l.blur;
-    renderer.render(postScene, postCam);
+    const fineRows = paint();
     const data = new Uint8Array(opts.cols * fineRows * 4);
-    renderer.readRenderTargetPixels(out, 0, 0, opts.cols, fineRows, data);
-    renderer.setRenderTarget(null);
-    out.dispose();
-    resize(w, h);
+    renderer.readRenderTargetPixels(pixelRT, 0, 0, opts.cols, fineRows, data);
     return { width: opts.cols, height: fineRows, data: Array.from(data) };
   }
 
@@ -253,6 +262,7 @@ export function createHero(canvas, options = {}) {
     scene.remove(subject);
     subject = fitModel(gltf.scene, accentMat);
     scene.add(subject);
+    drawn = -1;
     render();
   }
 
@@ -278,10 +288,12 @@ export function createHero(canvas, options = {}) {
       post.uniforms.uDark.value = hex(opts.palette.dark);
       post.uniforms.uLight.value = hex(opts.palette.light);
       post.uniforms.uAccent.value = hex(opts.palette.accent);
+      drawn = -1;
       render();
     },
     dispose() {
       rt.dispose();
+      pixelRT.dispose();
       renderer.dispose();
     },
   };
