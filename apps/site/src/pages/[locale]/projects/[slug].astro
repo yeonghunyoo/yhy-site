@@ -21,7 +21,7 @@ const dict = t(locale);
 const { Content } = await render(project);
 ---
 
-<BaseLayout locale={locale} title={project.data.title} description={project.data.summary}>
+<BaseLayout locale={locale} title={project.data.title} description={project.data.summary} type="article">
   <article class="container-page py-10 md:py-16">
     <a href={`/${locale}/#project`} class="-ml-2 inline-flex min-h-11 items-center px-2 text-sm text-muted"
       >{dict.project.back}</a

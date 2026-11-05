@@ -5,18 +5,30 @@ import Header from '../components/ui/Header.astro';
 import Footer from '../components/ui/Footer.astro';
 import Overlay from '../components/islands/Overlay';
 import ChatDock from '../components/islands/ChatDock';
-import { locales, t, type Locale, switchLocalePath } from '../i18n';
+import { locales, t, type Locale } from '../i18n';
+import { absolute, alternates, ogLocale } from '../lib/seo';
 
 interface Props {
   locale: Locale;
   title?: string;
   description?: string;
+  /** og:type — 프로젝트 상세는 'article' */
+  type?: 'website' | 'article';
+  /** 이 페이지가 있는 언어(프로젝트 본문이 한 언어뿐일 때). 기본: 둘 다 */
+  available?: readonly Locale[];
+  /** 404 등 색인하지 않는 페이지 */
+  noindex?: boolean;
 }
 
-const { locale, title, description } = Astro.props;
+const { locale, title, description, type = 'website', available = locales, noindex = false } = Astro.props;
 const dict = t(locale);
 const pageTitle = title ? `${title} · ${dict.intro.name}` : dict.intro.name;
+const pageDescription = description ?? dict.site.description;
+// SEO·GEO(docs/01-frontend.md): 절대 URL은 Astro.site에서. 도메인을 코드에 쓰지 않는다
+const site = Astro.site!;
 const path = Astro.url.pathname;
+const canonical = absolute(site, path);
+const alts = alternates(path, available);
 ---
 
 <!doctype html>
@@ -25,10 +37,28 @@ const path = Astro.url.pathname;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>{pageTitle}</title>
-    <meta name="description" content={description ?? dict.site.description} />
+    <meta name="description" content={pageDescription} />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    {locales.map((l) => <link rel="alternate" hreflang={l} href={switchLocalePath(path, l)} />)}
+    {
+      noindex ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonical} />
+          {alts.map((a) => <link rel="alternate" hreflang={a.locale} href={absolute(site, a.path)} />)}
+          <link rel="alternate" hreflang="x-default" href={new URL('/', site).href} />
+          <meta property="og:type" content={type} />
+          <meta property="og:site_name" content={dict.intro.name} />
+          <meta property="og:title" content={pageTitle} />
+          <meta property="og:description" content={pageDescription} />
+          <meta property="og:url" content={canonical} />
+          <meta property="og:locale" content={ogLocale[locale]} />
+          {alts.filter((a) => a.locale !== locale).map((a) => <meta property="og:locale:alternate" content={ogLocale[a.locale]} />)}
+          <meta name="twitter:card" content="summary" />
+        </>
+      )
+    }
   </head>
   <body class="flex min-h-dvh flex-col">
     <a
