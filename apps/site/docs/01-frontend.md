@@ -63,7 +63,7 @@ src/
 - **히어로** `.story`(`data-hero`): `hero.ts`가 `.is-live`를 붙이면 높이 552vh(화면 100 + 히어로 252 + 머묾 100 + 커튼 100 — 머묾 동안 픽셀이 가운데로 모여 사라짐), 무대 `.story-stage`는 sticky. 진행도 p(0~1)로 장면·문구(`data-from`·`data-to`)를 바꾼다. WebGL이면 `scene.js`를 동적 import해 `.is-3d`, 그 전에는 `public/hero/poster.webp`(80×45, 칸 그대로 키움)
 - **커튼(패럴랙스)**: 본문 `.home-body`가 `margin-top: -100vh`로 히어로 위로 올라오고, 그동안 무대는 본문의 35% 속도로 올라가며 어두워진다(0 → 75%)
 - **정적 히어로**(움직임 줄이기·스크립트 없음·WebGL 없음): 높이 78dvh, 포스터 + "BETTER CALL YH!". 글은 모두 HTML(`h1`은 시각적으로 숨긴 이름·한 줄 소개)
-- **본문**: 소개(역할·소개 문단·정보 칸 4개) · 프로젝트(번호·이름·한 줄·기간·지표, 행 전체가 상세 링크) · 경력(최근 순) · 연락(레터 버튼 `data-action="letter"` + `hello@`)
+- **본문(S-010)**: 소개(큰 한 문장 + 문단 + 한 줄 메타) → 경력(최근 순, 지금 회사 기간만 강조색) → 스택(실무·개인 프로젝트, `src/data/stack.ts`) → 프로젝트(큰 제목 + 한 줄 + 스택, 지표 숫자는 강조색, 블록 전체가 상세 링크) → 연락(큰 문장 + 테두리 버튼 `data-action="letter"` + `hello@`). 표·구분선·장식 없음, 섹션 표시는 `// 소개` 같은 작은 고정폭 글자
 - 클래스 이름: daisyUI `hero`·`hero-content`와 겹치면 레이아웃이 깨진다(11/05 실제로 깨짐) — `story-*`·`home-*`
 - CSP: three.js는 같은 출처 청크라 그대로. 나중에 Meshopt 압축 모델을 쓰면 디코더가 WebAssembly라 `script-src`에 `'wasm-unsafe-eval'`이 필요하다(지금 임시 흉상은 모델 파일이 없어 해당 없음)
 

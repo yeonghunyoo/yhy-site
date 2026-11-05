@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { locales, t, type Locale } from '../../i18n';
 import { getProjects } from '../../lib/projects';
 import { career, formatMonths } from '../../data/career';
+import { stack } from '../../data/stack';
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -15,6 +16,7 @@ const hero = h.hero;
 const projects = await getProjects(locale);
 const { jobs, total } = career(locale);
 const recent = [...jobs].reverse();
+const groups = stack(locale);
 ---
 
 <BaseLayout locale={locale}>
@@ -35,80 +37,91 @@ const recent = [...jobs].reverse();
     </div>
   </div>
 
+  <!-- 본문(11/05, decisions S-010): 무채색 + 강조색 하나(구분·강조에만), 표·구분선·장식 없음. 소개 → 경력 → 스택 → 프로젝트 → 연락 -->
   <div class="home-body">
-    <section id="about" class="container-page home-sec" aria-labelledby="about-heading">
-      <p class="home-kicker">// {dict.intro.name}</p>
-      <h2 id="about-heading" class="home-h2">{h.role}</h2>
-      <p class="home-lead">{h.about}</p>
-      <dl class="home-facts">
-        <div><dt>{h.experience}</dt><dd class="num">{formatMonths(total, locale)}</dd></div>
-        <div><dt>{h.now}</dt><dd>{h.nowAt}</dd></div>
-        <div><dt>GitHub</dt><dd><a href="https://github.com/yeonghunyoo" rel="noopener">{h.github} ↗</a></dd></div>
-        <div><dt>{dict.contact.heading}</dt><dd><a href="#contact">{dict.contact.mail}</a></dd></div>
-      </dl>
-    </section>
+    <div class="container-page home-in">
+      <section id="about" aria-labelledby="about-heading">
+        <p class="home-kick">// {h.about}</p>
+        <h2 id="about-heading" class="home-statement">{h.statement[0]} <span>{h.statement[1]}</span></h2>
+        <p class="home-lead">{h.statementLead}</p>
+        <p class="home-meta">
+          <span>{h.experience} <b>{formatMonths(total, locale)}</b></span>
+          <span>{h.now} <b>{h.nowAt}</b></span>
+          <a href="https://github.com/yeonghunyoo" rel="noopener">{h.github} ↗</a>
+        </p>
+      </section>
 
-    <section id="project" class="container-page home-sec" aria-labelledby="project-heading">
-      <h2 id="project-heading" class="home-h2">{dict.nav.project}<small>{projects.length}</small></h2>
-      <ol class="home-rows">
-        {
-          projects.map((p, i) => (
-            <li>
-              <a href={`/${locale}/projects/${p.slug}/`} class="home-row">
-                <span class="n">{String(i + 1).padStart(2, '0')}</span>
-                <span class="main">
-                  <span class="t">{p.data.title}</span>
-                  <span class="d">{p.data.short ?? p.data.summary}</span>
+      <section id="career" aria-labelledby="career-heading">
+        <h2 id="career-heading" class="home-kick">// {dict.nav.career} · {formatMonths(total, locale)}</h2>
+        <ol class="home-path">
+          {
+            recent.map((j) => (
+              <li class:list={{ now: j.current }}>
+                {j.name}
+                {j.note && <span>{j.note}</span>}
+                <span class="len">
+                  {j.current && `${h.current} · `}
+                  {formatMonths(j.months, locale)}
                 </span>
-                <span class="period">{p.data.period}</span>
-                <span class="metric">
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section id="stack" aria-labelledby="stack-heading" class="home-stack">
+        <h2 id="stack-heading" class="home-kick">// {h.stack}</h2>
+        {
+          groups.map((g) => (
+            <div>
+              <h3>{g.title}</h3>
+              <ul class="home-tags">
+                {g.items.map((i) => (
+                  <li>{i}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </section>
+
+      <section id="project" aria-labelledby="project-heading">
+        <h2 id="project-heading" class="home-kick">// {dict.nav.project} · {projects.length}</h2>
+        <ol class="home-works">
+          {
+            projects.map((p) => (
+              <li>
+                <a class="home-work" href={`/${locale}/projects/${p.slug}/`}>
+                  <span class="body">
+                    {p.data.period && <span class="when">{p.data.period}</span>}
+                    <span class="name">{p.data.title}</span>
+                    <span class="one">{p.data.short ?? p.data.summary}</span>
+                    {p.data.stack && <span class="tech">{p.data.stack.join(' · ')}</span>}
+                  </span>
                   {p.data.metric && (
-                    <>
+                    <span class="num">
                       <b>
                         {p.data.metric.value}
                         {p.data.metric.unit}
-                      </b>{' '}
-                      {p.data.metric.label}
-                    </>
+                      </b>
+                      <span>{p.data.metric.label}</span>
+                    </span>
                   )}
-                </span>
-              </a>
-            </li>
-          ))
-        }
-      </ol>
-    </section>
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
 
-    <section id="career" class="container-page home-sec" aria-labelledby="career-heading">
-      <h2 id="career-heading" class="home-h2">{dict.nav.career}<small>{h.total} {formatMonths(total, locale)}</small></h2>
-      <ol class="home-rows">
-        {
-          recent.map((j) => (
-            <li class="home-row">
-              <span class="n">{j.current ? '●' : ''}</span>
-              <span class="main">
-                <span class="t">{j.name}</span>
-                {j.note && <span class="d">{j.note}</span>}
-              </span>
-              <span class="period" />
-              <span class="metric">
-                {j.current && <b>{h.current} · </b>}
-                {formatMonths(j.months, locale)}
-              </span>
-            </li>
-          ))
-        }
-      </ol>
-    </section>
-
-    <section id="contact" class="container-page home-sec home-contact" aria-labelledby="contact-heading">
-      <h2 id="contact-heading" class="home-h2">{dict.contact.heading}</h2>
-      <p class="home-lead">{h.letterNote}</p>
-      <p class="home-cta">
-        <button type="button" class="btn btn-primary" data-action="letter">{dict.contact.letter} →</button>
-        <span class="home-kicker">{dict.contact.mail}</span>
-      </p>
-    </section>
+      <section id="contact" aria-labelledby="contact-heading" class="home-ask">
+        <p class="home-kick">// {dict.contact.heading}</p>
+        <h2 id="contact-heading" class="home-big">{h.askTitle}</h2>
+        <p class="home-lead">{h.askNote}</p>
+        <button type="button" class="home-btn" data-action="letter">{dict.contact.letter} →</button>
+        <p class="home-meta"><span>{h.or} <b>{dict.contact.mail}</b></span></p>
+      </section>
+    </div>
   </div>
 </BaseLayout>
 
@@ -149,44 +162,50 @@ const recent = [...jobs].reverse();
   .story.is-3d .story-poster { opacity: 0; }
   .story.is-live + .home-body { margin-top: -100vh; }
 
-  /* 본문: 커튼처럼 히어로 위로 올라온다 */
+  /* 본문: 커튼처럼 히어로 위로 올라온다. 무채색 + 강조색 하나, 장식 없음(S-010) */
   .home-body {
-    position: relative; z-index: 2; background: var(--color-bg); border-top: 1px solid var(--color-border);
-    box-shadow: 0 -24px 48px rgb(0 0 0 / 0.6); padding-block: 3rem 5rem;
+    position: relative; z-index: 2; background: var(--color-bg); box-shadow: 0 -24px 48px rgb(0 0 0 / 0.6); padding-block: 5rem 7rem;
   }
-  .home-sec { padding-block: 2.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
-  .home-kicker { margin: 0; font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); }
-  .home-h2 { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.15; }
-  .home-h2 small { font-family: var(--font-mono); font-size: 0.875rem; color: var(--color-accent); }
-  .home-lead { margin: 0; max-width: 62ch; color: var(--color-muted); font-size: 1rem; line-height: 1.75; }
-  .home-facts { margin: 0.5rem 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); }
-  .home-facts div { padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.15rem; border-bottom: 1px solid var(--color-border); min-width: 0; }
-  .home-facts div:nth-child(odd) { border-right: 1px solid var(--color-border); }
-  .home-facts div:nth-last-child(-n + 2) { border-bottom: 0; }
-  .home-facts dt { font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-quiet); }
-  .home-facts dd { margin: 0; overflow-wrap: anywhere; }
-  .home-facts a:hover { color: var(--color-accent); }
-  .home-rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--color-border); }
-  .home-row {
-    display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); column-gap: 0.75rem; row-gap: 0.25rem; align-items: baseline;
-    padding-block: 1.1rem; border-bottom: 1px solid var(--color-border);
-  }
-  a.home-row:hover .t, a.home-row:focus-visible .t { color: var(--color-accent); }
-  .home-row .n { grid-row: span 3; font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-quiet); }
-  .home-row .main { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-  .home-row .t { font-size: 1.125rem; font-weight: 600; }
-  .home-row .d { color: var(--color-muted); font-size: 0.875rem; }
-  .home-row .period, .home-row .metric { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
-  .home-row .metric b { color: var(--color-accent); font-weight: 500; }
-  .home-cta { margin: 0.5rem 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; }
-  @media (min-width: 768px) {
-    .home-sec { padding-block: 3.5rem; }
-    .home-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .home-facts div { border-bottom: 0; border-right: 1px solid var(--color-border); }
-    .home-facts div:last-child { border-right: 0; }
-    .home-row { grid-template-columns: 3rem minmax(0, 1fr) 7rem minmax(9rem, 14rem); column-gap: 1.5rem; }
-    .home-row .n { grid-row: auto; }
-    .home-row .metric { text-align: right; }
+  .home-in { max-width: 1040px; display: flex; flex-direction: column; gap: clamp(5.5rem, 12vw, 9rem); }
+  .home-kick { margin: 0 0 1.75rem; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; color: var(--color-muted); letter-spacing: 0.04em; }
+  .home-statement { margin: 0; max-width: 22ch; font-size: clamp(1.75rem, 4.4vw, 3.25rem); line-height: 1.32; font-weight: 500; letter-spacing: -0.015em; text-wrap: balance; }
+  .home-statement span { color: var(--color-muted); }
+  .home-lead { margin: 1.75rem 0 0; max-width: 46ch; color: var(--color-muted); font-size: 1rem; line-height: 1.8; }
+  .home-meta { margin: 2rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.375rem; font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-muted); }
+  .home-meta b { color: var(--color-fg); font-weight: 500; }
+  .home-meta a { color: var(--color-fg); border-bottom: 1px solid var(--color-border); }
+  .home-meta a:hover { color: var(--color-accent); border-color: var(--color-accent); }
+  .home-path { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.125rem; }
+  .home-path li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.875rem; font-size: clamp(1.25rem, 2.6vw, 1.75rem); font-weight: 500; }
+  .home-path li span { font-size: 0.875rem; font-weight: 400; color: var(--color-muted); }
+  .home-path li .len { margin-left: auto; font-family: var(--font-mono); font-size: 0.8125rem; }
+  .home-path li.now .len { color: var(--color-accent); }
+  .home-stack { display: flex; flex-direction: column; gap: 1.75rem; }
+  .home-stack .home-kick { margin-bottom: 0; }
+  .home-stack h3 { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--color-muted); }
+  .home-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem 1rem; font-family: var(--font-mono); font-size: 0.875rem; }
+  .home-works { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: clamp(3.5rem, 8vw, 5.5rem); }
+  .home-work { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2.5rem; }
+  .home-work .body { flex: 999 1 26rem; min-width: 0; display: flex; flex-direction: column; gap: 0.625rem; }
+  .home-work .when, .home-work .tech { font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); }
+  .home-work .name { font-family: var(--font-display); font-size: clamp(2.5rem, 7.5vw, 5.75rem); line-height: 1; overflow-wrap: anywhere; }
+  /* 화살표는 자리를 차지하지 않게(긴 이름 뒤에서 줄이 바뀌어 빈 줄이 생기지 않게) */
+  .home-work .name { position: relative; }
+  .home-work .name::after { content: '→'; position: absolute; margin-left: 0.4em; font-size: 0.5em; line-height: 2; color: var(--color-accent); opacity: 0; transform: translateX(-0.5rem); transition: opacity 0.2s, transform 0.2s; }
+  .home-work:hover .name::after, .home-work:focus-visible .name::after { opacity: 1; transform: none; }
+  .home-work:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0.5rem; }
+  .home-work .one { font-size: 1.0625rem; }
+  .home-work .num { flex: 1 1 11rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .home-work .num b { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+  .home-work .num span { font-size: 0.8125rem; color: var(--color-muted); max-width: 22ch; }
+  .home-ask { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+  .home-ask .home-kick, .home-ask .home-lead, .home-ask .home-meta { margin: 0; }
+  .home-big { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: 1.05; text-wrap: balance; }
+  .home-btn { display: inline-flex; align-items: center; min-height: 3.25rem; padding: 0 1.625rem; border: 1px solid var(--color-fg); border-radius: 2px; background: transparent; color: var(--color-fg); font-family: var(--font-mono); font-size: 0.875rem; cursor: pointer; }
+  .home-btn:hover { background: var(--color-fg); color: var(--color-bg); }
+  .home-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+  @media (min-width: 720px) {
+    .home-work .num { flex: 0 0 12.5rem; align-items: flex-end; text-align: right; }
   }
 </style>
 

@@ -135,7 +135,7 @@
       "I learn by making,",
       "and let the work do the talking."
     ],
-    "about": "I've mostly built native iOS apps, but I don't box myself into one platform or role. When a problem keeps coming back at work, I build a tool to solve it. Tools take the repetition; I focus on making the service better.",
+    "about": "About",
     "experience": "Experience",
     "now": "Now",
     "nowAt": "Clush · on assignment at a semiconductor company",
@@ -158,6 +158,15 @@
       "l2": "Doing the same task over and over?",
       "k3": "02 · a fast, quick developer",
       "l3": "I build a tool and finish it."
-    }
+    },
+    "statement": [
+      "I've mostly built native iOS apps,",
+      "but I don't box myself into one platform."
+    ],
+    "statementLead": "When a problem keeps coming back at work, I build a tool to solve it. Tools take the repetition; I focus on making the service better.",
+    "stack": "Stack",
+    "askTitle": "Something to build together?",
+    "askNote": "No sign-in needed; replies go to the email you leave.",
+    "or": "or"
   }
 }
