@@ -34,6 +34,11 @@ const RESUME_KEY = 'uiResume';
 const FOLLOWUP_MAX = 3;
 // 데스크톱 표시 방식(11/05): 위젯(우하단 패널) / 하단 바(아래 가운데 넓은 패널). 브라우저에 기억
 const MODE_KEY = 'chatMode';
+// 위젯 위치(드래그로 옮긴 자리, 11/05)
+const POS_KEY = 'chatPos';
+// 사이트 상단 헤더(--header-h 3.5rem) 아래로만 — 위젯이 헤더와 겹치지 않게
+const TOP_GAP = 56 + 8;
+const EDGE = 16;
 type Mode = 'widget' | 'bar';
 const desktop = () => window.innerWidth >= 768;
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -76,6 +81,11 @@ export default function ChatDock({ dict, locale }: Props) {
   const [frame, setFrame] = useState<{ keyboard: boolean } | null>(null);
   const panelRef = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<Mode>('widget');
+  // 최소화: 머리만 남기고 그 자리에 접는다(대화·위치 그대로). 닫기(×)는 버튼으로 돌아간다
+  const [collapsed, setCollapsed] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [snapping, setSnapping] = useState(false);
+  const drag = useRef<{ dx: number; dy: number; sx: number; sy: number; moved: boolean } | null>(null);
   // 열기 전 독 버튼 자리 — 패널이 그 자리에서 커진다(히어로 전환, 11/05)
   const fromRef = useRef<DOMRect | null>(null);
   const closing = useRef(false);
@@ -86,6 +96,8 @@ export default function ChatDock({ dict, locale }: Props) {
     setTurns(load());
     try {
       if (localStorage.getItem(MODE_KEY) === 'bar') setMode('bar');
+      const saved = JSON.parse(localStorage.getItem(POS_KEY) ?? 'null') as { x: number; y: number } | null;
+      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) setPos(saved);
     } catch {}
     // 하이드레이트를 일으킨 독 버튼 클릭(client:demand)
     if (window.__uiPending === 'chat') {
@@ -117,7 +129,7 @@ export default function ChatDock({ dict, locale }: Props) {
     if (!open) return;
     inputRef.current?.focus({ preventScroll: true });
     // Esc는 맨 위 레이어만 닫는다 — 챗 위에 시트(로그인 등, aria-modal)가 떠 있으면 시트가 닫는다
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('[aria-modal="true"]') && minimize();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('[aria-modal="true"]') && closePanel();
     document.addEventListener('keydown', onKey);
     if (window.innerWidth >= 768) {
       setFrame(null);
@@ -172,8 +184,8 @@ export default function ChatDock({ dict, locale }: Props) {
     );
   }, [open, mode]);
 
-  /** 닫기 = 최소화: 대화는 남고, 데스크톱이면 패널이 독 버튼 자리로 줄어든 뒤 버튼이 된다 */
-  function minimize() {
+  /** 닫기: 대화는 남고, 데스크톱이면 패널이 독 버튼 자리로 줄어든 뒤 버튼이 된다 */
+  function closePanel() {
     const panel = panelRef.current;
     if (!panel || !desktop() || reduced() || closing.current) {
       setOpen(false);
@@ -197,9 +209,62 @@ export default function ChatDock({ dict, locale }: Props) {
       )
       .finished.finally(() => {
         closing.current = false;
+        setCollapsed(false);
         setOpen(false);
       });
   }
+
+  // 위젯 드래그(데스크톱): 머리를 잡고 화면 안에서 옮긴다. 놓으면 가까운 왼쪽·오른쪽 가장자리에, 위아래 끝 근처면 그쪽에도 자석처럼 붙는다
+  const clampPos = (x: number, y: number, w: number, h: number) => ({
+    x: Math.min(Math.max(x, EDGE / 2), innerWidth - w - EDGE / 2),
+    y: Math.min(Math.max(y, TOP_GAP), innerHeight - h - EDGE / 2),
+  });
+  function onHeadDown(e: React.PointerEvent<HTMLElement>) {
+    if (!desktop() || mode !== 'widget' || (e.target as Element).closest('button')) return;
+    const r = panelRef.current?.getBoundingClientRect();
+    if (!r) return;
+    drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top, sx: e.clientX, sy: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onHeadMove(e: React.PointerEvent<HTMLElement>) {
+    const d = drag.current;
+    const r = panelRef.current?.getBoundingClientRect();
+    if (!d || !r) return;
+    if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 4) return;
+    d.moved = true;
+    setPos(clampPos(e.clientX - d.dx, e.clientY - d.dy, r.width, r.height));
+  }
+  function onHeadUp() {
+    const d = drag.current;
+    drag.current = null;
+    const r = panelRef.current?.getBoundingClientRect();
+    if (!d || !r) return;
+    if (!d.moved) {
+      if (collapsed) setCollapsed(false); // 접힌 머리를 누르면 펼친다
+      return;
+    }
+    const x = r.left + r.width / 2 < innerWidth / 2 ? EDGE : innerWidth - r.width - EDGE;
+    let y = r.top;
+    if (y < TOP_GAP + 64) y = TOP_GAP;
+    else if (innerHeight - r.bottom < 64) y = innerHeight - r.height - EDGE;
+    const next = clampPos(x, y, r.width, r.height);
+    setSnapping(true);
+    setPos(next);
+    window.setTimeout(() => setSnapping(false), 320);
+    try {
+      localStorage.setItem(POS_KEY, JSON.stringify(next));
+    } catch {}
+  }
+  // 창 크기가 바뀌면 화면 안으로 다시 넣는다
+  useEffect(() => {
+    if (!pos) return;
+    const fit = () => {
+      const r = panelRef.current?.getBoundingClientRect();
+      if (r) setPos((p) => (p ? clampPos(p.x, p.y, r.width, r.height) : p));
+    };
+    addEventListener('resize', fit);
+    return () => removeEventListener('resize', fit);
+  }, [pos === null]);
 
   function switchMode() {
     const next: Mode = mode === 'widget' ? 'bar' : 'widget';
@@ -287,7 +352,7 @@ export default function ChatDock({ dict, locale }: Props) {
   // 모바일은 화면 전체를 덮으므로 다시 열지 않는다 — 대화는 sessionStorage에 남아 독 버튼으로 이어진다.
   const followSource = (href: string) => {
     if (href.split('#')[0] === location.pathname) {
-      minimize();
+      closePanel();
       return;
     }
     if (window.innerWidth >= 768) {
@@ -297,6 +362,8 @@ export default function ChatDock({ dict, locale }: Props) {
     }
   };
   const asked = turns.filter((t) => t.role === 'user').map((t) => t.content);
+  // 위젯을 옮긴 적이 있으면 그 자리(데스크톱 위젯 모드만)
+  const floating = mode === 'widget' && pos !== null && typeof window !== 'undefined' && desktop();
 
   if (!open) {
     return (
@@ -324,14 +391,24 @@ export default function ChatDock({ dict, locale }: Props) {
       ref={panelRef}
       role="dialog"
       aria-label={dict.chat.title}
-      // 테두리 없이 그림자와 둥근 모서리(11/05). 데스크톱: 위젯(우하단 380px) / 하단 바(아래 가운데, 최대 760px)
+      // 테두리 없이 그림자와 둥근 모서리(11/05). 데스크톱: 위젯(380px, 드래그로 옮김) / 하단 바(아래 가운데, 넓고 낮게)
+      style={floating ? { left: pos!.x, top: pos!.y, right: 'auto', bottom: 'auto' } : undefined}
       className={`fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:top-auto md:bottom-4 md:rounded-[20px] md:shadow-[0_24px_64px_rgb(0_0_0/0.55)] ${
+        snapping ? 'chat-snap' : ''
+      } ${
         mode === 'bar'
-          ? 'md:mx-auto md:h-[min(62dvh,600px)] md:w-[min(760px,calc(100vw-2rem))]'
-          : 'md:left-auto md:right-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px]'
+          ? `md:mx-auto md:w-[min(960px,calc(100vw-2rem))] ${collapsed ? 'md:h-auto' : 'md:h-[min(40dvh,380px)]'}`
+          : `md:left-auto md:right-4 md:w-[380px] ${collapsed ? 'md:h-auto' : 'md:h-[560px] md:max-h-[calc(100dvh-var(--header-h)-2rem)]'}`
       }`}
     >
-      <header data-chat-inner className={`flex shrink-0 items-center justify-between pr-2 pl-5 ${frame?.keyboard ? '' : 'pt-[env(safe-area-inset-top)]'}`}>
+      <header
+        data-chat-inner
+        onPointerDown={onHeadDown}
+        onPointerMove={onHeadMove}
+        onPointerUp={onHeadUp}
+        onPointerCancel={onHeadUp}
+        className={`flex shrink-0 touch-none items-center justify-between gap-2 pt-1 pr-2 pl-5 select-none ${mode === 'widget' ? 'md:cursor-grab md:active:cursor-grabbing' : ''} ${frame?.keyboard ? '' : 'pt-[max(0.25rem,env(safe-area-inset-top))]'}`}
+      >
         <h2 className="font-mono text-sm text-muted">
           <span className="text-accent">$</span> {dict.chat.title}
         </h2>
@@ -345,7 +422,7 @@ export default function ChatDock({ dict, locale }: Props) {
           >
             {mode === 'widget' ? (
               <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                <rect x="3" y="13" width="18" height="7" rx="2" />
+                <rect x="3" y="14" width="18" height="6" rx="2" />
               </svg>
             ) : (
               <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -353,13 +430,26 @@ export default function ChatDock({ dict, locale }: Props) {
               </svg>
             )}
           </button>
-          <button type="button" onClick={minimize} className="grid size-11 place-items-center rounded-full text-xl text-muted hover:text-fg" aria-label={dict.ui.close}>
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            className="hidden size-11 place-items-center rounded-full text-muted hover:text-fg md:grid"
+            aria-label={collapsed ? dict.chat.expand : dict.chat.minimize}
+            aria-expanded={!collapsed}
+            title={collapsed ? dict.chat.expand : dict.chat.minimize}
+          >
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+              {collapsed ? <path d="M6 14l6-6 6 6" /> : <path d="M6 12h12" />}
+            </svg>
+          </button>
+          <button type="button" onClick={closePanel} className="grid size-11 place-items-center rounded-full text-xl text-muted hover:text-fg" aria-label={dict.ui.close} title={dict.ui.close}>
             ×
           </button>
         </div>
       </header>
 
-      <div ref={listRef} data-chat-inner data-scroll-allow className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-2" aria-live="polite">
+      {/* 내용: 안쪽 여백을 넉넉히, 위·아래 끝은 흐리게 사라져 머리(도구바)와 겹쳐 보이지 않는다(11/05) */}
+      <div ref={listRef} data-chat-inner data-scroll-allow hidden={collapsed} className="chat-list min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 pt-4 pb-3" aria-live="polite">
         <p className="rounded-2xl bg-bg px-4 py-2.5">{dict.chat.greeting}</p>
         {/* 개인정보 고지 — 입력란 아래에서 옮겼다(11/03, 입력 영역을 좁게) */}
         <p className="px-1 text-xs text-muted">{dict.chat.notice}</p>
@@ -471,10 +561,11 @@ export default function ChatDock({ dict, locale }: Props) {
       </div>
 
       <form
+        hidden={collapsed}
         onSubmit={submit}
         aria-busy={busy}
         data-chat-inner
-        className={`shrink-0 px-3 pt-2 ${frame?.keyboard ? 'pb-2' : 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'}`}
+        className={`shrink-0 px-4 pt-2 ${frame?.keyboard ? 'pb-3' : 'pb-[max(1rem,env(safe-area-inset-bottom))]'}`}
       >
         {/* 입력란과 보내기 버튼은 같은 높이(44px, 11/05). 여러 줄이면 입력란만 커지고 버튼은 아래에 붙는다 */}
         <div className="flex items-end gap-2 rounded-2xl bg-bg p-1.5">

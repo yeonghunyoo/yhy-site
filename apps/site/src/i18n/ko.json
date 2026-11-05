@@ -135,7 +135,9 @@
     "mode": {
       "widget": "위젯으로 보기",
       "bar": "하단 바로 보기"
-    }
+    },
+    "minimize": "최소화",
+    "expand": "펼치기"
   },
   "home": {
     "role": "유영훈 · Software Engineer · iOS · Builder",

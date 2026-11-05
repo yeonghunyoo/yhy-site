@@ -219,3 +219,16 @@ html[data-fab='hidden'] .chat-fab {
     animation: none;
   }
 }
+
+/* 챗 위젯(11/05): 드래그를 놓으면 가장자리로 자석처럼 붙는 움직임, 목록 위·아래 끝 흐림 */
+.chat-snap {
+  transition: left 0.32s cubic-bezier(0.2, 1.25, 0.4, 1), top 0.32s cubic-bezier(0.2, 1.25, 0.4, 1);
+}
+.chat-list {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 1rem, #000 calc(100% - 0.75rem), transparent 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-snap {
+    transition: none;
+  }
+}

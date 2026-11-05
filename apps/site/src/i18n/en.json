@@ -135,7 +135,9 @@
     "mode": {
       "widget": "Show as widget",
       "bar": "Show as bottom bar"
-    }
+    },
+    "minimize": "Minimize",
+    "expand": "Expand"
   },
   "home": {
     "role": "Yeonghun Yoo · Software Engineer · iOS · Builder",
