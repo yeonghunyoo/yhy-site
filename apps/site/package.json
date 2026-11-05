@@ -39,7 +39,8 @@
     "drizzle-orm": "^0.45.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
@@ -47,11 +48,11 @@
     "@napi-rs/canvas": "^1.1.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
     "daisyui": "^5.7.50",
     "drizzle-kit": "^0.31.11",
     "playwright": "^1.64.1",
     "sharp": "^0.35.5",
-    "three": "^0.187.0",
     "typescript": "^6.0.3",
     "unpdf": "1.9.0",
     "wrangler": "^4.153.0"

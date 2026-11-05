@@ -56,7 +56,18 @@ src/
 
 **스타일**: Tailwind v4. 디자인 토큰은 `src/styles/tokens.css`의 CSS 변수로 두고, 세계관 콘셉트가 정해지면 이 파일만 교체한다. UI 레퍼런스는 Mobbin, 컴포넌트는 daisyUI 5(`global.css`의 `@plugin 'daisyui' { themes: false; }`). 내장 테마는 끄고, daisyUI 테마 변수(`--color-base-*`, `--color-primary`, `--radius-field`, `--size-field` 등)를 `tokens.css`에서 기존 토큰으로 연결한다 — 세계관이 정해지면 이 파일만 바꾼다. 버튼은 daisyUI(`btn`, `btn-primary`, `btn-error`, `btn-outline`), 높이는 `--size-field`로 44px. 입력칸은 iOS 확대 방지(16px)를 위해 자체 `.field`를 유지한다(daisyUI `input`은 기본 14px).
 
-## 홈 (11/03)
+## 홈 (11/05, decisions S-009) — 지금 구현
+
+`src/pages/[locale]/index.astro` + `src/lib/hero/hero.ts`(스크롤) + `src/lib/hero/scene.js`(three.js 장면·픽셀 셰이더). 세부 값·파이프라인은 [guides/3d-hero.md](guides/3d-hero.md).
+
+- **히어로** `.story`(`data-hero`): `hero.ts`가 `.is-live`를 붙이면 높이 452vh(화면 100 + 히어로 252 + 커튼 100), 무대 `.story-stage`는 sticky. 진행도 p(0~1)로 장면·문구(`data-from`·`data-to`)를 바꾼다. WebGL이면 `scene.js`를 동적 import해 `.is-3d`, 그 전에는 `public/hero/poster.webp`(80×45, 칸 그대로 키움)
+- **커튼(패럴랙스)**: 본문 `.home-body`가 `margin-top: -100vh`로 히어로 위로 올라오고, 그동안 무대는 본문의 35% 속도로 올라가며 어두워진다(0 → 75%)
+- **정적 히어로**(움직임 줄이기·스크립트 없음·WebGL 없음): 높이 78dvh, 포스터 + "BETTER CALL YH!". 글은 모두 HTML(`h1`은 시각적으로 숨긴 이름·한 줄 소개)
+- **본문**: 소개(역할·소개 문단·정보 칸 4개) · 프로젝트(번호·이름·한 줄·기간·지표, 행 전체가 상세 링크) · 경력(최근 순) · 연락(레터 버튼 `data-action="letter"` + `hello@`)
+- 클래스 이름: daisyUI `hero`·`hero-content`와 겹치면 레이아웃이 깨진다(11/05 실제로 깨짐) — `story-*`·`home-*`
+- CSP: three.js는 같은 출처 청크라 그대로. 나중에 Meshopt 압축 모델을 쓰면 디코더가 WebAssembly라 `script-src`에 `'wasm-unsafe-eval'`이 필요하다(지금 임시 흉상은 모델 파일이 없어 해당 없음)
+
+## 홈 (11/03) — 11/05에 걷어냄, 기록용
 
 레퍼런스는 Mobbin의 Clipo(자유 배치, 큰 글자, 괄호 라벨, 선택 핸들, 커서 태그). 시안은 claude.ai 아티팩트 "yhy 홈 시안". 문서 같은 줄·표를 버리고 캔버스(모바일 6칸 / 820px 이상 12칸 그리드) 위에 덩어리를 비대칭으로 놓는다. 구현은 `src/pages/[locale]/index.astro`(마크업·스타일) + `src/lib/home.ts`(연출, React 없음).
 

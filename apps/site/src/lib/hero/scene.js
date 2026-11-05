@@ -1,6 +1,6 @@
 // 히어로 3D 장면 — 픽셀화(저해상도 격자 + 흑백 계조 + 디더링) · 블러 · 스크롤 카메라.
-// 설계: docs/guides/3d-hero.md. 프로토타입(아티팩트)·프레임 렌더(frames.mjs)·사이트가 이 파일 하나를 같이 쓴다.
-// 'three'와 'three/addons/'는 import map으로 푼다(브라우저 ES 모듈, 빌드 도구 없이 동작).
+// 설계: docs/guides/3d-hero.md. 사이트 홈(src/lib/hero/hero.ts)·프레임 렌더(scripts/hero/frames.mjs)·프로토타입이 이 파일 하나를 같이 쓴다.
+// 'three'는 사이트에서는 Vite가 묶고(동적 import), 로컬 셸(scripts/hero/scene.html)·프로토타입에서는 import map으로 푼다.
 import * as THREE from 'three';
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };

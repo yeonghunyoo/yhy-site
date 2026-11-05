@@ -2,7 +2,7 @@
 
 "Better call yh!" 오마주 히어로: 본인 얼굴 스캔을 3D로 띄우고, 저해상도 격자 + 흑백 계조 + 디더링으로 픽셀화하고, 스크롤에 따라 카메라가 다가가 마지막에 확 줌인한다. 원작 영상·로고·글꼴·배우 얼굴은 쓰지 않는다 — 재현하는 건 광고 클리셰(정장, 가리키는 손, 천칭)와 카메라 연출이다.
 
-프로토타입(임시 흉상): claude.ai 아티팩트 "Better Call YH 3D". 장면 코드는 레포와 같은 `scripts/hero/scene.js`다.
+**11/05 사이트 홈에 반영·배포(decisions S-009, 모델은 임시 흉상).** 프로토타입: claude.ai 아티팩트 "Better Call YH 3D". 장면 코드는 `src/lib/hero/scene.js` 하나를 사이트·프레임 렌더·프로토타입이 같이 쓴다.
 
 ## 흐름
 
@@ -13,11 +13,12 @@
 
 | 파일 | 역할 |
 | --- | --- |
-| `scripts/hero/scene.js` | 장면(흉상·조명·카메라 경로) + 픽셀화 후처리 셰이더. `createHero(canvas, opts)` → `setProgress(0~1)`, `snapshot()`, `loadModel(url)` |
+| `src/lib/hero/scene.js` (+ `scene.d.ts`) | 장면(흉상·조명·카메라 경로) + 픽셀화 후처리 셰이더. `createHero(canvas, opts)` → `setProgress(0~1)`, `snapshot()`, `loadModel(url)` |
 | `scripts/hero/scene.html` | 로컬 셸. 쿼리 `model` `cols` `levels` `aspect` `preserve` |
 | `scripts/hero/serve.mjs` | `apps/site`를 루트로 정적 서버(`pnpm hero:preview`, 4321) |
 | `scripts/hero/optimize.mjs` | `hero-src/head.glb` → `hero-src/out/head.min.glb` (Meshopt + WebP 1024px + 면 50%) |
-| `scripts/hero/frames.mjs` | 헤드리스로 진행도 0~1을 N장 → `hero-src/out/hero-sprite.webp`(세로로 쌓은 무손실) + `.json`. `--publish`면 `public/hero/` |
+| `scripts/hero/frames.mjs` | 헤드리스로 진행도 0~1을 N장 → `hero-src/out/hero-sprite.webp`(세로로 쌓은 무손실) + `.json`. `--publish`면 `public/hero/`. `--poster=1`이면 홈 정적 이미지 `public/hero/poster.webp`만 |
+| `src/lib/hero/hero.ts` | 사이트 홈: 스크롤 → 진행도·문구·패럴랙스, WebGL이면 `scene.js` 동적 import |
 | `hero-src/` | 원본 작업 폴더 — `.gitignore`(README만 커밋). 얼굴 스캔은 공개 레포에 올리지 않는다 |
 
 ## ① 촬영·스캔 — 본인
@@ -74,7 +75,7 @@ pnpm site hero:frames --model=/hero-src/out/head.min.glb --frames=48
 3. 결과(격자 크기)를 화면에 칸 그대로 키워 옮긴다(Nearest + CSS `image-rendering: pixelated`)
 - 성능(11/05): 2단계를 화면 픽셀마다가 아니라 격자 크기에서 한 번만 돈다 — 소프트웨어 GPU 측정 85 → 33ms. 진행도가 같으면 다시 그리지 않는다(커튼 구간에선 그리기 0). 고정 장면에 `will-change: transform`
 
-## 사이트 연결 (구현 전 — 홈 개편 S-007과 같이)
+## 사이트 연결 (11/05 반영 — 실시간 3D가 기본, 스프라이트는 쓰지 않음)
 
 **스크롤 구조 (11/05 프로토타입에서 확인, 사용자 OK)**
 - 히어로 구간 252vh(11/05: 180 → 252, 40% 늘림): 화면 고정(sticky) 캔버스, 진행도 p 0→1(거친 픽셀·블러 → 고운 픽셀·선명, 마지막 줌인 + "BETTER CALL YH!"). 처음 520vh는 길다는 의견으로 줄였다
@@ -82,12 +83,14 @@ pnpm site hero:frames --model=/hero-src/out/head.min.glb --frames=48
 - 조절 막대(칸·계조·디더·강조색)는 확인용 — 프로토타입 주소 끝 `#tune`일 때만. 사이트에는 넣지 않는다
 - 그 뒤는 평범한 본문 스크롤(소개 · 사건 기록(프로젝트) · 경력 · 상담)
 
-- **1차 스프라이트(모든 기기)**: `public/hero/hero-sprite.webp`를 `image-rendering: pixelated`로 키우고 스크롤 진행도로 프레임(y 오프셋)을 고른다. three.js를 보내지 않는다. `prefers-reduced-motion`이면 마지막 프레임 한 장
-- **2차 실시간(데스크톱·고성능)**: 화면에 들어올 때 `scene.js` + three.js를 동적 import. 모델은 `head.min.glb`를 `public/hero/`에(누구나 받을 수 있다 — 면 줄인 것만)
+- (구상만, 지금 안 씀) **스프라이트**: `public/hero/hero-sprite.webp`를 `image-rendering: pixelated`로 키우고 스크롤 진행도로 프레임(y 오프셋)을 고른다. three.js를 보내지 않는다. `prefers-reduced-motion`이면 마지막 프레임 한 장
+- **실시간(WebGL 되는 모든 기기, 11/05 반영)**: `hero.ts`가 `scene.js` + three.js를 동적 import(gzip 약 144KB, 초기 JS 밖). 그 전·안 될 때는 포스터. 모델은 `head.min.glb`를 `public/hero/`에(누구나 받을 수 있다 — 면 줄인 것만)
 - 파일은 `/media/`가 아니라 `public/`(비용, docs/01-frontend.md "SEO·GEO"). CSP: 같은 출처 스크립트 + WebGL이라 그대로
 - 글(문구)은 항상 HTML에 — 캔버스는 꾸밈(`aria-hidden` 또는 `role="img"` + 설명)
 
 ## 남은 결정
+
+- 모델 교체 시: `scene.js`의 `createHero`에 `modelUrl`(예: `/hero/head.min.glb`)을 넘기고, `astro.config.mjs` CSP `script-src`에 `'wasm-unsafe-eval'`(Meshopt 디코더), 포스터 다시 생성(`pnpm site hero:frames --model=… --poster=1`)
 
 - 스토리 장 구성(1~5장)과 각 장의 카메라 지점
 - 천칭: 실물 사진(CC0)·직접 촬영·3D 모델 중

@@ -21,7 +21,7 @@
 <input id="p" type="range" min="0" max="1" step="0.001" value="0" aria-label="진행도">
 <script type="module">
   // 로컬 미리보기·프레임 렌더용 셸. 쿼리: model(GLB 경로) cols levels aspect(예: 1.7778) preserve(1)
-  import { createHero } from './scene.js';
+  import { createHero } from '/src/lib/hero/scene.js';
   const q = new URLSearchParams(location.search);
   const num = (k) => (q.has(k) ? Number(q.get(k)) : undefined);
   const hero = createHero(document.getElementById('c'), {

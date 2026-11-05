@@ -1,6 +1,7 @@
 // 미리 렌더한 프레임 — 같은 장면을 헤드리스 브라우저로 열어 진행도 0~1을 N장 찍고 한 장(스프라이트)으로 묶는다.
 // 설계: docs/guides/3d-hero.md "⑤ 사이트 연결 1차". 결과는 hero-src/out/(커밋 안 함). --publish면 public/hero/로 복사.
-// 사용: pnpm hero:frames [--model=/hero-src/out/head.min.glb] [--frames=48] [--cols=160] [--aspect=1.7778] [--publish]
+// 사용: pnpm hero:frames [--model=/hero-src/out/head.min.glb] [--frames=48] [--cols=80] [--aspect=1.7778] [--publish]
+// 포스터만: pnpm hero:frames --poster=1  → public/hero/poster.webp (홈 히어로의 정적 이미지: 3D 전·움직임 줄이기·WebGL 없음)
 // Chromium 경로가 따로 있으면 HERO_CHROMIUM=/path/to/chromium
 import { mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,6 +26,17 @@ await page.goto(`http://localhost:4322/scripts/hero/scene.html?${qs}`);
 await page.waitForFunction(() => window.heroReady || window.heroError, null, { timeout: 60000 });
 const err = await page.evaluate(() => window.heroError);
 if (err) throw new Error(err);
+
+const poster = arg('poster', '');
+if (poster) {
+  const shot = await page.evaluate((p) => { window.hero.setProgress(p); return window.hero.snapshot(); }, Number(poster));
+  mkdirSync(join(ROOT, 'public/hero'), { recursive: true });
+  await sharp(Buffer.from(shot.data), { raw: { width: shot.width, height: shot.height, channels: 4 } }).flip().webp({ lossless: true }).toFile(join(ROOT, 'public/hero/poster.webp'));
+  console.log(`→ public/hero/poster.webp ${shot.width}×${shot.height} (진행도 ${poster})`);
+  await browser.close();
+  server.close();
+  process.exit(0);
+}
 
 const tiles = [];
 for (let i = 0; i < frames; i++) {
