@@ -24,6 +24,15 @@ export function useReports(spaceId: string | undefined, enabled: boolean) {
   });
 }
 
+/** 로그인한 기기 목록 (설정) */
+export function useSessions(enabled: boolean) {
+  return useQuery({
+    queryKey: ["sessions"],
+    enabled,
+    queryFn: async () => (await unwrap(api.me.sessions.$get())).sessions,
+  });
+}
+
 /** 관리자: 아직 쓸 수 있는 초대 링크 */
 export function useInvites(spaceId: string | undefined, enabled: boolean) {
   return useQuery({

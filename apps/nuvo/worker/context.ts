@@ -7,7 +7,8 @@ export type SessionUser = { id: string; name: string; email: string; image?: str
 
 export type AppEnv = {
   Bindings: Env;
-  Variables: { db: Db; auth: Auth; user: SessionUser | null };
+  /** sessionId: 지금 요청의 세션 (로그인 기기 목록에서 "이 기기" 표시용) */
+  Variables: { db: Db; auth: Auth; user: SessionUser | null; sessionId: string | null };
 };
 
 /** 요청마다 DB·인증 인스턴스 생성, 응답 후 커넥션 정리 */
@@ -27,6 +28,7 @@ export const withContext = createMiddleware<AppEnv>(async (c, next) => {
 export const withSession = createMiddleware<AppEnv>(async (c, next) => {
   const s = await c.var.auth.api.getSession({ headers: c.req.raw.headers });
   c.set("user", s?.user ?? null);
+  c.set("sessionId", s?.session.id ?? null);
   await next();
 });
 

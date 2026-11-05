@@ -9,7 +9,7 @@ import { api, unwrap } from "../lib/api";
 import { signOut } from "../lib/auth";
 import { toastError } from "../lib/toast";
 import { initLocal, removeFolder, scanFolder, useLocal } from "../lib/local/store";
-import { useConfig, useMe } from "../lib/queries";
+import { useConfig, useMe, useSessions } from "../lib/queries";
 import { setAccent, setThemePref, useTheme, type Accent } from "../theme/theme";
 
 const ACCENTS: { value: Accent; label: string; light: string; dark: string }[] = [
@@ -31,6 +31,7 @@ export function SettingsPage() {
   const theme = useTheme();
   const me = useMe();
   const config = useConfig();
+  const sessions = useSessions(me.signedIn);
   const local = useLocal();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -128,6 +129,57 @@ export function SettingsPage() {
               <p className="mt-3 text-xs text-faint">가족이 내 Space에 올린 사진도 내 용량에서 차감돼요. 초대받은 Space는 그 Space 소유자의 용량을 써요.</p>
             </Section>
           )}
+          <Section title="로그인한 기기">
+            <ul className="flex flex-col gap-2" data-testid="sessions">
+              {(sessions.data ?? []).map((ss) => (
+                <li key={ss.id} className="flex items-center gap-3 text-sm">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">
+                      {ss.device}
+                      {ss.current && <span className="ml-1.5 text-xs text-accent">이 기기</span>}
+                    </span>
+                    <span className="block text-xs text-faint">
+                      {new Date(ss.lastActiveAt).toLocaleDateString()} 마지막 사용{ss.ip ? ` · ${ss.ip}` : ""}
+                    </span>
+                  </span>
+                  {!ss.current && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        try {
+                          await unwrap(api.me.sessions[":sessionId"].$delete({ param: { sessionId: ss.id } }));
+                          void qc.invalidateQueries({ queryKey: ["sessions"] });
+                        } catch (e) {
+                          toastError(e);
+                        }
+                      }}
+                    >
+                      로그아웃
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {(sessions.data?.length ?? 0) > 1 && (
+              <Button
+                className="mt-3"
+                size="sm"
+                onClick={async () => {
+                  if (!confirm("이 기기만 남기고 다른 기기에서 모두 로그아웃할까요?")) return;
+                  try {
+                    await unwrap(api.me.sessions["revoke-others"].$post());
+                    void qc.invalidateQueries({ queryKey: ["sessions"] });
+                  } catch (e) {
+                    toastError(e);
+                  }
+                }}
+              >
+                다른 기기 모두 로그아웃
+              </Button>
+            )}
+            <p className="mt-2 text-xs text-faint">모르는 기기가 보이면 로그아웃하고 비밀번호를 바꿔 주세요.</p>
+          </Section>
           <Section title="계정">
             <div className="flex items-center gap-3">
               <Avatar name={me.data.user.name} image={me.data.user.image} size={40} />

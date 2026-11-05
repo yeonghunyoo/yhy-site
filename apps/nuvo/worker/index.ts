@@ -11,6 +11,7 @@ import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
 import { deletionRequestRoutes } from "./routes/deletion-requests";
 import { reportRoutes } from "./routes/reports";
+import { sessionRoutes } from "./routes/sessions";
 import { inviteRoutes, spaceRoutes } from "./routes/spaces";
 import { uploads } from "./routes/uploads";
 
@@ -55,6 +56,7 @@ const api = new Hono<AppEnv>()
   .route("/spaces", spaceRoutes)
   .route("/spaces", reportRoutes)
   .route("/invites", inviteRoutes)
+  .route("/me/sessions", sessionRoutes)
   .route("/", assetRoutes);
 
 api.onError((err, c) => {

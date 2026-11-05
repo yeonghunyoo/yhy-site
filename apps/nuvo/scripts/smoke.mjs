@@ -127,7 +127,7 @@ ok((await a("/api/me")).status === 401, "비로그인 /me → 401");
   await y("/api/me", { method: "DELETE" });
 }
 
-await signUp(a, "엄마");
+const emailA = await signUp(a, "엄마");
 const meA0 = (await a("/api/me")).data;
 ok(meA0.personal?.id, "가입 시 개인 라이브러리 자동 생성");
 ok(meA0.subscription?.active === false, "가입 직후는 구독 없음");
@@ -273,6 +273,20 @@ const cfg = await fetch(`${BASE}/api/config`).then((r) => r.json());
 ok("supportEmail" in cfg && "appStoreUrl" in cfg && "playStoreUrl" in cfg, "공개 설정에 지원 연락처·스토어 링크 자리");
 ok((await fetch(`${BASE}/api/health`)).headers.get("x-robots-tag")?.includes("noindex"), "API 응답은 noindex");
 ok((await fetch(BASE + asset.urls.original)).headers.get("x-robots-tag")?.includes("noindex"), "미디어 응답은 noindex");
+
+// 로그인한 기기: 다른 기기를 골라 로그아웃하면 그 기기는 바로 로그아웃된다
+{
+  const other = client();
+  await other("/api/auth/sign-in/email", { method: "POST", json: { email: emailA, password: "password1234" } });
+  const list = (await a("/api/me/sessions")).data.sessions;
+  const mine = list?.find((x) => x.current);
+  const theirs = list?.find((x) => !x.current);
+  ok(list?.length >= 2 && mine && theirs && !("token" in theirs), `로그인한 기기 목록, 토큰은 내보내지 않음 (${list?.length})`);
+  ok((await a(`/api/me/sessions/${mine.id}`, { method: "DELETE" })).status === 400, "이 기기는 목록에서 로그아웃 불가 (일반 로그아웃 사용)");
+  ok((await b(`/api/me/sessions/${theirs.id}`, { method: "DELETE" })).status === 404, "남의 세션은 지울 수 없음");
+  const rm = await a(`/api/me/sessions/${theirs.id}`, { method: "DELETE" });
+  ok(rm.status === 200 && (await other("/api/me")).status === 401, "다른 기기 로그아웃 → 그 기기는 바로 401");
+}
 
 // 백업 상태 조회
 const bs = await b("/api/backup-status", { method: "POST", json: { sha256s: [img.sha256, imgB.sha256, fake.sha256] } });
