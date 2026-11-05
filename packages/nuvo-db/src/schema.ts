@@ -224,6 +224,37 @@ export const r2Gc = pgTable(
   (t) => [primaryKey({ columns: [t.sha256, t.owner] }), index("r2_gc_due_idx").on(t.dueAt)],
 );
 
+export const subscriptionSource = pgEnum("subscription_source", ["manual", "apple", "google"]);
+export const subscriptionStatus = pgEnum("subscription_status", ["active", "grace", "expired", "canceled"]);
+
+/**
+ * 구독 (docs/service-plan.md "결제 구조", docs/work-plan.md ③).
+ * 한 사용자에 여러 행이 있을 수 있다(스토어를 바꾼 경우 등) — "구독자인가"는 active·grace이면서 기간이 남은 행이 하나라도 있는지로 본다(worker/lib/subscription.ts).
+ * 1차는 source=manual(운영자가 켬)만 쓴다. apple·google은 2차에서 영수증 검증·서버 간 통지로 채운다.
+ */
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    source: subscriptionSource("source").notNull(),
+    status: subscriptionStatus("status").notNull().default("active"),
+    /** 스토어 상품 id. manual은 null */
+    productId: text("product_id"),
+    /** Apple originalTransactionId / Google purchaseToken. manual은 null */
+    externalId: text("external_id"),
+    /** 이 시각까지 유효. null = 기한 없음(manual) */
+    currentPeriodEnd: ts("current_period_end"),
+    /** manual 사유·메모 */
+    note: text("note"),
+    createdAt: createdAt(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("subscriptions_user_idx").on(t.userId), uniqueIndex("subscriptions_source_external_uq").on(t.source, t.externalId)],
+);
+
 /**
  * 사용량 카운터(일·월 상한). 키 = budget:{이름}:{YYYY-MM-DD | YYYY-MM} (KST). worker/lib/usage.ts
  * 하루에 몇 행만 생겨서 지우지 않는다. expires_at이 지난 행은 0으로 본다.

@@ -1,10 +1,73 @@
-import { blobs, r2Gc, type Db } from "@nuvo/db";
-import { sql } from "drizzle-orm";
+import { blobs, libraries, r2Gc, spaceMembers, type Db } from "@nuvo/db";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
+import type { Tx } from "./gc";
+import type { LibraryRow } from "./access";
+import { requireSubscriber } from "./subscription";
 
 const GB = 1024 ** 3;
 /** 썸네일(512·2048 WebP)은 Blob 크기에 없어서 원본의 12%로 어림한다 */
 const THUMB_OVERHEAD = 1.12;
+
+/* ───────────── 소유자 단위 용량 (docs/decisions.md D-016) ─────────────
+ * 용량은 사람 단위다. Space는 별도 용량이 없고 **Space 소유자의 개인 용량(10GB)**에서 차감한다.
+ * 라이브러리별 usedBytes는 그대로 두고(삭제·참조 계산에 쓴다), 한도 검사만 소유자 합계로 한다.
+ */
+
+/** 이 라이브러리의 과금 주체: 개인 → 그 사용자, Space → 소유자(role=owner). 소유자가 없으면 null */
+export async function billingOwner(db: Db | Tx, lib: LibraryRow): Promise<string | null> {
+  if (lib.type === "personal") return lib.userId;
+  const [m] = await db
+    .select({ userId: spaceMembers.userId })
+    .from(spaceMembers)
+    .where(and(eq(spaceMembers.spaceId, lib.spaceId!), eq(spaceMembers.role, "owner")))
+    .limit(1);
+  return m?.userId ?? null;
+}
+
+export type Usage = { usedBytes: number; quotaBytes: number };
+
+/** 소유자의 사용량 = 개인 라이브러리 + 소유한 Space 라이브러리의 usedBytes 합. 한도 = 개인 라이브러리 quotaBytes */
+export async function ownerUsage(db: Db | Tx, ownerId: string): Promise<Usage> {
+  const owned = db
+    .select({ id: spaceMembers.spaceId })
+    .from(spaceMembers)
+    .where(and(eq(spaceMembers.userId, ownerId), eq(spaceMembers.role, "owner")));
+  const [row] = await db
+    .select({
+      used: sql<number>`coalesce(sum(${libraries.usedBytes}), 0)`.mapWith(Number),
+      quota: sql<number>`coalesce(max(case when ${libraries.type} = 'personal' then ${libraries.quotaBytes} end), 0)`.mapWith(Number),
+    })
+    .from(libraries)
+    .where(or(eq(libraries.userId, ownerId), inArray(libraries.spaceId, owned)));
+  return { usedBytes: row?.used ?? 0, quotaBytes: row?.quota ?? 0 };
+}
+
+function quotaError(usage: Usage, need: number) {
+  return new HTTPException(413, {
+    message: `저장 공간이 부족해요 (${Math.round((usage.usedBytes + need - usage.quotaBytes) / 1024 / 1024)}MB 초과)`,
+  });
+}
+
+/**
+ * 이 라이브러리에 올릴 수 있는지: 구독 + 소유자 용량.
+ * - 개인 라이브러리: 본인이 구독자여야 한다
+ * - Space 라이브러리: 멤버 역할은 호출한 쪽(requireLibrary editor)이 보고, 여기서는 **소유자**가 구독자인지와 소유자 용량만 본다.
+ *   구독 없는 가족도 소속 Space에는 올릴 수 있다(D-016). 소유자 구독이 끝나면 보기는 되고 올리기만 막힌다
+ * 돌려주는 값은 소유자 사용량·한도 (화면 표시용)
+ */
+export async function assertUploadAllowed(db: Db | Tx, lib: LibraryRow, need: number, pendingBytes = 0): Promise<Usage> {
+  const owner = await billingOwner(db, lib);
+  if (!owner) throw new HTTPException(409, { message: "Space 소유자가 없어요" });
+  await requireSubscriber(db, owner, lib.type === "personal" ? "me" : "owner");
+  const usage = await ownerUsage(db, owner);
+  if (need > 0 && usage.usedBytes + pendingBytes + need > usage.quotaBytes) {
+    throw quotaError({ ...usage, usedBytes: usage.usedBytes + pendingBytes }, need);
+  }
+  return usage;
+}
+
+/* ───────────── 서비스 전체 상한 (계정을 옮기기 전까지, docs/mvp.md "계정 공용 한도") ───────────── */
 
 /**
  * 서비스 전체 저장 상한 (R2 무료 사용량 안에 머물기 위한 안전장치).
@@ -20,7 +83,7 @@ export function storageCapBytes(env: Env): number {
  * 저장량 = 등록된 Blob + 완료 전·삭제 대기 업로드(r2_gc), 썸네일 몫 포함.
  * 동시에 올리면 조금 넘을 수 있으므로 상한은 무료 사용량보다 여유 있게 잡는다.
  */
-export async function assertServiceCapacity(db: Db, env: Env, need: number) {
+export async function assertServiceCapacity(db: Db | Tx, env: Env, need: number) {
   const cap = storageCapBytes(env);
   if (!cap || need <= 0) return;
   const [[b], [g]] = await Promise.all([

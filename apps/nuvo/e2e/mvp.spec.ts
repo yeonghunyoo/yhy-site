@@ -118,7 +118,7 @@ test("Space: 초대 → 함께 업로드 → 실시간 반영 → 권한", async
   await mom.keyboard.press("Escape");
 
   const kid = await newPageWithoutFolderPicker(browser);
-  await signUp(kid, "동생");
+  await signUp(kid, "동생", false); // 구독 없는 가족도 초대받은 Space에는 올릴 수 있다 (D-016)
   await kid.goto(url);
   await expect(kid.getByTestId("invite-space")).toHaveText("우리 가족");
   await kid.getByRole("button", { name: "참여하기" }).click();

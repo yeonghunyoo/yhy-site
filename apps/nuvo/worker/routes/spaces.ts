@@ -5,9 +5,10 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
-import { quotas } from "../auth";
 import { requireUser, type AppEnv } from "../context";
 import { requireSpaceRole } from "../lib/access";
+import { billingOwner, ownerUsage } from "../lib/capacity";
+import { requireSubscriber, subscriptionOf } from "../lib/subscription";
 import { kickFromHub, lockLibraries, notifyHub, recordSpaceActivity, removeAssets } from "../lib/assets";
 import { collectGarbage, type Tx } from "../lib/gc";
 import { HUB_USER_HEADER } from "../hub";
@@ -35,12 +36,15 @@ export const spaceRoutes = new Hono<AppEnv>()
   .post("/", validate("json", SpaceNameInput), async (c) => {
     const user = requireUser(c);
     const { name } = c.req.valid("json");
+    // Space 만들기는 구독자만 (초대받은 가족은 구독 없이 보기·올리기, docs/decisions.md D-016)
+    await requireSubscriber(c.var.db, user.id);
     const out = await c.var.db.transaction(async (tx) => {
       const [s] = await tx.insert(spaces).values({ name, createdBy: user.id }).returning();
       await tx.insert(spaceMembers).values({ spaceId: s!.id, userId: user.id, role: "owner" });
       const [lib] = await tx
         .insert(libraries)
-        .values({ type: "space", spaceId: s!.id, quotaBytes: quotas(c.env).space })
+        // Space는 별도 용량이 없다(0). 소유자의 개인 용량에서 차감한다 (worker/lib/capacity.ts)
+        .values({ type: "space", spaceId: s!.id, quotaBytes: 0 })
         .returning();
       return { id: s!.id, name: s!.name, libraryId: lib!.id };
     });
@@ -59,11 +63,15 @@ export const spaceRoutes = new Hono<AppEnv>()
       .innerJoin(userTable, eq(userTable.id, spaceMembers.userId))
       .where(eq(spaceMembers.spaceId, spaceId))
       .orderBy(spaceMembers.joinedAt);
+    const owner = await billingOwner(c.var.db, lib);
+    const usage = owner ? await ownerUsage(c.var.db, owner) : { usedBytes: lib.usedBytes, quotaBytes: 0 };
     return c.json({
       id: s!.id,
       name: s!.name,
       myRole,
-      library: { id: lib.id, type: "space" as const, usedBytes: lib.usedBytes, quotaBytes: lib.quotaBytes },
+      // 용량은 소유자 것 (개인 + 소유 Space 합). 소유자 구독이 끝나면 올리기가 막히니 화면이 알 수 있게 함께 준다
+      library: { id: lib.id, type: "space" as const, usedBytes: usage.usedBytes, quotaBytes: usage.quotaBytes, ownBytes: lib.usedBytes },
+      ownerSubscribed: owner ? (await subscriptionOf(c.var.db, owner)).active : false,
       members,
     });
   })

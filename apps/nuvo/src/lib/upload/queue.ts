@@ -162,8 +162,9 @@ async function run(job: Job) {
     }
     const msg = e instanceof ApiError || e instanceof Error ? e.message : "업로드 실패";
     update(id, { status: "error", error: msg });
-    if (e instanceof ApiError && (e.status === 413 || e.status === 507)) {
-      // 413: 이 라이브러리 용량 초과 → 같은 라이브러리 작업 중단
+    if (e instanceof ApiError && (e.status === 402 || e.status === 413 || e.status === 507)) {
+      // 402: 구독 필요(내 사진함) 또는 Space 소유자 구독 종료 → 같은 라이브러리 작업 중단
+      // 413: 소유자 용량 초과 → 같은 라이브러리 작업 중단 (Space는 소유자 용량에서 차감)
       // 507: 서비스 전체 저장 공간이 가득 참 → 남은 작업 모두 중단
       const all = e.status === 507;
       for (let i = jobs.length - 1; i >= 0; i--) {

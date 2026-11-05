@@ -125,11 +125,23 @@ ok((await a("/api/me")).status === 401, "비로그인 /me → 401");
 }
 
 await signUp(a, "엄마");
+const meA0 = (await a("/api/me")).data;
+ok(meA0.personal?.id, "가입 시 개인 라이브러리 자동 생성");
+ok(meA0.subscription?.active === false, "가입 직후는 구독 없음");
+
+// 구독 없이는 내 사진함 업로드·Space 만들기 불가 (402)
+const img = fakeImage();
+const noSub = await a("/api/uploads/prepare", {
+  method: "POST", json: { libraryId: meA0.personal.id, files: [{ sha256: img.sha256, size: img.bytes.length, mime: "image/jpeg" }] },
+});
+const noSubSpace = await a("/api/spaces", { method: "POST", json: { name: "구독 전" } });
+ok(noSub.status === 402 && noSubSpace.status === 402, `구독 없이 업로드·Space 생성 → 402 (${noSub.status}, ${noSubSpace.status})`);
+ok((await a("/api/dev/subscribe", { method: "POST" })).data.active === true, "수동 구독 켬 (로컬 전용)");
 const meA = (await a("/api/me")).data;
-ok(meA.personal?.id, "가입 시 개인 라이브러리 자동 생성");
+ok(meA.subscription?.active === true && meA.subscription.source === "manual", "구독 상태 반영");
+ok(meA.personal.quotaBytes === 10 * 1024 ** 3, `개인 용량 10GB (${meA.personal.quotaBytes})`);
 
 // 업로드
-const img = fakeImage();
 const up = await upload(a, meA.personal.id, img);
 ok(up.action === "upload", "새 사진 → upload");
 ok(up.done.status === 200 && up.done.data.assets?.length === 1, `업로드 완료 (${up.done.status} ${JSON.stringify(up.done.data).slice(0, 120)})`);
@@ -177,7 +189,8 @@ const token = inv.data.token;
 await signUp(b, "동생");
 const meB = (await b("/api/me")).data;
 ok((await b(`/api/spaces/${space.id}`)).status === 404, "초대 전에는 Space 접근 불가");
-// B가 A의 사진 해시를 알아도 link 불가 (존재 여부 비노출)
+// B가 A의 사진 해시를 알아도 link 불가 (존재 여부 비노출). 구독 검사(402)가 먼저라 잠시 구독을 켜고 검사한다
+await b("/api/dev/subscribe", { method: "POST" });
 const probe = await b("/api/uploads/prepare", {
   method: "POST", json: { libraryId: meB.personal.id, files: [{ sha256: img.sha256, size: img.bytes.length, mime: "image/jpeg" }] },
 });
@@ -187,6 +200,8 @@ const steal = await b("/api/uploads/complete", {
   json: { libraryId: meB.personal.id, items: [{ sha256: img.sha256, size: img.bytes.length, mime: "image/jpeg", width: 1, height: 1, filename: null, takenAt: Date.now(), lat: null, lng: null, camera: null, dhash: null, blurhash: null }] },
 });
 ok(steal.status === 403, `영수증 없이 남의 Blob 등록 시도 → 403 (${steal.status})`);
+await b("/api/dev/subscribe?off", { method: "POST" });
+ok((await b("/api/me")).data.subscription?.active === false, "동생 구독 끔 (구독 없는 가족 흐름)");
 
 const preview = await b(`/api/invites/${token}`);
 ok(preview.data.spaceName === "우리 가족" && preview.data.valid, "초대 미리보기");
@@ -195,10 +210,19 @@ ok(acc.data.joined === true, "초대 수락");
 const spB = (await b(`/api/spaces/${space.id}`)).data;
 ok(spB.members?.length === 2 && spB.myRole === "editor", "멤버 2명, 동생은 참여자");
 
-// 함께 업로드
+// 함께 업로드: 동생은 구독이 없지만 소속 Space에는 올릴 수 있다 (D-016). 용량은 소유자(엄마) 몫
 const imgB = fakeImage();
+const bOwn = await b("/api/uploads/prepare", {
+  method: "POST", json: { libraryId: meB.personal.id, files: [{ sha256: imgB.sha256, size: imgB.bytes.length, mime: "image/jpeg" }] },
+});
+ok(bOwn.status === 402, `구독 없는 동생은 내 사진함 업로드 불가 (${bOwn.status})`);
+const usedBefore = (await a("/api/me")).data.personal.usedBytes;
 const upB = await upload(b, space.libraryId, imgB, Date.now() - 86400_000);
-ok(upB.done.data.assets?.length === 1, "동생이 Space에 업로드");
+ok(upB.done.data.assets?.length === 1, "동생이 Space에 업로드 (구독 없이)");
+const usedAfter = (await a("/api/me")).data.personal.usedBytes;
+ok(usedAfter === usedBefore + imgB.bytes.length, `동생이 올린 사진은 소유자(엄마) 용량에서 차감 (${usedBefore} → ${usedAfter})`);
+const spUsage = (await b(`/api/spaces/${space.id}`)).data;
+ok(spUsage.library.usedBytes === usedAfter && spUsage.ownerSubscribed === true, "Space 화면의 용량은 소유자 것");
 const spTl = (await a(`/api/libraries/${space.libraryId}/assets`)).data;
 ok(spTl.assets?.length === 2, "엄마도 Space 타임라인에서 2장 확인");
 const feed = (await a(`/api/spaces/${space.id}/activities`)).data;
@@ -248,6 +272,8 @@ const c = client();
 const d = client();
 await signUp(c, "아빠");
 await signUp(d, "삼촌");
+await c("/api/dev/subscribe", { method: "POST" });
+await d("/api/dev/subscribe", { method: "POST" });
 const meC = (await c("/api/me")).data;
 const meD = (await d("/api/me")).data;
 const s2 = (await a("/api/spaces", { method: "POST", json: { name: "역할 테스트" } })).data;
@@ -292,9 +318,9 @@ ok(delAsset.data.removed === 1, "개인 라이브러리에서 삭제");
 const stillThere = await fetch(BASE + momAssetInSpace.urls.original);
 ok(stillThere.status === 200, "Space의 같은 사진은 그대로 (Blob 참조 유지)");
 
-// 용량 반영
+// 용량 반영: 개인 사진함은 비었지만 소유한 Space의 사진(2장)은 내 용량에 남는다
 const meA2 = (await a("/api/me")).data;
-ok(meA2.personal.usedBytes === 0, `개인 사용량 0으로 복귀 (${meA2.personal.usedBytes})`);
+ok(meA2.personal.usedBytes === 2 * img.bytes.length, `개인 사용량 = 소유 Space 2장 (${meA2.personal.usedBytes})`);
 ok(meA2.spaces?.[0]?.assetCount === 2, "Space 사진 수 2");
 
 // 소유자는 그냥 못 나감

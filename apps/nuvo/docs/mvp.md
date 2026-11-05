@@ -26,15 +26,19 @@
 
 예전 "이후 단계" 목록(외부 클라우드 연동, 모바일 백업 앱(Expo), 데스크톱 앱(Tauri), 동영상(서버 변환), 결제, 앨범·휴지통·게스트 링크, AI 검색·얼굴·지도, presigned multipart)은 11/04 무효입니다. 다음 단계는 [service-plan.md](service-plan.md) "순서 제안"과 [roadmap-video-classification.md](roadmap-video-classification.md)에서 다시 정합니다.
 
-## 현재 용량 한도 (코드 값, 2026-11-04)
+## 용량·구독 (코드 값, 2026-11-05)
 
-MVP 때 클라우드 무료 사용량 안에 맞춰 정한 값입니다. **목표는 개인 10GB 구독**이고([service-plan.md](service-plan.md)), 계정을 옮기고 결제를 붙일 때 바꿉니다. 그때까지는 이 값이 운영에 걸려 있습니다.
+용량은 **사람 단위**입니다([decisions.md](decisions.md) D-016). Space는 별도 용량이 없고 **Space 소유자의 개인 용량**에서 차감합니다(`worker/lib/capacity.ts`).
 
 | 항목 | 값 | 근거 |
 |---|---|---|
-| 개인 사진함 | 2GB (약 600장) | `PERSONAL_QUOTA_GB` |
-| Space | 5GB (약 1,500장) | `SPACE_QUOTA_GB` |
-| **서비스 전체** | **8GB** | `STORAGE_CAP_GB`. R2 무료 10GB는 계정 공용 (아래 "계정 공용 한도") |
+| 개인 용량 (내 사진함 + 내가 만든 Space 합) | 10GB | `PERSONAL_QUOTA_GB`. 라이브러리 행의 `quota_bytes`에 저장(바꿔도 이미 만든 사진함에는 반영되지 않음) |
+| Space 라이브러리 | `quota_bytes` 0 (= 소유자 용량) | 11/05 마이그레이션 0004에서 기존 행도 0으로 |
+| **서비스 전체** | **8GB** | `STORAGE_CAP_GB`. R2 무료 10GB는 계정 공용 (아래 "계정 공용 한도"). 계정을 옮기면 비용 알림으로 대체 |
+
+**업로드 허용 조건** = (구독자 and 내 사진함) **or** (Space 멤버 editor 이상 and Space 소유자가 구독자 and 소유자 용량 남음). 구독 없는 가족도 초대받은 Space에는 올릴 수 있고, 그 사진은 소유자 용량에서 차감됩니다. 소유자 구독이 끝나면 Space는 보기만 되고 올리기가 막힙니다. 구독이 필요한 요청은 **402**, 용량 초과는 413, 서비스 상한은 507입니다.
+
+**구독 상태**는 `subscriptions` 표(source `manual` / `apple` / `google`)이고, "구독자인가"는 `worker/lib/subscription.ts`의 `subscriptionOf` 하나로 판단합니다. 1차는 운영자가 켜는 `manual`만 씁니다(로컬: `POST /api/dev/subscribe`, 운영: [developer-guide.md](developer-guide.md) "수동 구독"). Apple·Google은 2차에서 영수증 검증·서버 간 통지로 채웁니다.
 
 - 전체 저장량(등록된 원본 + 완료 전·삭제 대기 업로드, 썸네일 몫 12% 포함)이 상한을 넘는 업로드는 507로 거부하고, 화면은 남은 업로드를 모두 멈춥니다. 이미 있는 사진에 연결(link)하는 것은 저장량이 늘지 않아서 막지 않습니다.
 - 동시에 올리면 상한을 조금 넘을 수 있어서, 계정 배분(nuvo 8 + portfolio-web 1)에서 1GB를 여유로 남겼습니다.
@@ -98,6 +102,7 @@ user / session / account / verification   Better Auth
 blobs        물리 파일 (sha256 유일, refCount). 여러 Asset이 공유, 참조 0이면 R2에서 삭제
 libraries    personal(userId) | space(spaceId), quotaBytes, usedBytes
 assets       라이브러리 안 사진 1장 (blobId, uploadedBy, takenAt, gps, camera, dhash, blurhash)
+subscriptions 구독 (userId, source manual|apple|google, status, currentPeriodEnd, externalId). 구독자 판단은 worker/lib/subscription.ts
 spaces / space_members(owner|admin|editor|viewer) / invites(7일, 10명)
 activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한 줄로 합침
 ```
@@ -152,6 +157,7 @@ activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한
 
 - **이 PC 폴더 참조는 Chrome/Edge 데스크톱만** 지원합니다. 다른 브라우저는 열 때마다 폴더를 다시 골라야 합니다 (1회 스캔).
 - 사진만 지원하고, 파일당 100MB까지입니다.
+- 소유자 용량 검사는 라이브러리별 `used_bytes` 합으로 하므로, 동시에 여러 기기에서 올리면 한도를 조금 넘을 수 있습니다(완료 단계에서 다시 검사해 되돌리지만 틈은 있습니다).
 - 3D 보기는 최근 240장만 보여줍니다.
 - **썸네일은 처음 올린 사람의 브라우저가 만듭니다.** 같은 원본 파일을 가진 사람이 먼저 올리면서 엉뚱한 썸네일을 붙이면, 뒤에 같은 사진을 올린 사람도 그 썸네일을 봅니다 (원본은 항상 정확합니다). 원본을 가진 사람만 할 수 있어서 MVP에서는 받아들이고, 외부 클라우드 연동 단계에서 서버 썸네일 생성(Cloudflare Images)으로 바꿉니다.
 - 중복 정리는 nuvo 사진끼리만 합니다. PC 파일은 지우지 않습니다.

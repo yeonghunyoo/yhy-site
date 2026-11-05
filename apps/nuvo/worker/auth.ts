@@ -7,11 +7,9 @@ import { mailBudget } from "./lib/usage";
 
 const GB = 1024 ** 3;
 
-export function quotas(env: Env) {
-  return {
-    personal: Number(env.PERSONAL_QUOTA_GB || 5) * GB,
-    space: Number(env.SPACE_QUOTA_GB || 20) * GB,
-  };
+/** 개인 구독 용량. Space 라이브러리는 quotaBytes 0 — 소유자의 개인 용량에서 차감한다 (worker/lib/capacity.ts) */
+export function personalQuotaBytes(env: Env) {
+  return Number(env.PERSONAL_QUOTA_GB || 10) * GB;
 }
 
 export function enabledProviders(env: Env) {
@@ -116,7 +114,7 @@ export function createAuth(env: Env, db: Db, origin: string, defer: Defer) {
           after: async (u) => {
             await db
               .insert(libraries)
-              .values({ type: "personal", userId: u.id, quotaBytes: quotas(env).personal })
+              .values({ type: "personal", userId: u.id, quotaBytes: personalQuotaBytes(env) })
               .onConflictDoNothing();
           },
         },

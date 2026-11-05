@@ -6,7 +6,7 @@
 
 | 단계 | 상태 |
 |---|---|
-| 1차 웹(서버) | **시작 전.** 문서·결정 정리 완료 |
+| 1차 웹(서버) | **진행 중.** ②용량·③구독 상태 모델 구현(11/05). 나머지 대기 |
 | 2차 모바일 | 대기 |
 | 3차 동영상·분류 | 대기(제안 V1~V11) |
 
@@ -21,17 +21,18 @@
 - [ ] 코드 후속: `STORAGE_CAP_GB` 제거(또는 0), 비용 알림을 대시보드에서 설정(15단계), `mvp.md`·site `cost-guard.md`의 "계정 공용 한도" 표 삭제, `docs/monorepo.md` 계정 표 갱신
 
 ### ② 용량 모델 — 코드
-- [ ] `PERSONAL_QUOTA_GB` 2 → **10**. `SPACE_QUOTA_GB` **제거** — Space 업로드는 소유자의 개인 한도에서 차감(D-016)
-- [ ] 업로드 허용 조건 = (구독자 and 자기 사진함) **or** (Space 멤버 and 소유자 한도 남음). 구독 없는 멤버가 올리면 소유자 몫 차감. 한도가 차면 Space 전체 업로드 멈춤 + 소유자에게 알림(피드·메일)
-- [ ] 한도 초과 응답(지금 507)과 화면 안내 문구를 "구독 용량"에 맞게. 구독 없는 사용자에게는 "앱에서 구독" 안내(⑧)
-- [ ] 스모크 테스트 갱신(용량·구독 시나리오)
+- [x] `PERSONAL_QUOTA_GB` 2 → **10**. `SPACE_QUOTA_GB` **제거** — Space 라이브러리 `quota_bytes` 0, 소유자의 개인 한도에서 차감(D-016). 마이그레이션 0004 (11/05)
+- [x] 업로드 허용 조건 = (구독자 and 자기 사진함) **or** (Space 멤버 and 소유자 구독 and 소유자 한도 남음) — `worker/lib/capacity.ts` `assertUploadAllowed`. prepare·blob·complete·copy 모두 거침 (11/05)
+- [ ] 한도가 찼을 때 소유자에게 알림(피드·메일) — 아직 413 응답만
+- [x] 화면: 설정에 구독 상태·"내 사진함 + 내가 만든 Space" 용량, Space 화면에 소유자 용량·구독 종료 안내, 업로드 큐 402 처리 (11/05). "앱에서 구독" 링크는 ⑧
+- [x] 스모크 테스트 갱신: 402, 가족 업로드 → 소유자 차감, 구독 켬/끔 (11/05). **로컬 Postgres가 있는 환경에서 `pnpm nuvo:smoke`로 확인 필요**
 - 관련 코드: `worker/lib/capacity.ts`, `worker/routes/uploads.ts`, `wrangler.jsonc` vars, `packages/nuvo-shared` 상수
 
 ### ③ 구독 상태 모델 — 코드
-- [ ] `packages/nuvo-db`에 `subscriptions` 표: userId, source(`manual` / `apple` / `google`), productId, status(active/grace/expired), currentPeriodEnd, 원본 식별자(originalTransactionId / purchaseToken), 갱신 시각. 마이그레이션
-- [ ] "이 계정은 구독자" 판단 함수 하나(`worker/lib/subscription.ts`): active 또는 grace면 참. 웹·앱·업로드 검사가 모두 이 함수만 봄
-- [ ] 1차는 **운영자가 수동으로 켜는 `manual`** 행만. 켜고 끄는 건 DB 직접 또는 작은 관리자 스크립트(`scripts/`)
-- [ ] API: `GET /api/me`에 구독 상태(source·만료일) 포함 → 화면이 "구독 중 / 앱에서 구독" 분기
+- [x] `packages/nuvo-db` `subscriptions` 표 + 마이그레이션 0004 (11/05)
+- [x] `worker/lib/subscription.ts` `subscriptionOf` 하나로 판단 (11/05)
+- [x] 1차는 `manual`만: 로컬 `POST /api/dev/subscribe`, 운영은 SQL([developer-guide.md](developer-guide.md) "수동 구독") (11/05)
+- [x] `GET /api/me`에 `subscription` 포함, Space 조회에 `ownerSubscribed` (11/05)
 - [ ] 2차를 위한 자리만: Apple App Store Server Notifications·Google RTDN을 받을 라우트 경로 예약(`/api/billing/apple`, `/api/billing/google`) — 구현은 2차
 - 중복 구독 방지·해지는 2차(스토어 연동 때)
 

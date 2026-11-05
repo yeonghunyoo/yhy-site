@@ -103,14 +103,28 @@ export function SettingsPage() {
 
       {me.signedIn && me.data && (
         <>
+          <Section title="구독">
+            {me.data.subscription.active ? (
+              <p className="text-sm">
+                구독 중
+                <span className="ml-2 text-xs text-faint">
+                  {me.data.subscription.source === "apple" ? "App Store" : me.data.subscription.source === "google" ? "Google Play" : "운영자 설정"}
+                  {me.data.subscription.currentPeriodEnd ? ` · ${new Date(me.data.subscription.currentPeriodEnd).toLocaleDateString()}까지` : ""}
+                </span>
+              </p>
+            ) : (
+              <p className="text-sm text-muted">구독하면 사진을 nuvo에 백업하고 가족 Space를 만들 수 있어요. 구독은 nuvo 앱에서 할 수 있어요 (준비 중).</p>
+            )}
+            <p className="mt-2 text-xs text-faint">초대받은 가족 Space는 구독 없이 보고 올릴 수 있어요. 구독 관리와 해지는 결제한 스토어에서 해요.</p>
+          </Section>
           {p && (
             <Section title="저장 공간">
               <div className="mb-2 flex justify-between text-sm">
-                <span className="text-muted">내 라이브러리</span>
+                <span className="text-muted">내 사진함 + 내가 만든 Space</span>
                 <span>{formatBytes(p.usedBytes)} / {formatBytes(p.quotaBytes)}</span>
               </div>
-              <Progress value={p.usedBytes / p.quotaBytes} />
-              <p className="mt-3 text-xs text-faint">Space 사진은 각 Space의 공간을 사용해요. 유료 플랜은 준비 중이에요.</p>
+              <Progress value={p.quotaBytes ? p.usedBytes / p.quotaBytes : 0} />
+              <p className="mt-3 text-xs text-faint">가족이 내 Space에 올린 사진도 내 용량에서 차감돼요. 초대받은 Space는 그 Space 소유자의 용량을 써요.</p>
             </Section>
           )}
           <Section title="계정">

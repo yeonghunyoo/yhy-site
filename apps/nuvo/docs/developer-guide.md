@@ -258,10 +258,25 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 | `GOOGLE_CLIENT_ID` / `_SECRET` | `wrangler secret` / `.dev.vars` | 12단계 | 비우면 버튼 숨김 |
 | `KAKAO_CLIENT_ID` / `_SECRET` | `wrangler secret` / `.dev.vars` | 13단계 | 비우면 버튼 숨김 |
 | `ENVIRONMENT` | `wrangler.jsonc` vars (`production`) / `.dev.vars` (`development`) | — | `development`일 때만 이메일 로그인 |
-| `PERSONAL_QUOTA_GB` / `SPACE_QUOTA_GB` | `wrangler.jsonc` vars | — | MVP 2 / 5 (무료 운영). 바꿔도 이미 만든 사진함에는 반영되지 않음 |
+| `PERSONAL_QUOTA_GB` | `wrangler.jsonc` vars | — | 개인 구독 용량 10. Space는 별도 용량 없이 소유자 용량에서 차감([mvp.md](mvp.md) "용량·구독"). 바꿔도 이미 만든 사진함에는 반영되지 않음 |
 | `STORAGE_CAP_GB` | `wrangler.jsonc` vars | — | 서비스 전체 저장 상한, 지금 8 — 계정을 옮기면 비용 알림으로 대체 ([service-plan.md](service-plan.md)) (R2 무료 10GB는 portfolio-web과 계정 공용, [mvp.md](mvp.md) "계정 공용 한도"). 0이면 상한 없음 |
 | `MAIL_DAILY_CAP` / `MAIL_MONTHLY_CAP` | `wrangler.jsonc` vars | — | 서비스 전체 메일 상한 80 / 2,800 (Resend 무료 100 / 3,000 아래, [mvp.md](mvp.md) "메일 상한") |
 | Hyperdrive `id` | `wrangler.jsonc` | 8단계 | |
+
+## 수동 구독 (1차, 스토어 결제 전)
+
+결제 연동 전에는 운영자가 DB에서 직접 구독을 켭니다. 켜진 계정만 내 사진함 업로드·Space 만들기가 됩니다(가족은 구독 없이 초대받은 Space 보기·올리기).
+
+```sql
+-- 켜기 (사용자 id는 user 표에서 이메일로 찾는다)
+INSERT INTO subscriptions (user_id, source, status, note)
+SELECT id, 'manual', 'active', '운영자 수동' FROM "user" WHERE email = 'someone@example.com';
+-- 끄기
+UPDATE subscriptions SET status = 'canceled', updated_at = now()
+WHERE source = 'manual' AND user_id = (SELECT id FROM "user" WHERE email = 'someone@example.com');
+```
+
+로컬 개발 서버는 로그인한 계정으로 `POST /api/dev/subscribe`(끄기는 `?off`)를 부르면 됩니다. 운영에서는 404입니다.
 
 ## 결정이 필요한 것
 

@@ -73,7 +73,7 @@ export function LibraryPage() {
                 {formatBytes(personal.usedBytes)} / {formatBytes(personal.quotaBytes)}
               </span>
             </div>
-            <Progress value={personal.usedBytes / personal.quotaBytes} />
+            <Progress value={personal.quotaBytes ? personal.usedBytes / personal.quotaBytes : 0} />
           </div>
         )}
       </section>

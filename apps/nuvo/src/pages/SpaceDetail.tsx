@@ -134,8 +134,10 @@ export function SpaceDetailPage() {
 
       <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-72 shrink-0 overflow-y-auto pt-8 xl:block">
         <div className="mb-6 text-xs text-faint">
-          <div className="mb-1.5 flex justify-between"><span>Space 저장 공간</span><span>{formatBytes(s.library.usedBytes)} / {formatBytes(s.library.quotaBytes)}</span></div>
-          <Progress value={s.library.usedBytes / s.library.quotaBytes} />
+          <div className="mb-1.5 flex justify-between"><span>소유자 저장 공간</span><span>{formatBytes(s.library.usedBytes)} / {formatBytes(s.library.quotaBytes)}</span></div>
+          <Progress value={s.library.quotaBytes ? s.library.usedBytes / s.library.quotaBytes : 0} />
+          <p className="mt-1.5">이 Space 사진 {formatBytes(s.library.ownBytes)}. Space에 올린 사진은 소유자의 용량을 써요.</p>
+          {!s.ownerSubscribed && <p className="mt-1.5 text-danger">소유자의 구독이 끝나 지금은 올릴 수 없어요. 보기는 그대로예요.</p>}
         </div>
         <Feed activities={feed.data ?? []} />
         {assets.assets.length > 1 && (

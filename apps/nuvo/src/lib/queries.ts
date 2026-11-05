@@ -52,7 +52,9 @@ export function useSpace(spaceId: string | undefined) {
       id: string;
       name: string;
       myRole: SpaceRole;
-      library: { id: string; type: "space"; usedBytes: number; quotaBytes: number };
+      /** usedBytes·quotaBytes는 소유자 것(개인 + 소유 Space 합), ownBytes는 이 Space만 */
+      library: { id: string; type: "space"; usedBytes: number; quotaBytes: number; ownBytes: number };
+      ownerSubscribed: boolean;
       members: Member[];
     }>,
   });

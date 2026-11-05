@@ -5,7 +5,8 @@ import { HTTPException } from "hono/http-exception";
 import { enabledProviders } from "./auth";
 import { collectGarbage } from "./lib/gc";
 import { devOutbox } from "./lib/mail";
-import { withContext, withSession, type AppEnv } from "./context";
+import { requireUser, withContext, withSession, type AppEnv } from "./context";
+import { setManualSubscription } from "./lib/subscription";
 import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
 import { inviteRoutes, spaceRoutes } from "./routes/spaces";
@@ -25,6 +26,14 @@ const api = new Hono<AppEnv>()
   .use(withContext)
   .on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw))
   .use(withSession)
+  /** 로컬 개발 전용: 내 계정의 수동 구독 켜기/끄기 (스모크·E2E용). 운영에서는 404 */
+  .post("/dev/subscribe", async (c) => {
+    if (c.env.ENVIRONMENT === "production") return c.json({ error: "not found" }, 404);
+    const user = requireUser(c);
+    const on = c.req.query("off") == null;
+    await setManualSubscription(c.var.db, user.id, on, "dev");
+    return c.json({ ok: true, active: on });
+  })
   .get("/health/db", async (c) => {
     const [row] = await c.var.db.execute<{ now: string }>(sql`select now() as now`);
     return c.json({ ok: true, now: row?.now });

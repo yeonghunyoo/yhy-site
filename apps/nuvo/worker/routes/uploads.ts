@@ -13,18 +13,12 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requireUser, type AppEnv } from "../context";
 import { accessibleLibraryIds, requireLibrary } from "../lib/access";
-import { assertServiceCapacity } from "../lib/capacity";
+import { assertServiceCapacity, assertUploadAllowed, billingOwner, ownerUsage } from "../lib/capacity";
 import { assetColumns, recordSpaceActivity, toCloudAsset } from "../lib/assets";
 import { lockShas, PENDING_UPLOAD_TTL_MS } from "../lib/gc";
 import { r2Key, signReceipt, verifyReceipt } from "../lib/sign";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
-
-function quotaError(used: number, quota: number, need: number) {
-  return new HTTPException(413, {
-    message: `저장 공간이 부족해요 (${Math.round((used + need - quota) / 1024 / 1024)}MB 초과)`,
-  });
-}
 
 export const uploads = new Hono<AppEnv>()
   /**
@@ -62,14 +56,15 @@ export const uploads = new Hono<AppEnv>()
       seen.add(f.sha256);
       return link.has(f.sha256) ? { sha256: f.sha256, action: "link" } : { sha256: f.sha256, action: "upload" };
     });
-    if (lib.usedBytes + need > lib.quotaBytes) throw quotaError(lib.usedBytes, lib.quotaBytes, need);
+    // 구독 + 소유자 용량 (Space는 소유자의 개인 용량에서 차감, docs/decisions.md D-016)
+    const usage = await assertUploadAllowed(db, lib, need);
     // 새로 R2에 쓰는 원본만 서비스 상한에 넣는다 (link는 기존 Blob을 공유하므로 저장량이 늘지 않음)
     const newBytes = files
       .filter((f, i) => results[i]!.action === "upload" && files.findIndex((g) => g.sha256 === f.sha256) === i)
       .reduce((s, f) => s + f.size, 0);
     await assertServiceCapacity(db, c.env, newBytes);
 
-    return c.json({ results, usedBytes: lib.usedBytes, quotaBytes: lib.quotaBytes });
+    return c.json({ results, usedBytes: usage.usedBytes, quotaBytes: usage.quotaBytes });
   })
 
   /**
@@ -99,9 +94,7 @@ export const uploads = new Hono<AppEnv>()
       .select({ pending: sql<number>`coalesce(sum(${r2Gc.bytes}), 0)::bigint` })
       .from(r2Gc)
       .where(and(eq(r2Gc.owner, user.id), gt(r2Gc.dueAt, now), ne(r2Gc.sha256, sha)));
-    if (lib.usedBytes + Number(pending) + len > lib.quotaBytes) {
-      throw quotaError(lib.usedBytes + Number(pending), lib.quotaBytes, len);
-    }
+    await assertUploadAllowed(db, lib, len, Number(pending));
     if (!existing) await assertServiceCapacity(db, c.env, len);
     const row = { sha256: sha, owner: user.id, bytes: len, dueAt: new Date(now.getTime() + PENDING_UPLOAD_TTL_MS) };
     await db
@@ -150,6 +143,8 @@ export const uploads = new Hono<AppEnv>()
     const db = c.var.db;
     const env = c.env;
     const { lib } = await requireLibrary(db, user.id, libraryId, "editor");
+    // 구독 확인만 (용량은 prepare·blob에서 봤다. 여기서 막으면 R2에 올린 원본이 대기열에 남아 cron이 지운다)
+    await assertUploadAllowed(db, lib, 0);
 
     const shas = [...new Set(items.map((i) => i.sha256))];
     const libs = await accessibleLibraryIds(db, user.id);
@@ -240,7 +235,13 @@ export const uploads = new Hono<AppEnv>()
         .where(eq(libraries.id, libraryId))
         .returning({ usedBytes: libraries.usedBytes });
       if (!updated) throw new HTTPException(404, { message: "라이브러리를 찾을 수 없어요" });
-      if (updated.usedBytes > lib.quotaBytes) throw quotaError(lib.usedBytes, lib.quotaBytes, added);
+      // 동시 업로드로 소유자 용량을 넘겼으면 되돌린다 (413이면 트랜잭션 롤백)
+      if (added > 0) {
+        const usage = await ownerUsage(tx, (await billingOwner(tx, lib)) ?? user.id);
+        if (usage.usedBytes > usage.quotaBytes) {
+          throw new HTTPException(413, { message: `저장 공간이 부족해요 (${Math.round((usage.usedBytes - usage.quotaBytes) / 1024 / 1024)}MB 초과)` });
+        }
+      }
 
       for (const r of inserted) {
         await tx.update(blobs).set({ refCount: sql`${blobs.refCount} + 1` }).where(eq(blobs.id, r.blobId));

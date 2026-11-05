@@ -7,6 +7,8 @@ import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { requireUser, type AppEnv } from "../context";
 import { accessibleLibraryIds, isUuid, libraryAccess, requireLibrary } from "../lib/access";
+import { assertUploadAllowed, ownerUsage } from "../lib/capacity";
+import { subscriptionOf } from "../lib/subscription";
 import { assetColumns, kickFromHub, lockLibraries, recordSpaceActivity, removeAssets, toCloudAsset } from "../lib/assets";
 import { collectGarbage } from "../lib/gc";
 import { signMediaUrl } from "../lib/sign";
@@ -116,12 +118,13 @@ export const assetRoutes = new Hono<AppEnv>()
         .returning({ id: assets.id, blobId: assets.blobId });
       const sizeOf = new Map(src.map((s) => [s.blobId, s.size]));
       const added = ins.reduce((n, r) => n + (sizeOf.get(r.blobId) ?? 0), 0);
-      const [u] = await tx
+      await tx
         .update(libraries)
         .set({ usedBytes: sql`${libraries.usedBytes} + ${added}` })
-        .where(eq(libraries.id, targetLibraryId))
-        .returning({ usedBytes: libraries.usedBytes });
-      if (u && u.usedBytes > lib.quotaBytes) throw new HTTPException(413, { message: "저장 공간이 부족해요" });
+        .where(eq(libraries.id, targetLibraryId));
+      // 소유자 용량으로 검사 (넘으면 트랜잭션이 되돌린다). 구독 확인도 여기서
+      const usage = await assertUploadAllowed(tx, lib, 0);
+      if (added > 0 && usage.usedBytes > usage.quotaBytes) throw new HTTPException(413, { message: "저장 공간이 부족해요" });
       for (const r of ins) await tx.update(blobs).set({ refCount: sql`${blobs.refCount} + 1` }).where(eq(blobs.id, r.blobId));
       return ins;
     });
@@ -270,11 +273,12 @@ export const assetRoutes = new Hono<AppEnv>()
       })),
     );
     const [u] = await db.select().from(userTable).where(eq(userTable.id, user.id));
+    // 용량은 사람 단위: 개인 + 내가 소유한 Space의 합 (docs/decisions.md D-016)
+    const [usage, subscription] = await Promise.all([ownerUsage(db, user.id), subscriptionOf(db, user.id)]);
     return c.json({
       user: { id: user.id, name: u?.name ?? user.name, email: u?.email ?? user.email, image: u?.image ?? null },
-      personal: personal
-        ? { id: personal.id, type: "personal" as const, usedBytes: personal.usedBytes, quotaBytes: personal.quotaBytes }
-        : null,
+      personal: personal ? { id: personal.id, type: "personal" as const, usedBytes: usage.usedBytes, quotaBytes: usage.quotaBytes } : null,
+      subscription,
       spaces: spacesOut,
     });
   });

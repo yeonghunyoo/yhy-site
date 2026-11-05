@@ -29,6 +29,13 @@
       "when": 1793786782223,
       "tag": "0003_usage_counter",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793844793482,
+      "tag": "0004_subscriptions",
+      "breakpoints": true
     }
   ]
 }

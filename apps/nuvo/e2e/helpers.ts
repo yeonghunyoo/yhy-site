@@ -1,6 +1,6 @@
 import { expect, type Browser, type Page } from "@playwright/test";
 
-export async function signUp(page: Page, name: string) {
+export async function signUp(page: Page, name: string, subscribe = true) {
   const email = `e2e${Date.now()}${Math.floor(Math.random() * 1e5)}@test.nuvo`;
   await page.goto("/signin");
   await page.getByRole("button", { name: "처음이신가요? 가입하기" }).click();
@@ -13,6 +13,8 @@ export async function signUp(page: Page, name: string) {
   const link = await outboxLink(page, email, /verify-email/);
   await page.goto(link);
   await expect(page).toHaveURL(/\/library/);
+  // 테스트 계정은 구독자로 (백업·Space 만들기에 필요, 로컬 전용 /api/dev/subscribe). 구독 없는 흐름은 subscribe=false
+  if (subscribe) await page.request.post("/api/dev/subscribe");
   return email;
 }
 
