@@ -227,12 +227,14 @@ export default function ChatDock({ dict, locale }: Props) {
       <button
         type="button"
         data-action="chat"
+        data-chat-fab
         aria-label={dict.chat.open}
-        className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 grid size-14 place-items-center rounded-full bg-accent text-accent-fg shadow-lg"
+        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-2 rounded-[var(--radius)] border border-border bg-surface/95 px-4 font-mono text-sm text-fg shadow-lg backdrop-blur"
       >
-        <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" strokeLinejoin="round" />
-        </svg>
+        {/* 터미널 프롬프트 모양(11/05): $ + 문구 + 깜빡이는 커서. 숨김·보임은 src/lib/chat-fab.ts가 <html data-fab>로 */}
+        <span className="text-accent" aria-hidden="true">$</span>
+        <span>{dict.chat.fab}</span>
+        <span className="chat-fab-caret" aria-hidden="true" />
       </button>
     );
   }

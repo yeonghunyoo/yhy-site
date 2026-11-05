@@ -127,7 +127,8 @@
       "connections": "Connections",
       "hint": "Pinch to zoom · double-tap to fit",
       "fit": "Fit to screen"
-    }
+    },
+    "fab": "ask yh"
   },
   "home": {
     "role": "Yeonghun Yoo · Software Engineer · iOS · Builder",

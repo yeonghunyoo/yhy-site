@@ -31,29 +31,59 @@ export function initHero(): void {
 
   root.classList.add('is-live');
   let hero: Hero | null = null;
-  let queued = false;
+  // 휠은 한 번에 100px씩 뛰어 장면이 뚝뚝 끊긴다(11/05) — 스크롤 위치는 목표로만 쓰고,
+  // 화면에 쓰는 값은 매 프레임 목표를 부드럽게 따라간다(시간 상수 TAU, 프레임 수와 무관)
+  const TAU = 110;
+  const cur = { p: -1, o: 0, q: 0 };
+  let running = false;
+  let lastT = 0;
 
-  const frame = () => {
-    queued = false;
+  const targets = () => {
     const vh = innerHeight;
     const y = scrollY - root.offsetTop;
-    const p = clamp(y / (vh * HERO_VH));
-    const o = clamp((y - vh * HERO_VH) / (vh * HOLD_VH * 0.7));
-    const q = clamp((y - vh * (HERO_VH + HOLD_VH)) / vh);
-    hero?.setProgress(p);
-    hero?.setOutro(o);
-    for (const c of caps) c.classList.toggle('on', p >= Number(c.dataset.from) && p < Number(c.dataset.to));
-    shade.style.opacity = String(q * 0.75);
-    stage.style.transform = q > 0 ? `translate3d(0, ${(-q * vh * PARALLAX).toFixed(1)}px, 0)` : '';
+    return {
+      p: clamp(y / (vh * HERO_VH)),
+      o: clamp((y - vh * HERO_VH) / (vh * HOLD_VH * 0.7)),
+      q: clamp((y - vh * (HERO_VH + HOLD_VH)) / vh),
+    };
+  };
+
+  const apply = () => {
+    hero?.setProgress(cur.p);
+    hero?.setOutro(cur.o);
+    for (const c of caps) c.classList.toggle('on', cur.p >= Number(c.dataset.from) && cur.p < Number(c.dataset.to));
+    shade.style.opacity = String(cur.q * 0.75);
+    stage.style.transform = cur.q > 0 ? `translate3d(0, ${(-cur.q * innerHeight * PARALLAX).toFixed(1)}px, 0)` : '';
+  };
+
+  const step = (t: number) => {
+    const goal = targets();
+    const k = lastT ? 1 - Math.exp(-(t - lastT) / TAU) : 1;
+    lastT = t;
+    let moving = false;
+    for (const key of ['p', 'o', 'q'] as const) {
+      const d = goal[key] - cur[key];
+      if (cur[key] < 0 || Math.abs(d) < 0.0004) cur[key] = goal[key];
+      else {
+        cur[key] += d * k;
+        moving = true;
+      }
+    }
+    apply();
+    if (moving) requestAnimationFrame(step);
+    else {
+      running = false;
+      lastT = 0;
+    }
   };
   const request = () => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(frame);
+    if (running) return;
+    running = true;
+    requestAnimationFrame(step);
   };
   addEventListener('scroll', request, { passive: true });
   addEventListener('resize', request);
-  frame();
+  request();
 
   if (!hasWebGL()) return;
   import('./scene.js')
@@ -66,7 +96,7 @@ export function initHero(): void {
       const instance = hero;
       new ResizeObserver(() => instance.resize(canvas.clientWidth, canvas.clientHeight)).observe(canvas);
       root.classList.add('is-3d');
-      frame();
+      apply();
     })
     .catch(() => {
       // 3D를 못 띄우면 포스터 그대로

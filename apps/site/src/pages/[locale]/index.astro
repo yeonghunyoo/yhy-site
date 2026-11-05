@@ -30,9 +30,9 @@ const groups = stack(locale);
       <canvas class="story-canvas" aria-hidden="true"></canvas>
       <div class="story-shade" aria-hidden="true"></div>
       <h1 class="sr-only">{hero.title}</h1>
-      <p class="story-cap on" data-from="0" data-to="0.2"><span>// {hero.k1}</span><b>{hero.l1}</b></p>
-      <p class="story-cap" data-from="0.24" data-to="0.5"><span>// {hero.k2}</span><b>{hero.l2}</b></p>
-      <p class="story-cap" data-from="0.6" data-to="0.86"><span>// {hero.k3}</span><b>{hero.l3}</b></p>
+      <p class="story-cap on" data-side="l" data-from="0" data-to="0.2"><span>// {hero.k1}</span><b>{hero.l1}</b></p>
+      <p class="story-cap" data-side="r" data-from="0.24" data-to="0.5"><span>// {hero.k2}</span><b>{hero.l2}</b></p>
+      <p class="story-cap" data-side="l" data-from="0.6" data-to="0.86"><span>// {hero.k3}</span><b>{hero.l3}</b></p>
       <p class="story-cap story-final" data-from="0.9" data-to="1.01" lang="en"><b>BETTER CALL <em>YH!</em></b><span>{dict.contact.mail}</span></p>
     </div>
   </div>
@@ -151,6 +151,16 @@ const groups = stack(locale);
   .story-final.on { transform: translateY(-50%); }
   .story-final b { font-size: clamp(2.75rem, 10vw, 7.5rem); text-shadow: 0 0 24px var(--color-bg); }
   .story-final em { font-style: normal; color: var(--color-accent); }
+  /* 데스크톱(11/05): 문구를 화면 세로 가운데, 왼쪽·오른쪽 번갈아. 그늘도 그쪽 옆으로 */
+  @media (min-width: 768px) {
+    .story-cap[data-side] { top: 50%; bottom: auto; width: min(44%, 34rem); padding-inline: max(3rem, env(safe-area-inset-left)) max(3rem, env(safe-area-inset-right)); transform: translateY(calc(-50% + 8px)); }
+    .story-cap[data-side].on { transform: translateY(-50%); }
+    .story-cap[data-side='l'] { left: 0; right: auto; }
+    .story-cap[data-side='r'] { left: auto; right: 0; align-items: flex-end; text-align: right; }
+    .story-cap[data-side]::before { top: -50vh; bottom: -50vh; }
+    .story-cap[data-side='l']::before { left: 0; right: -40%; background: linear-gradient(to right, rgb(14 15 17 / 0.9) 45%, rgb(14 15 17 / 0)); }
+    .story-cap[data-side='r']::before { left: -40%; right: 0; background: linear-gradient(to left, rgb(14 15 17 / 0.9) 45%, rgb(14 15 17 / 0)); }
+  }
   /* 정적 히어로: 첫 문구 대신 마지막 문구 */
   .story:not(.is-live) .story-cap { opacity: 0; }
   .story:not(.is-live) .story-final { opacity: 1; }

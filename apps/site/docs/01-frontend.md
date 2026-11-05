@@ -61,9 +61,12 @@ src/
 `src/pages/[locale]/index.astro` + `src/lib/hero/hero.ts`(스크롤) + `src/lib/hero/scene.js`(three.js 장면·픽셀 셰이더). 세부 값·파이프라인은 [guides/3d-hero.md](guides/3d-hero.md).
 
 - **히어로** `.story`(`data-hero`): `hero.ts`가 `.is-live`를 붙이면 높이 552vh(화면 100 + 히어로 252 + 머묾 100 + 커튼 100 — 머묾 동안 픽셀이 가운데로 모여 사라짐), 무대 `.story-stage`는 sticky. 진행도 p(0~1)로 장면·문구(`data-from`·`data-to`)를 바꾼다. WebGL이면 `scene.js`를 동적 import해 `.is-3d`, 그 전에는 `public/hero/poster.webp`(80×45, 칸 그대로 키움)
+- **스크롤 관성(11/05)**: 휠이 100px씩 뛰어 장면이 끊겨서, 스크롤 위치는 목표로만 쓰고 화면 값(p·outro·커튼)은 매 프레임 목표를 따라간다(시간 상수 110ms, `hero.ts`)
+- **문구 위치(11/05)**: 데스크톱(768px+)은 화면 세로 가운데에 왼쪽·오른쪽 번갈아(`data-side`), 그늘도 그쪽 옆 그라데이션. 모바일은 아래쪽 그대로. 마지막 문장은 가운데
 - **커튼(패럴랙스)**: 본문 `.home-body`가 `margin-top: -100vh`로 히어로 위로 올라오고, 그동안 무대는 본문의 35% 속도로 올라가며 어두워진다(0 → 75%)
 - **정적 히어로**(움직임 줄이기·스크립트 없음·WebGL 없음): 높이 78dvh, 포스터 + "BETTER CALL YH!". 글은 모두 HTML(`h1`은 시각적으로 숨긴 이름·한 줄 소개)
 - **본문(S-010)**: 소개(큰 한 문장 + 문단 + 한 줄 메타) → 경력(최근 순, 지금 회사 기간만 강조색) → 스택(실무·개인 프로젝트, `src/data/stack.ts`) → 프로젝트(큰 제목 + 한 줄 + 스택, 지표 숫자는 강조색, 블록 전체가 상세 링크) → 연락(큰 문장 + 테두리 버튼 `data-action="letter"` + `hello@`). 표·구분선·장식 없음, 섹션 표시는 `// 소개` 같은 작은 고정폭 글자
+- **챗 버튼(11/05, 공통)**: 원형 아이콘 대신 터미널 프롬프트 모양(`$ yh에게 물어보기` + 깜빡이는 커서, `ChatDock.tsx` `[data-chat-fab]`). 자동 숨김·보임은 `src/lib/chat-fab.ts`가 `<html data-fab>`로 — 홈은 서버에서 숨긴 채 시작해 프로젝트 섹션이 화면 85% 위치에 오면 튀어 오르고, 그 뒤로는 아래로 스크롤하면 숨고 위로 스크롤하거나 0.7초 멈추면 보인다. 다른 페이지는 처음부터 보이고 같은 규칙. 움직임 줄이기면 전환 없이
 - 클래스 이름: daisyUI `hero`·`hero-content`와 겹치면 레이아웃이 깨진다(11/05 실제로 깨짐) — `story-*`·`home-*`
 - CSP: three.js는 같은 출처 청크라 그대로. 나중에 Meshopt 압축 모델을 쓰면 디코더가 WebAssembly라 `script-src`에 `'wasm-unsafe-eval'`이 필요하다(지금 임시 흉상은 모델 파일이 없어 해당 없음)
 

@@ -29,10 +29,12 @@ const site = Astro.site!;
 const path = Astro.url.pathname;
 const canonical = absolute(site, path);
 const alts = alternates(path, available);
+// 홈은 챗 버튼이 처음엔 숨어 있다가 프로젝트가 나올 때쯤 나온다(src/lib/chat-fab.ts) — 깜빡임 없게 서버에서 숨긴 채로
+const isHome = /^\/(ko|en)\/?$/.test(path);
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-fab={isHome ? 'hidden' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
@@ -75,5 +77,9 @@ const alts = alternates(path, available);
     {/* 2차 챗: 빌드 때 PUBLIC_CHAT_ENABLED=1일 때만 독을 넣는다(서버는 CHAT_ENABLED로 따로 잠금) */}
     {import.meta.env.PUBLIC_CHAT_ENABLED === '1' && <ChatDock client:demand dict={dict} locale={locale} />}
     <NavProgress />
+    <script>
+      import { initChatFab } from '../lib/chat-fab';
+      initChatFab();
+    </script>
   </body>
 </html>
