@@ -109,14 +109,20 @@ uniform float uDither;   // 0/1
 uniform float uMode;     // 0 = pixel, 1 = ascii(색 대신 글자 정보를 담는다: r 밝기 단계, g 윤곽 방향, b 강조)
 uniform float uGlyphs;   // ascii ramp 글자 수
 uniform float uEdge;
+uniform float uOutro;    // 0~1: 마지막 문장 뒤 — 장면이 가운데로 줄어들며 칸이 흩어져 사라진다
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
 float bayer2(vec2 a) { a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
 float bayer4(vec2 a) { return bayer2(0.5 * a) * 0.25 + bayer2(a); }
 
 vec3 sampleCell(vec2 cell) {
   vec2 uv = (cell + 0.5) / uGrid;
+  // outro: 가운데를 향해 줄어든다(화면 밖을 샘플하면 비어 있음)
+  uv = 0.5 + (uv - 0.5) / max(0.001, 1.0 - uOutro * 0.85);
+  if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return vec3(0.0);
   return pow(texture2D(tScene, uv).rgb, vec3(1.0 / 2.2));
 }
 
@@ -127,6 +133,7 @@ float lumAt(vec2 cell) {
 
 void main() {
   vec2 cell = floor(vUv * uGrid);
+  bool gone = uOutro > 0.0 && hash(cell) < uOutro * uOutro; // 칸이 하나씩 꺼진다
   vec3 c = sampleCell(cell);
   if (uBlur > 0.001) { // 칸 단위 상자 블러(반경 최대 3칸)
     float r = uBlur * 3.0;
@@ -149,13 +156,14 @@ void main() {
       code = floor(phi / 0.7853982) + 1.0; // 1 '-', 2 '/', 3 '|', 4 '\'
     }
     float level = floor(lum * (uGlyphs - 1.0) + 0.5) / (uGlyphs - 1.0);
+    if (gone) { level = 0.0; code = 0.0; }
     gl_FragColor = vec4(level, code / 4.0, accent ? 1.0 : 0.0, 1.0);
     return;
   }
   float d = mix(0.5, bayer4(cell), uDither);
   float q = clamp(floor(lum * (uLevels - 1.0) + d) / (uLevels - 1.0), 0.0, 1.0);
   vec3 col = accent ? mix(uDark, uAccent, q) : mix(uDark, uLight, q);
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(gone ? uDark : col, 1.0);
 }`;
 
 const hex = (h) => new THREE.Color(h);
@@ -271,6 +279,7 @@ export function createHero(canvas, options = {}) {
       uMode: { value: opts.mode === 'ascii' ? 1 : 0 },
       uGlyphs: { value: opts.ramp.length },
       uEdge: { value: opts.edge },
+      uOutro: { value: 0 },
       uDark: { value: hex(opts.palette.dark) },
       uLight: { value: hex(opts.palette.light) },
       uAccent: { value: hex(opts.palette.accent) },
@@ -306,7 +315,7 @@ export function createHero(canvas, options = {}) {
     return chars.length;
   }
   const glyphTotal = drawAtlas();
-  document.fonts?.load(`600 ${GLYPH * 0.82}px "IBM Plex Mono"`).then(() => { drawAtlas(); drawn = -1; render(); }, () => {});
+  document.fonts?.load(`600 ${GLYPH * 0.82}px "IBM Plex Mono"`).then(() => { drawAtlas(); drawn = ''; render(); }, () => {});
 
   const blit = new THREE.ShaderMaterial({
     vertexShader: VERT,
@@ -345,7 +354,8 @@ void main() {
   blitScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blit));
 
   let progress = 0;
-  let drawn = -1; // 마지막으로 그린 진행도 — 같으면 다시 그리지 않는다
+  let outro = 0;
+  let drawn = ''; // 마지막으로 그린 상태(진행도·outro) — 같으면 다시 그리지 않는다
   let width = 1;
   let height = 1;
 
@@ -362,7 +372,7 @@ void main() {
     width = Math.max(1, w);
     height = Math.max(1, h);
     renderer.setSize(width, height, false);
-    drawn = -1;
+    drawn = '';
     render();
   }
 
@@ -389,6 +399,7 @@ void main() {
     renderer.render(scene, camera);
     post.uniforms.uGrid.value.set(l.cols, rows);
     post.uniforms.uBlur.value = l.blur;
+    post.uniforms.uOutro.value = outro;
     blit.uniforms.uGrid.value.set(l.cols, rows);
     renderer.setRenderTarget(pixelRT);
     renderer.render(postScene, postCam);
@@ -397,8 +408,9 @@ void main() {
   }
 
   function render() {
-    if (drawn === progress) return;
-    drawn = progress;
+    const key = `${progress}:${outro}`;
+    if (drawn === key) return;
+    drawn = key;
     paint();
     renderer.render(blitScene, postCam);
   }
@@ -421,7 +433,7 @@ void main() {
     subject = new THREE.Group().add(fitModel(gltf.scene, accentMat));
     subject.rotation.y = THREE.MathUtils.degToRad(FACE);
     scene.add(subject);
-    drawn = -1;
+    drawn = '';
     render();
   }
 
@@ -435,6 +447,11 @@ void main() {
     loadModel,
     setProgress(p) {
       progress = Math.min(1, Math.max(0, p));
+      render();
+    },
+    /** 마지막 문장 뒤 정리(0~1): 픽셀이 가운데로 모여 사라진다 */
+    setOutro(o) {
+      outro = Math.min(1, Math.max(0, o));
       render();
     },
     setOptions(next) {
@@ -454,7 +471,7 @@ void main() {
       blit.uniforms.uDark.value.copy(post.uniforms.uDark.value);
       blit.uniforms.uLight.value.copy(post.uniforms.uLight.value);
       blit.uniforms.uAccent.value.copy(post.uniforms.uAccent.value);
-      drawn = -1;
+      drawn = '';
       render();
     },
     dispose() {

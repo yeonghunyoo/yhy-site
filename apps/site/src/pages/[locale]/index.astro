@@ -142,8 +142,8 @@ const recent = [...jobs].reverse();
   .story:not(.is-live) .story-cap { opacity: 0; }
   .story:not(.is-live) .story-final { opacity: 1; }
 
-  /* 이야기: 화면 100vh + 히어로 252vh + 커튼 100vh(hero.ts의 HERO_VH와 맞춘다) */
-  .story.is-live { height: 452vh; }
+  /* 이야기: 화면 100vh + 히어로 252vh + 머묾 100vh(마지막 문장, 픽셀이 가운데로 사라짐) + 커튼 100vh(hero.ts와 맞춘다) */
+  .story.is-live { height: 552vh; }
   .story.is-live .story-stage { position: sticky; top: 0; height: 100vh; height: 100dvh; will-change: transform; }
   .story.is-live .story-shade { will-change: opacity; }
   .story.is-3d .story-poster { opacity: 0; }

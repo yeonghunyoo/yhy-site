@@ -3,8 +3,10 @@
 // prefers-reduced-motion이면 아무것도 하지 않는다: 짧은 정적 히어로(포스터 + 마지막 문구)가 그대로 보인다.
 import type { Hero } from './scene.js';
 
-/** 히어로 구간 길이(화면 높이 배수). CSS의 .story.is-live 높이(100 + 252 + 100vh)와 맞춘다 */
+/** 히어로 구간 길이(화면 높이 배수). CSS의 .story.is-live 높이(100 + 252 + 100 + 100vh)와 맞춘다 */
 const HERO_VH = 2.52;
+/** 마지막 문장에 머무는 구간 — 앞 70% 동안 픽셀이 가운데로 모여 사라진다(11/05) */
+const HOLD_VH = 1;
 /** 커튼 구간에서 뒤 장면이 올라가는 속도(본문 대비) */
 const PARALLAX = 0.35;
 
@@ -36,8 +38,10 @@ export function initHero(): void {
     const vh = innerHeight;
     const y = scrollY - root.offsetTop;
     const p = clamp(y / (vh * HERO_VH));
-    const q = clamp((y - vh * HERO_VH) / vh);
+    const o = clamp((y - vh * HERO_VH) / (vh * HOLD_VH * 0.7));
+    const q = clamp((y - vh * (HERO_VH + HOLD_VH)) / vh);
     hero?.setProgress(p);
+    hero?.setOutro(o);
     for (const c of caps) c.classList.toggle('on', p >= Number(c.dataset.from) && p < Number(c.dataset.to));
     shade.style.opacity = String(q * 0.75);
     stage.style.transform = q > 0 ? `translate3d(0, ${(-q * vh * PARALLAX).toFixed(1)}px, 0)` : '';

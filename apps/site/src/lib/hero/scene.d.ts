@@ -22,6 +22,8 @@ export interface Hero {
   resize(width?: number, height?: number): void;
   render(): void;
   setProgress(p: number): void;
+  /** 마지막 문장 뒤 정리(0~1): 픽셀이 가운데로 모여 사라진다 */
+  setOutro(o: number): void;
   setOptions(next: HeroOptions): void;
   snapshot(): { width: number; height: number; data: number[] };
   loadModel(url: string): Promise<void>;
