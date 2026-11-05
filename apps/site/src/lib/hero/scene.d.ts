@@ -11,6 +11,10 @@ export interface HeroOptions {
   modelUrl?: string | null;
   points?: Record<string, [number, number, number]> | null;
   preserve?: boolean;
+  /** 'pixel' = 계조 칸, 'ascii' = 글자(밝기 ramp + 윤곽 - / | \) */
+  mode?: 'pixel' | 'ascii';
+  ramp?: string;
+  edge?: number;
 }
 
 export interface Hero {

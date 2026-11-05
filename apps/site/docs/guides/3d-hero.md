@@ -69,6 +69,12 @@ pnpm site hero:frames --model=/hero-src/out/head.min.glb --frames=48
 
 곡선은 `scene.js`의 `look(p)` 하나 — 프레임 렌더와 실시간이 같은 값을 쓴다.
 
+**ASCII 모드 (11/05, `mode: 'ascii'`)** — [Codrops 모양 인식 ASCII 렌더러](https://tympanus.net/codrops/2026/09/04/beyond-the-luminance-ramp-a-shape-aware-ascii-renderer-in-three-js/)를 가볍게 옮김
+- 후처리 패스가 칸마다 색 대신 글자 정보를 담는다: r = 밝기 단계(ramp ` .:-=+*#%@`), g = 윤곽 방향(이웃 칸 밝기 기울기가 `edge` 0.16보다 크면 윤곽선 방향을 4방향 `- / | \`로), b = 강조(넥타이)
+- 화면 패스가 칸 안 위치로 글자 아틀라스(캔버스에 IBM Plex Mono로 그림, 글꼴이 늦게 오면 다시 그림)를 찍는다. 윤곽 글자는 밝게, 밝기 글자는 밝기만큼, 강조는 강조색
+- 프레임 렌더(`snapshot`)는 pixel 모드 전용
+- 사이트는 아직 `pixel`(기본값). 프로토타입은 `ascii`로 보며 `#tune`에서 바꿔 본다
+
 **픽셀 효과가 만들어지는 방식 (WebGL 셰이더, three.js)**
 1. 3D 장면을 화면 크기가 아니라 격자 크기(예: 1280×720 화면이면 80×45)의 작은 타깃에 그린다
 2. 후처리 셰이더가 칸마다(격자 = 화면 폭 ÷ `cell`): 진행도에 따른 격자로 칸을 맞추고(거칠게 시작) → 블러(칸 단위 상자, 반경 최대 3칸) → 밝기 → `levels`단계로 양자화 + 4×4 Bayer 디더 → `dark`~`light` 두 색 사이로. 마젠타 표식 재질(넥타이)만 `accent`

@@ -89,6 +89,10 @@ const DEFAULTS = {
   modelUrl: null, // 없으면 임시 흉상
   points: null, // 대상점 덮어쓰기(스캔 모델의 눈 위치 등) — { eyeL: [x, y, z], … }
   preserve: false, // 프레임 캡처용
+  // 'pixel' = 칸을 계조 색으로 채움 / 'ascii' = 칸마다 글자(11/05, Codrops 모양 인식 ASCII를 가볍게): 밝기 → ramp, 윤곽 → - / | \
+  mode: 'pixel',
+  ramp: ' .:-=+*#%@',
+  edge: 0.16, // 이웃 칸 밝기 차가 이보다 크면 윤곽 글자
 };
 
 const VERT = /* glsl */ `
@@ -102,6 +106,9 @@ uniform vec2 uGrid;      // 지금 격자(칸 수)
 uniform float uLevels;
 uniform float uBlur;     // 0~1
 uniform float uDither;   // 0/1
+uniform float uMode;     // 0 = pixel, 1 = ascii(색 대신 글자 정보를 담는다: r 밝기 단계, g 윤곽 방향, b 강조)
+uniform float uGlyphs;   // ascii ramp 글자 수
+uniform float uEdge;
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
 
@@ -111,6 +118,11 @@ float bayer4(vec2 a) { return bayer2(0.5 * a) * 0.25 + bayer2(a); }
 vec3 sampleCell(vec2 cell) {
   vec2 uv = (cell + 0.5) / uGrid;
   return pow(texture2D(tScene, uv).rgb, vec3(1.0 / 2.2));
+}
+
+float lumAt(vec2 cell) {
+  vec3 c = sampleCell(cell);
+  return clamp((dot(c, vec3(0.299, 0.587, 0.114)) - 0.06) * 1.2, 0.0, 1.0);
 }
 
 void main() {
@@ -127,6 +139,19 @@ void main() {
   float lum = dot(c, vec3(0.299, 0.587, 0.114));
   if (accent) lum = max(c.r, c.b);
   lum = clamp((lum - 0.06) * 1.2, 0.0, 1.0); // 검은 바탕은 계조 0에 붙여 디더 잡음이 없게
+  if (uMode > 0.5) {
+    // 윤곽: 이웃 칸 밝기 기울기(Sobel 간이) → 윤곽선 방향(기울기에 수직)을 4방향으로
+    float gx = lumAt(cell + vec2(1.0, 0.0)) - lumAt(cell - vec2(1.0, 0.0));
+    float gy = lumAt(cell + vec2(0.0, 1.0)) - lumAt(cell - vec2(0.0, 1.0));
+    float code = 0.0;
+    if (length(vec2(gx, gy)) > uEdge && lum > 0.02) {
+      float phi = mod(atan(gy, gx) + 1.5707963 + 0.3926991, 3.1415926);
+      code = floor(phi / 0.7853982) + 1.0; // 1 '-', 2 '/', 3 '|', 4 '\'
+    }
+    float level = floor(lum * (uGlyphs - 1.0) + 0.5) / (uGlyphs - 1.0);
+    gl_FragColor = vec4(level, code / 4.0, accent ? 1.0 : 0.0, 1.0);
+    return;
+  }
   float d = mix(0.5, bayer4(cell), uDither);
   float q = clamp(floor(lum * (uLevels - 1.0) + d) / (uLevels - 1.0), 0.0, 1.0);
   vec3 col = accent ? mix(uDark, uAccent, q) : mix(uDark, uLight, q);
@@ -243,6 +268,9 @@ export function createHero(canvas, options = {}) {
       uLevels: { value: opts.levels },
       uBlur: { value: 0 },
       uDither: { value: opts.dither ? 1 : 0 },
+      uMode: { value: opts.mode === 'ascii' ? 1 : 0 },
+      uGlyphs: { value: opts.ramp.length },
+      uEdge: { value: opts.edge },
       uDark: { value: hex(opts.palette.dark) },
       uLight: { value: hex(opts.palette.light) },
       uAccent: { value: hex(opts.palette.accent) },
@@ -257,10 +285,60 @@ export function createHero(canvas, options = {}) {
   // 픽셀 결과는 격자 크기(예: 104×58)의 작은 타깃에 한 번만 계산하고, 화면에는 칸을 그대로 키워 옮긴다.
   // 셰이더(블러 25탭·디더)를 화면 픽셀마다 돌리지 않아 가볍다(11/05: 스크롤 버벅임)
   const pixelRT = new THREE.WebGLRenderTarget(64, 36, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  // ascii: 글자 아틀라스(ramp + 윤곽 4글자)를 캔버스로 만든다. 글꼴이 늦게 오면 다시 만든다
+  const GLYPH = 64;
+  const atlasCanvas = document.createElement('canvas');
+  const atlas = new THREE.CanvasTexture(atlasCanvas);
+  atlas.minFilter = THREE.LinearFilter;
+  atlas.generateMipmaps = false;
+  function drawAtlas() {
+    const chars = [...opts.ramp, '-', '/', '|', '\\'];
+    atlasCanvas.width = GLYPH * chars.length;
+    atlasCanvas.height = GLYPH;
+    const ctx = atlasCanvas.getContext('2d');
+    ctx.clearRect(0, 0, atlasCanvas.width, GLYPH);
+    ctx.fillStyle = '#fff';
+    ctx.font = `600 ${GLYPH * 0.82}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    chars.forEach((ch, i) => ctx.fillText(ch, i * GLYPH + GLYPH / 2, GLYPH * 0.54));
+    atlas.needsUpdate = true;
+    return chars.length;
+  }
+  const glyphTotal = drawAtlas();
+  document.fonts?.load(`600 ${GLYPH * 0.82}px "IBM Plex Mono"`).then(() => { drawAtlas(); drawn = -1; render(); }, () => {});
+
   const blit = new THREE.ShaderMaterial({
     vertexShader: VERT,
-    fragmentShader: 'uniform sampler2D tPixel; varying vec2 vUv; void main() { gl_FragColor = texture2D(tPixel, vUv); }',
-    uniforms: { tPixel: { value: pixelRT.texture } },
+    fragmentShader: /* glsl */ `
+precision highp float;
+uniform sampler2D tPixel, tAtlas;
+uniform vec2 uGrid;
+uniform float uMode, uGlyphs, uTotal;
+uniform vec3 uDark, uLight, uAccent;
+varying vec2 vUv;
+void main() {
+  if (uMode < 0.5) { gl_FragColor = texture2D(tPixel, vUv); return; }
+  vec2 cell = floor(vUv * uGrid);
+  vec2 inCell = fract(vUv * uGrid);
+  vec4 d = texture2D(tPixel, (cell + 0.5) / uGrid);
+  float code = floor(d.g * 4.0 + 0.5);
+  float idx = code > 0.5 ? uGlyphs + code - 1.0 : floor(d.r * (uGlyphs - 1.0) + 0.5);
+  float a = texture2D(tAtlas, vec2((idx + inCell.x) / uTotal, inCell.y)).r;
+  vec3 ink = d.b > 0.5 ? uAccent : (code > 0.5 ? uLight : mix(uLight * 0.5, uLight, d.r));
+  gl_FragColor = vec4(mix(uDark, ink, a), 1.0);
+}`,
+    uniforms: {
+      tPixel: { value: pixelRT.texture },
+      tAtlas: { value: atlas },
+      uGrid: { value: new THREE.Vector2(64, 36) },
+      uMode: { value: opts.mode === 'ascii' ? 1 : 0 },
+      uGlyphs: { value: opts.ramp.length },
+      uTotal: { value: glyphTotal },
+      uDark: { value: hex(opts.palette.dark) },
+      uLight: { value: hex(opts.palette.light) },
+      uAccent: { value: hex(opts.palette.accent) },
+    },
     depthTest: false,
   });
   const blitScene = new THREE.Scene();
@@ -311,6 +389,7 @@ export function createHero(canvas, options = {}) {
     renderer.render(scene, camera);
     post.uniforms.uGrid.value.set(l.cols, rows);
     post.uniforms.uBlur.value = l.blur;
+    blit.uniforms.uGrid.value.set(l.cols, rows);
     renderer.setRenderTarget(pixelRT);
     renderer.render(postScene, postCam);
     renderer.setRenderTarget(null);
@@ -324,7 +403,7 @@ export function createHero(canvas, options = {}) {
     renderer.render(blitScene, postCam);
   }
 
-  /** 프레임 캡처: 격자 크기 결과를 픽셀 배열로(frames.mjs) */
+  /** 프레임 캡처: 격자 크기 결과를 픽셀 배열로(frames.mjs). pixel 모드 전용 — ascii는 글자 정보가 담겨 그림이 아니다 */
   function snapshot() {
     const { cols, fineRows } = paint();
     const data = new Uint8Array(cols * fineRows * 4);
@@ -368,12 +447,20 @@ export function createHero(canvas, options = {}) {
       post.uniforms.uDark.value = hex(opts.palette.dark);
       post.uniforms.uLight.value = hex(opts.palette.light);
       post.uniforms.uAccent.value = hex(opts.palette.accent);
+      const ascii = opts.mode === 'ascii' ? 1 : 0;
+      post.uniforms.uMode.value = ascii;
+      post.uniforms.uEdge.value = opts.edge;
+      blit.uniforms.uMode.value = ascii;
+      blit.uniforms.uDark.value.copy(post.uniforms.uDark.value);
+      blit.uniforms.uLight.value.copy(post.uniforms.uLight.value);
+      blit.uniforms.uAccent.value.copy(post.uniforms.uAccent.value);
       drawn = -1;
       render();
     },
     dispose() {
       rt.dispose();
       pixelRT.dispose();
+      atlas.dispose();
       renderer.dispose();
     },
   };
