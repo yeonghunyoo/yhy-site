@@ -97,6 +97,7 @@ src/
 - `BaseLayout`: canonical, hreflang 절대 URL + `x-default`(→ `/`), OG(`type`·`site_name`·`title`·`description`·`url`·`locale`·`locale:alternate`), `twitter:card summary`. props `type`(프로젝트 상세 `article`)·`available`(본문이 한 언어뿐인 프로젝트)·`noindex`(404)
 - `src/pages/robots.txt.ts`: `/admin`·`/api/`·`/auth/`·`/media/` Disallow + sitemap 주소
 - `src/pages/sitemap.xml.ts`: 홈·개인정보처리방침·프로젝트 상세를 언어마다 `<url>` 하나, `xhtml:link`로 ko·en을 잇는다. 프로젝트는 컬렉션에서 자동
+- 11/05 배포(버전 `9caf7201`)
 - 남은 것: OG 이미지(미결, 그때 `twitter:card`를 `summary_large_image`로), JSON-LD·`llms.txt`(아래 "홈 개편안"과 같이 — 화면과 같은 데이터에서 만든다)
 
 **구현 계획**
@@ -134,14 +135,16 @@ JSON-LD·`llms.txt`는 도메인 전에 만들어 두고 URL만 `Astro.site`로 
 | --- | --- | --- | --- |
 | 1 | 소개 | h1 이름, 한 줄 역할, 소개 문단. `md` 이상에서 오른쪽 정보 칸: 총 경력 · 지금 · GitHub · 연락(`hello@`) | [GitHub ReadME Project 프로필](https://mobbin.com/sites/sections/10928b8e-852d-4424-b248-8028e8ff92d5) |
 | 2 | 프로젝트 | 텍스트 인덱스 표 — 번호 · 이름 · 한 줄 설명(`short`) · 기간(`period`) · 지표(`metric`). 행 전체가 상세 링크(펼침 버튼 없음). 모바일은 행마다 두 줄 | [Locomotive 프로젝트 인덱스](https://mobbin.com/sites/sections/280c1a2d-41d4-4495-a4bd-816763c93ad3), 스택 태그는 [Wild](https://mobbin.com/sites/sections/bd58336d-6de6-4678-aafd-10089a509897) |
-| 3 | 경력 | 3단 표 — 회사(+파견 등 note) · 역할 · 기간. 표 위에 총 경력 한 줄(기존 이어 붙인 막대는 선택) | [Webflow 3단 표](https://mobbin.com/sites/sections/cd3b84b1-6a90-4caf-a6a7-82c1a1522786), 톤은 [Linear 어두운 목록](https://mobbin.com/sites/sections/b94b791e-21d7-46d0-95e8-cd3ec25fc5ee) |
+| 3 | 경력 | 표 — 회사(+파견 등 note) · 기간(11/05: 역할 열 없음). 표 위에 총 경력 한 줄(기존 이어 붙인 막대는 선택) | [Webflow 3단 표](https://mobbin.com/sites/sections/cd3b84b1-6a90-4caf-a6a7-82c1a1522786), 톤은 [Linear 어두운 목록](https://mobbin.com/sites/sections/b94b791e-21d7-46d0-95e8-cd3ec25fc5ee) |
 | 4 | 연락 | 레터 버튼 + `hello@bettercurl.dev` | — |
 
-**데이터**: `src/data/career.ts`에 `role`(언어별)을 더한다. 프로젝트는 지금 frontmatter(`short`·`period`·`metric`·`stack`)로 충분하다
+**데이터**: `src/data/career.ts` 그대로(11/05: 역할 열을 두지 않아 `role` 불필요). 프로젝트는 지금 frontmatter(`short`·`period`·`metric`·`stack`)로 충분하다
 
 **같이 붙일 것**: JSON-LD 홈 `Person`(이름·`jobTitle`·`worksFor`·`sameAs` GitHub·`email`) + `WebSite`, 프로젝트 상세 `CreativeWork`. `llms.txt`는 소개·프로젝트 인덱스·경력 표와 같은 데이터
 
-**미결 (정하고 구현)**
+**11/05 사용자 답 — 4가지 모두 지금 것 유지**: 이름 글자 그림 남김(소개 h1 자리) · 경력 표에 역할 열을 따로 두지 않음(회사·note·기간) · 프로젝트 목록에 썸네일 없음 · 숫자 연출 남김(`reduced-motion`이면 없음)
+
+**미결이던 것 (11/05 위 답으로 정함)**
 - 이름 글자 그림(ASCII 연출)을 남길지 — 남기면 소개 h1 자리에, 빼면 큰 글자 그대로
 - 경력 역할 문구(회사별)
 - 프로젝트 표에 썸네일을 넣을지(넣으면 `md` 이상에서만, 갤러리 첫 장)
