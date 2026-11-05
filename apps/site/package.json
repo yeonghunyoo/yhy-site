@@ -24,7 +24,8 @@
     "rag:translate": "node scripts/rag-translate.mjs",
     "hero:preview": "node scripts/hero/serve.mjs",
     "hero:optimize": "node scripts/hero/optimize.mjs",
-    "hero:frames": "node scripts/hero/frames.mjs"
+    "hero:frames": "node scripts/hero/frames.mjs",
+    "hero:og": "node scripts/hero/og.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",

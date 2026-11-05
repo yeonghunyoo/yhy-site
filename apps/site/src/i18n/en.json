@@ -1,6 +1,9 @@
 {
   "site": {
-    "description": "Portfolio of yhy, a builder — what I made, why, and how it turned out."
+    "description": "Portfolio of yhy, a builder — what I made, why, and how it turned out.",
+    "name": "Yeonghun.y",
+    "role": "iOS Engineer & Builder",
+    "ogAlt": "BETTER CALL YH! — Yeonghun Yoo, iOS Engineer & Builder (bettercurl.dev)"
   },
   "nav": {
     "project": "Project",

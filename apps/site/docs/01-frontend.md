@@ -119,7 +119,8 @@ src/
 - `src/pages/robots.txt.ts`: `/admin`·`/api/`·`/auth/`·`/media/` Disallow + sitemap 주소
 - `src/pages/sitemap.xml.ts`: 홈·개인정보처리방침·프로젝트 상세를 언어마다 `<url>` 하나, `xhtml:link`로 ko·en을 잇는다. 프로젝트는 컬렉션에서 자동
 - 11/05 배포(버전 `9caf7201`)
-- 남은 것: OG 이미지(미결, 그때 `twitter:card`를 `summary_large_image`로), JSON-LD·`llms.txt`(아래 "홈 개편안"과 같이 — 화면과 같은 데이터에서 만든다)
+- **11/05 OG 이미지·탭 제목**: `public/og.png`(1200×630) — 왼쪽 "BETTER CALL YH!" + 이름·직무 + 도메인, 오른쪽 히어로와 같은 픽셀 흉상. `scripts/hero/og.html`을 `pnpm site hero:og`가 헤드리스로 찍는다(모델·문구 바꾸면 다시). `og:image`(+크기·alt), `twitter:card summary_large_image`·`twitter:title/description/image`. 탭 제목은 홈 `Yeonghun.y | iOS 개발자 · 빌더`(en `iOS Engineer & Builder`), 그 밖 `페이지 — Yeonghun.y`(i18n `site.name`·`site.role`). 크롬 탭 호버 카드는 OG가 아니라 제목·파비콘·주소를 보여 준다 — 파비콘을 픽셀 `yh`(y 흰색, h 강조색)로 바꿈
+- 남은 것: JSON-LD·`llms.txt`(홈 개편과 같이 — 화면과 같은 데이터에서 만든다)
 
 **구현 계획**
 
