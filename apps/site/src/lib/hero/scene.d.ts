@@ -15,8 +15,6 @@ export interface HeroOptions {
   mode?: 'pixel' | 'ascii';
   ramp?: string;
   edge?: number;
-  /** pixel 모드에서 칸을 유리 타일처럼 */
-  glass?: boolean;
 }
 
 export interface Hero {

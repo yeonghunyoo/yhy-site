@@ -93,7 +93,6 @@ const DEFAULTS = {
   mode: 'pixel',
   ramp: ' .:-=+*#%@',
   edge: 0.16, // 이웃 칸 밝기 차가 이보다 크면 윤곽 글자
-  glass: false, // pixel 모드에서 칸을 유리 타일처럼(틈·모서리 빛·반사광·볼록함). 바탕 칸은 그대로(11/05 시험)
 };
 
 const VERT = /* glsl */ `
@@ -324,27 +323,11 @@ export function createHero(canvas, options = {}) {
 precision highp float;
 uniform sampler2D tPixel, tAtlas;
 uniform vec2 uGrid;
-uniform float uMode, uGlyphs, uTotal, uGlass;
+uniform float uMode, uGlyphs, uTotal;
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
 void main() {
-  if (uMode < 0.5) {
-    vec3 base = texture2D(tPixel, vUv).rgb;
-    if (uGlass < 0.5 || distance(base, uDark) < 0.02) { gl_FragColor = vec4(base, 1.0); return; }
-    // 유리 타일: 칸 안 위치 f(0~1, y는 위쪽이 1)
-    vec2 f = fract(vUv * uGrid);
-    vec2 e = min(f, 1.0 - f);
-    float tile = smoothstep(0.03, 0.07, min(e.x, e.y));            // 칸 사이 얇은 틈
-    float hl = (1.0 - smoothstep(0.0, 0.2, f.x)) + (1.0 - smoothstep(0.0, 0.2, 1.0 - f.y)); // 왼쪽·위 모서리 빛
-    float sh = (1.0 - smoothstep(0.0, 0.2, 1.0 - f.x)) + (1.0 - smoothstep(0.0, 0.2, f.y)); // 오른쪽·아래 그늘
-    float sheen = 1.0 - smoothstep(0.0, 0.07, abs((f.x + 1.0 - f.y) * 0.5 - 0.3));            // 대각선 반사광
-    float lum = dot(base, vec3(0.299, 0.587, 0.114));
-    vec3 col = base * (0.9 + 0.16 * (1.0 - length(f - 0.5) * 1.3)); // 가운데가 볼록하게 밝음
-    col += (hl * 0.09 + sheen * 0.1) * (0.3 + lum);
-    col -= sh * 0.07;
-    gl_FragColor = vec4(mix(uDark, clamp(col, 0.0, 1.0), tile), 1.0);
-    return;
-  }
+  if (uMode < 0.5) { gl_FragColor = texture2D(tPixel, vUv); return; }
   vec2 cell = floor(vUv * uGrid);
   vec2 inCell = fract(vUv * uGrid);
   vec4 d = texture2D(tPixel, (cell + 0.5) / uGrid);
@@ -361,7 +344,6 @@ void main() {
       uMode: { value: opts.mode === 'ascii' ? 1 : 0 },
       uGlyphs: { value: opts.ramp.length },
       uTotal: { value: glyphTotal },
-      uGlass: { value: opts.glass ? 1 : 0 },
       uDark: { value: hex(opts.palette.dark) },
       uLight: { value: hex(opts.palette.light) },
       uAccent: { value: hex(opts.palette.accent) },
@@ -486,7 +468,6 @@ void main() {
       post.uniforms.uMode.value = ascii;
       post.uniforms.uEdge.value = opts.edge;
       blit.uniforms.uMode.value = ascii;
-      blit.uniforms.uGlass.value = opts.glass ? 1 : 0;
       blit.uniforms.uDark.value.copy(post.uniforms.uDark.value);
       blit.uniforms.uLight.value.copy(post.uniforms.uLight.value);
       blit.uniforms.uAccent.value.copy(post.uniforms.uAccent.value);
