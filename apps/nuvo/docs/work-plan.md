@@ -68,7 +68,7 @@
 ### 보안 제안 중 1차에 넣을 것 — 코드 ([media-security.md](media-security.md))
 - [x] Space로 보낼 때·Space에 직접 올릴 때 DB 위치(lat/lng) 기본 저장 안 함 + 보내기 창의 "찍은 장소도 함께 보내기" 옵션 (2.1, D-016) (11/05). 원본 파일 EXIF는 그대로 — 화면에 그렇게 안내(media-security 2.1 선택지 a)
 - [x] 업로드 매직 넘버 검사 (1.2) — `worker/lib/sniff.ts`, 앞 12바이트로 JPEG·PNG·GIF·WebP·HEIC/HEIF/AVIF(ftyp 브랜드) 확인, 헤더와 계열이 다르면 415. 단위 테스트 (11/05)
-- [ ] SPA `script-src` CSP (5.2)
+- [x] SPA CSP (5.2) — `public/_headers`에 `default-src 'self'` 기반 전체 정책, 인라인 테마 스크립트는 `public/theme-init.js`로. HEIC 디코더 때문에 `'unsafe-eval'`·`worker-src blob:` 필요(D-021). 검사 스크립트 `scripts/csp-check.mjs` (11/05)
 - [x] 세션 목록·개별 로그아웃 (5.4) — 설정 "로그인한 기기": 기기 이름·마지막 사용·IP 앞 두 자리, 다른 기기 하나/모두 로그아웃. Better Auth list-sessions 대신 자체 API(`/api/me/sessions`)로 토큰을 브라우저에 내보내지 않음 (11/05)
 - [x] 초대 링크 즉시 끊기 (2.3) — 초대 창에 "쓰는 중인 초대 링크" 목록과 "끊기"(만료 처리), 관리자만 (11/05). "누가 어느 링크로 들어왔는지"는 하지 않음 — 참여는 피드에 이미 남음
 

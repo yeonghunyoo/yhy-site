@@ -1,11 +1,13 @@
 # 정적 파일(SPA) 응답 보안 헤더 — Cloudflare Workers Static Assets
+# CSP (docs/media-security.md 5.2): 인라인·외부 스크립트는 막는다. 'unsafe-eval'·worker blob:은 HEIC 디코더(heic-to, Emscripten embind가 new Function·blob Worker를 씀) 때문,
+# 'wasm-unsafe-eval'은 libheif WASM, img-src https:는 Google·카카오 프로필 사진, style 'unsafe-inline'은 라이브러리가 넣는 style 태그 대비
 # 검색 노출: 기본은 X-Robots-Tag noindex. 랜딩(/)만 아래에서 떼어 낸다 (docs/mvp.md "검색 노출", docs/decisions.md D-004)
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
-  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; worker-src 'self' blob:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'
   X-Robots-Tag: noindex, nofollow
 
 /

@@ -223,7 +223,7 @@
 - 미디어 응답: `CSP sandbox`, `nosniff`, `private` 캐시. 유지. 동영상을 넣어도 같은 헤더(roadmap V7)
 - 제안: SPA 자체에 `script-src 'self'` CSP 추가. 지금은 `frame-ancestors`·`base-uri`·`object-src`·`form-action`만 있고 `script-src`가 없어 XSS가 나면 막을 게 없습니다. Vite 빌드는 인라인 스크립트가 없어 넣을 수 있고, `index.html`의 테마 스크립트만 해시나 외부 파일로 빼면 됩니다
 - `Referrer-Policy`: `/m/*` 서명 URL이 Referer로 다른 사이트에 나가지 않게 — `strict-origin-when-cross-origin`이라 경로는 안 나갑니다. 유지
-- [ ] `script-src` CSP 도입 (제안: 넣음)
+- [x] CSP 도입 — 11/05 구현(D-021). `script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'`: 인라인·외부 스크립트는 막히고, eval 허용은 HEIC 디코더(heic-to의 Emscripten embind) 때문. `scripts/csp-check.mjs`로 랜딩·워커·HEIC 디코딩 위반 0 확인, 'unsafe-eval'을 빼면 HEIC가 열리지 않는 것도 확인
 
 ### 5.3 파일 처리 중 위험
 - HEIC 디코딩·EXIF 파싱은 Web Worker에서 합니다. 악성 파일로 Worker가 죽어도 페이지는 살아 있고, 서버에는 영향이 없습니다. 유지

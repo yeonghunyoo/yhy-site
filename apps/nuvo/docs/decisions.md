@@ -14,6 +14,14 @@
 
 ## 2026-11-05
 
+### D-021 · 확정 · SPA CSP에 'unsafe-eval' 허용 (HEIC 디코더 때문)
+- 정책: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; worker-src 'self' blob:; img-src 'self' data: blob: https:; connect-src 'self' blob: data:; style-src 'self' 'unsafe-inline'` + 기존 frame-ancestors·base-uri·object-src·form-action
+- 이유: HEIC 디코더 `heic-to`(libheif, Emscripten embind)가 `new Function`과 blob Worker를 씀. `'unsafe-eval'`을 빼면 HEIC가 열리지 않는 것을 브라우저로 확인(`scripts/csp-check.mjs` 음성 대조)
+- 그래도 얻는 것: **인라인 스크립트와 외부 스크립트가 막혀** 흔한 XSS(HTML 주입으로 `<script>`·이벤트 속성 실행)가 동작하지 않음. 인라인 테마 스크립트는 파일(`public/theme-init.js`)로 뺌
+- 본 것: HEIC 디코딩만 다른 출처(iframe·별도 Worker 도메인)로 격리해 본 문서는 `'unsafe-eval'` 없이 / Trusted Types. 버린 이유: 1차에 비해 구조 변경이 큼. HEIC 디코더를 바꾸거나(브라우저 기본 지원이 늘면) 격리할 때 다시 봄
+- `img-src https:`는 Google·카카오 프로필 사진, `style-src 'unsafe-inline'`은 라이브러리가 넣는 style 태그 대비
+- 남은 것: 배포 뒤 실제 응답 헤더 확인, 동영상(media-src) 추가 때 정책 갱신
+
 ### D-020 · 확정 · "앱에서 구독" 안내 방식 (work-plan ⑧)
 - 웹에는 결제 화면이 없고(D-010), 구독이 필요한 동작에서 **안내 창 하나**를 연다: 스토어 링크 + "앱에서 구독하면 웹에서도 바로 쓸 수 있어요" + "초대받은 가족은 구독 없이"
 - 여는 곳 두 겹: ① 화면이 미리 아는 경우(내 사진함 "올리기"·끌어다 놓기, "새 Space") ② 서버 402(토스트 대신, 업로드 큐 포함). 서버가 최종 판단이고 화면은 안내만
