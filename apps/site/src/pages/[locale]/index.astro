@@ -4,6 +4,7 @@ import { locales, t, type Locale } from '../../i18n';
 import { getProjects } from '../../lib/projects';
 import { career, formatMonths } from '../../data/career';
 import { stack } from '../../data/stack';
+import { Image } from 'astro:assets';
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -92,6 +93,12 @@ const groups = stack(locale);
             projects.map((p) => (
               <li>
                 <a class="home-work" href={`/${locale}/projects/${p.slug}/`}>
+                  {/* 썸네일(11/05): 상세 갤러리 첫 장. 없으면 같은 크기의 빈 칸 — 나중에 이미지만 넣으면 채워진다 */}
+                  <span class="thumb" aria-hidden="true">
+                    {p.data.images[0] && (
+                      <Image src={p.data.images[0].src} alt="" widths={[320, 640]} sizes="(min-width: 768px) 15rem, 100vw" format="webp" loading="lazy" />
+                    )}
+                  </span>
                   <span class="body">
                     {p.data.period && <span class="when">{p.data.period}</span>}
                     <span class="name">{p.data.title}</span>
@@ -196,10 +203,13 @@ const groups = stack(locale);
   .home-stack h3 { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 500; color: var(--color-muted); }
   .home-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem 1rem; font-family: var(--font-mono); font-size: 0.875rem; }
   .home-works { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: clamp(3.5rem, 8vw, 5.5rem); }
-  .home-work { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2.5rem; }
+  .home-work { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.25rem 2.5rem; }
+  .home-work .thumb { flex: 1 1 100%; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; background: var(--color-surface); }
+  .home-work .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform 0.4s; }
+  .home-work:hover .thumb img { transform: scale(1.03); }
   .home-work .body { flex: 999 1 26rem; min-width: 0; display: flex; flex-direction: column; gap: 0.625rem; }
   .home-work .when, .home-work .tech { font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); }
-  .home-work .name { font-family: var(--font-display); font-size: clamp(2.5rem, 7.5vw, 5.75rem); line-height: 1; overflow-wrap: anywhere; }
+  .home-work .name { font-family: var(--font-display); font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1; overflow-wrap: anywhere; }
   /* 화살표는 자리를 차지하지 않게(긴 이름 뒤에서 줄이 바뀌어 빈 줄이 생기지 않게) */
   .home-work .name { position: relative; }
   .home-work .name::after { content: '→'; position: absolute; margin-left: 0.4em; font-size: 0.5em; line-height: 2; color: var(--color-accent); opacity: 0; transform: translateX(-0.5rem); transition: opacity 0.2s, transform 0.2s; }
@@ -216,7 +226,9 @@ const groups = stack(locale);
   .home-btn:hover { background: var(--color-fg); color: var(--color-bg); }
   .home-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   @media (min-width: 720px) {
-    .home-work .num { flex: 0 0 12.5rem; align-items: flex-end; text-align: right; }
+    .home-work { align-items: center; flex-wrap: nowrap; }
+    .home-work .thumb { flex: 0 0 15rem; }
+    .home-work .num { flex: 0 0 11rem; align-items: flex-end; text-align: right; }
   }
 </style>
 
