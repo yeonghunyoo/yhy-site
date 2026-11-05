@@ -71,8 +71,8 @@ export function cameraAt(p, points) {
 const POINTS = {
   head: [0, 1.6, 0],
   bust: [0, 1.35, 0], // 가슴 위가 화면에 들어오는 높이(11/05)
-  eyeR: [-0.26, 1.72, 0.74],
-  eyeL: [0.26, 1.72, 0.74],
+  eyeR: [-0.26, 1.8, 0.74],
+  eyeL: [0.26, 1.8, 0.74],
 };
 
 const DEFAULTS = {
@@ -187,16 +187,10 @@ function placeholderBust(accentMat) {
   earL.position.set(-0.74, 1.58, 0);
   const earR = earL.clone();
   earR.position.x = 0.74;
-  const brow = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.08), hair);
-  brow.position.set(-0.26, 1.86, 0.74);
-  brow.rotation.z = 0.18;
-  const brow2 = brow.clone();
-  brow2.position.set(0.26, 1.9, 0.74);
-  brow2.rotation.z = -0.32; // 한쪽 눈썹만 올린 표정
   // 눈(11/05 임시): 기계처럼 — 가로로 긴 발광 슬릿. 마젠타 표식 재질이라 화면에서는 강조색으로 빛난다
   const eyeMat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 1, roughness: 0.3 });
   const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.06), eyeMat);
-  eyeL.position.set(-0.26, 1.72, 0.78); // 머리 표면(타원체) 바로 바깥
+  eyeL.position.set(-0.26, 1.8, 0.77); // 머리 표면(타원체) 바로 바깥, 11/05 조금 위로(1.72 → 1.8)
   const eyeR = eyeL.clone();
   eyeR.position.x = 0.26;
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.55, 24), skin);
@@ -210,8 +204,8 @@ function placeholderBust(accentMat) {
   front.position.set(0, 0.32, 0.5);
   const tie = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.78, 0.05), accentMat);
   tie.position.set(0, 0.2, 0.56);
-  // 11/05: 코·손은 뺐다(입처럼 읽혀서, 손은 안 보이게). 가슴 위로만 화면에 들어오게 카메라를 맞춘다(SHOTS)
-  g.add(head, cap, earL, earR, brow, brow2, eyeL, eyeR, neck, torso, front, tie);
+  // 11/05: 코·손·눈썹은 뺐다(코가 입처럼 읽혀서, 손은 안 보이게). 가슴 위로만 화면에 들어오게 카메라를 맞춘다(SHOTS)
+  g.add(head, cap, earL, earR, eyeL, eyeR, neck, torso, front, tie);
   return g;
 }
 

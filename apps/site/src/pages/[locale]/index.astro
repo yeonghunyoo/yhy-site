@@ -222,12 +222,12 @@ const groups = stack(locale);
   .home-work .num b { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1; color: var(--color-accent); font-variant-numeric: tabular-nums; }
   .home-work .num span { font-size: 0.8125rem; color: var(--color-muted); max-width: 22ch; }
   /* 스크롤 포커스(11/05): 화면 가운데 띠에 온 항목만 선명하게, 설명을 펼친다. focus-list.ts가 .is-focus-mode·.is-focus를 붙인다 */
-  .home-work .more { display: grid; grid-template-rows: 1fr; color: var(--color-muted); font-size: 0.9375rem; line-height: 1.7; max-width: 52ch; }
-  .home-work .more > span { overflow: hidden; }
+  .home-work .more { color: var(--color-muted); font-size: 0.9375rem; line-height: 1.7; max-width: 52ch; }
   .is-focus-mode > li { opacity: 0.35; transition: opacity 0.45s; }
   .is-focus-mode > li.is-focus { opacity: 1; }
-  .is-focus-mode .home-work .more { grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.45s ease, opacity 0.35s; }
-  .is-focus-mode .is-focus .home-work .more { grid-template-rows: 1fr; opacity: 1; }
+  /* 설명은 자리를 늘 차지하고 투명도만 바꾼다 — 높이를 접었다 펴면 스크롤하는 동안 글이 위아래로 밀린다(11/05) */
+  .is-focus-mode .home-work .more { opacity: 0; transition: opacity 0.35s; }
+  .is-focus-mode .is-focus .home-work .more { opacity: 1; }
   .is-focus-mode .is-focus .home-work .name::after { opacity: 1; transform: none; }
   .is-focus-mode .is-focus .home-work .thumb img { transform: scale(1.03); }
   @media (prefers-reduced-motion: reduce) {
