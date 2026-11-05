@@ -80,7 +80,8 @@ export default function ChatDock({ dict, locale }: Props) {
   // 모바일 풀스크린이면 { keyboard }. 높이·위치는 프레임마다 DOM에 바로 쓴다(viewport.ts) — 상태로 받으면 늦게 그려져 창이 출렁인다
   const [frame, setFrame] = useState<{ keyboard: boolean } | null>(null);
   const panelRef = useRef<HTMLElement>(null);
-  const [mode, setMode] = useState<Mode>('widget');
+  // 데스크톱 기본은 하단 바(11/05): 닫혀 있을 땐 아래 가운데 긴 바(`$ ▍`), 누르면 그 자리에서 이력이 있는 창으로 펼쳐진다
+  const [mode, setMode] = useState<Mode>('bar');
   // 최소화: 머리만 남기고 그 자리에 접는다(대화·위치 그대로). 닫기(×)는 버튼으로 돌아간다
   const [collapsed, setCollapsed] = useState(false);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -95,7 +96,7 @@ export default function ChatDock({ dict, locale }: Props) {
   useEffect(() => {
     setTurns(load());
     try {
-      if (localStorage.getItem(MODE_KEY) === 'bar') setMode('bar');
+      if (localStorage.getItem(MODE_KEY) === 'widget') setMode('widget');
       const saved = JSON.parse(localStorage.getItem(POS_KEY) ?? 'null') as { x: number; y: number } | null;
       if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) setPos(saved);
     } catch {}
@@ -193,10 +194,10 @@ export default function ChatDock({ dict, locale }: Props) {
     }
     closing.current = true;
     const to = panel.getBoundingClientRect();
-    // 버튼은 닫힌 뒤에 그려지므로 마지막 자리(우하단, 대략 크기)로 간다
-    const w = 220;
-    const h = 48;
-    const left = window.innerWidth - 16 - w;
+    // 닫힌 뒤 그려질 하단 바 자리(아래 가운데 긴 바)로 줄어든다
+    const w = Math.min(720, window.innerWidth - 32);
+    const h = 56;
+    const left = (window.innerWidth - w) / 2;
     const top = window.innerHeight - 16 - h;
     panel.querySelectorAll('[data-chat-inner]').forEach((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }));
     panel
@@ -213,6 +214,19 @@ export default function ChatDock({ dict, locale }: Props) {
         setOpen(false);
       });
   }
+
+  // 하단 바 모드(데스크톱): 창 바깥을 누르면 다시 바로 접힌다 — 입력 중이거나 답을 받는 중이면 그대로
+  useEffect(() => {
+    if (!open || mode !== 'bar' || !desktop()) return;
+    const onDown = (e: PointerEvent) => {
+      const panel = panelRef.current;
+      if (!panel || panel.contains(e.target as Node) || busy || input.trim()) return;
+      if ((e.target as Element | null)?.closest('[aria-modal="true"]')) return;
+      closePanel();
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [open, mode, busy, input]);
 
   // 위젯 드래그(데스크톱): 머리를 잡고 화면 안에서 옮긴다. 놓으면 가까운 왼쪽·오른쪽 가장자리에, 위아래 끝 근처면 그쪽에도 자석처럼 붙는다
   const clampPos = (x: number, y: number, w: number, h: number) => ({
@@ -372,11 +386,10 @@ export default function ChatDock({ dict, locale }: Props) {
         data-action="chat"
         data-chat-fab
         aria-label={dict.chat.open}
-        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-2 rounded-full bg-surface/95 px-5 font-mono text-sm text-fg shadow-[0_12px_32px_rgb(0_0_0/0.5)] backdrop-blur"
+        // 모바일: 우하단 작은 알약 / 데스크톱: 아래 가운데 긴 바(11/05). 둘 다 `$`와 깜빡이는 커서만 — 누르면 대화창이 펼쳐진다
+        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-2 rounded-full bg-surface/95 px-5 font-mono text-base text-fg shadow-[0_12px_32px_rgb(0_0_0/0.5)] backdrop-blur md:inset-x-0 md:mx-auto md:min-h-14 md:w-[min(720px,calc(100vw-2rem))] md:rounded-2xl md:bg-surface/90 md:px-6 md:ring-1 md:ring-white/5"
       >
-        {/* 터미널 프롬프트 모양(11/05): $ + 문구 + 깜빡이는 커서, 테두리 없이 둥글게. 홈에서는 프로젝트 즈음부터 보인다(src/lib/chat-fab.ts) */}
         <span className="text-accent" aria-hidden="true">$</span>
-        <span>{dict.chat.fab}</span>
         <span className="chat-fab-caret" aria-hidden="true" />
       </button>
     );

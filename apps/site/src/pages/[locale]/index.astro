@@ -39,21 +39,31 @@ const groups = stack(locale);
   </div>
 
   <!-- 본문(11/05, decisions S-010): 무채색 + 강조색 하나(구분·강조에만), 표·구분선·장식 없음. 소개 → 경력 → 스택 → 프로젝트 → 연락 -->
+  <!-- 데스크톱 플로팅 목차(11/05): 화면 왼쪽 가운데, 반투명. 본문에 들어오면 나타나고 지금 섹션을 표시(src/lib/toc.ts) -->
+  <nav class="home-toc" aria-label="Sections" data-toc>
+    <a href="#about">About</a>
+    <a href="#career">Career</a>
+    <a href="#stack">Stack</a>
+    <a href="#project">Projects</a>
+    <a href="#contact">Contact</a>
+  </nav>
   <div class="home-body">
     <div class="container-page home-in">
       <section id="about" aria-labelledby="about-heading">
-        <p class="home-kick">// {h.about}</p>
+        <p class="home-kick"><span>//</span> About</p>
         <h2 id="about-heading" class="home-statement">{h.statement[0]} <span>{h.statement[1]}</span></h2>
         <p class="home-lead">{h.statementLead}</p>
         <p class="home-meta">
           <span>{h.experience} <b>{formatMonths(total, locale)}</b></span>
           <span>{h.now} <b>{h.nowAt}</b></span>
-          <a href="https://github.com/yeonghunyoo" rel="noopener">{h.github} ↗</a>
+          <a href="https://github.com/yeonghunyoo" rel="noopener" class="home-gh" aria-label="GitHub — yeonghunyoo" title="github.com/yeonghunyoo">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          </a>
         </p>
       </section>
 
       <section id="career" aria-labelledby="career-heading">
-        <h2 id="career-heading" class="home-kick">// {dict.nav.career} · {formatMonths(total, locale)}</h2>
+        <h2 id="career-heading" class="home-kick"><span>//</span> Career <small>{formatMonths(total, locale)}</small></h2>
         <ol class="home-path">
           {
             recent.map((j) => (
@@ -71,7 +81,7 @@ const groups = stack(locale);
       </section>
 
       <section id="stack" aria-labelledby="stack-heading" class="home-stack">
-        <h2 id="stack-heading" class="home-kick">// {h.stack}</h2>
+        <h2 id="stack-heading" class="home-kick"><span>//</span> Stack</h2>
         {
           groups.map((g) => (
             <div>
@@ -87,7 +97,7 @@ const groups = stack(locale);
       </section>
 
       <section id="project" aria-labelledby="project-heading">
-        <h2 id="project-heading" class="home-kick">// {dict.nav.project} · {projects.length}</h2>
+        <h2 id="project-heading" class="home-kick"><span>//</span> Projects <small>{projects.length}</small></h2>
         <ol class="home-works" data-focus-list>
           {
             projects.map((p) => (
@@ -124,7 +134,7 @@ const groups = stack(locale);
       </section>
 
       <section id="contact" aria-labelledby="contact-heading" class="home-ask">
-        <p class="home-kick">// {dict.contact.heading}</p>
+        <p class="home-kick"><span>//</span> Contact</p>
         <h2 id="contact-heading" class="home-big">{h.askTitle}</h2>
         <p class="home-lead">{h.askNote}</p>
         <button type="button" class="home-btn" data-action="letter">{dict.contact.letter} →</button>
@@ -187,7 +197,14 @@ const groups = stack(locale);
     position: relative; z-index: 2; background: var(--color-bg); box-shadow: 0 -24px 48px rgb(0 0 0 / 0.6); padding-block: 5rem 7rem;
   }
   .home-in { max-width: 1040px; display: flex; flex-direction: column; gap: clamp(5.5rem, 12vw, 9rem); }
-  .home-kick { margin: 0 0 1.75rem; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; color: var(--color-muted); letter-spacing: 0.04em; }
+  /* 섹션 제목(11/05): 영어, 크게. // 는 흐리게, 옆 숫자(경력·개수)는 작게 */
+  .home-kick { margin: 0 0 2rem; display: flex; align-items: baseline; gap: 0.6rem; font-family: var(--font-mono); font-size: clamp(1.125rem, 1.6vw, 1.375rem); font-weight: 500; color: var(--color-fg); letter-spacing: 0.01em; }
+  .home-kick > span { color: var(--color-quiet); }
+  .home-kick small { font-size: 0.8125rem; font-weight: 400; color: var(--color-muted); }
+  .home-gh { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 0 !important; color: var(--color-fg); transition: color 0.15s, scale 0.15s; }
+  .home-gh svg { width: 1.25rem; height: 1.25rem; }
+  .home-gh:hover { color: var(--color-accent); }
+  .home-gh:active { scale: 0.92; }
   .home-statement { margin: 0; max-width: 22ch; font-size: clamp(1.75rem, 4.4vw, 3.25rem); line-height: 1.32; font-weight: 500; letter-spacing: -0.015em; text-wrap: balance; }
   .home-statement span { color: var(--color-muted); }
   .home-lead { margin: 1.75rem 0 0; max-width: 46ch; color: var(--color-muted); font-size: 1rem; line-height: 1.8; }
@@ -233,6 +250,22 @@ const groups = stack(locale);
   @media (prefers-reduced-motion: reduce) {
     .is-focus-mode > li, .is-focus-mode .home-work .more { transition: none; }
   }
+  .home-toc { display: none; }
+  @media (min-width: 1200px) {
+    .home-toc {
+      position: fixed; z-index: 20; left: 1.25rem; top: 50%; translate: -0.5rem -50%; display: flex; flex-direction: column; gap: 0.125rem;
+      padding: 0.5rem; border-radius: 14px; background: rgb(32 35 39 / 0.55); backdrop-filter: blur(10px);
+      font-family: var(--font-mono); font-size: 0.75rem; opacity: 0; pointer-events: none; transition: opacity 0.3s, translate 0.3s;
+    }
+    .home-toc.is-on { opacity: 1; translate: 0 -50%; pointer-events: auto; }
+    .home-toc a { display: flex; align-items: center; gap: 0.5rem; min-height: 2rem; padding: 0 0.625rem; border-radius: 8px; color: var(--color-quiet); transition: color 0.15s, background-color 0.15s; }
+    .home-toc a::before { content: ''; width: 0.375rem; height: 0.375rem; border-radius: 1px; background: currentColor; opacity: 0.5; }
+    .home-toc a:hover { color: var(--color-fg); background: rgb(255 255 255 / 0.05); }
+    .home-toc a[aria-current='true'] { color: var(--color-fg); }
+    .home-toc a[aria-current='true']::before { background: var(--color-accent); opacity: 1; }
+    .home-toc a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .home-toc { transition: none; } }
   .home-ask { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; }
   .home-ask .home-kick, .home-ask .home-lead, .home-ask .home-meta { margin: 0; }
   .home-big { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: 1.05; text-wrap: balance; }
@@ -249,6 +282,8 @@ const groups = stack(locale);
 <script>
   import { initHero } from '../../lib/hero/hero';
   import { initFocusList } from '../../lib/focus-list';
+  import { initToc } from '../../lib/toc';
   initHero();
   initFocusList();
+  initToc();
 </script>
