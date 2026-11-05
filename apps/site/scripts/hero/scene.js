@@ -18,21 +18,25 @@ export function look(p, cols) {
   return { cols: Math.round(c), blur: 0.55 * (1 - smooth(0, 0.8, s1)) }; // 시작 블러를 줄여 처음부터 형체가 보이게
 }
 
+/** 인물이 바라보는 방향(도). 0 = 화면 정면, − = 화면 왼쪽. 11/05: 시작 때 화면 왼쪽 대각선을 본다 */
+export const FACE = -35;
+
 /**
- * 카메라 키프레임(11/05 사용자 동선). 대상점 주위 구면 좌표: az(도, 0 = 정면, − = 화면 왼쪽), el(도), r(거리), fov,
+ * 카메라 키프레임(11/05 사용자 동선). 대상점 주위 구면 좌표(화면 기준): az(도, 0 = 화면 정면, − = 화면 왼쪽), el(도), r(거리), fov,
  * 그리고 카메라 자체 회전 roll(z축, 화면이 기우는 각) · pitch(x축, 고개 끄덕임) — 도.
- * 1스텝: 왼쪽으로 돌며 다가감(처음 25%) → 방향을 바꿔 오른쪽으로 돌며 인물의 오른쪽 눈(화면 왼쪽) 클로즈업
- * 2스텝: 인물의 왼쪽 눈(화면 오른쪽) 클로즈업에서 시작(컷) → 줌아웃해 상반신. 끝은 수평(문구가 읽히게)
+ * 인물은 FACE(−35°)를 보고 있으므로 az = FACE − 45 ≈ −80이 인물의 오른쪽 대각, FACE + 45 ≈ +10이 왼쪽 대각이다.
+ * 1스텝: 정면 멀리(인물은 화면 왼쪽 대각을 봄) → 다가가며 인물의 오른쪽 대각 → 반대로 돌아 왼쪽 대각 쪽에서 인물의 오른쪽 눈 클로즈업
+ * 2스텝: 인물의 왼쪽 눈 클로즈업에서 시작(컷) → 줌아웃해 상반신. 끝은 수평(문구가 읽히게)
  */
 const SHOTS = [
   [ // 1스텝
-    { t: 0, at: 'head', az: -35, el: 10, r: 9, fov: 35, roll: 0, pitch: 0 },
-    { t: 0.25, at: 'head', az: -75, el: 6, r: 5.2, fov: 34, roll: -9, pitch: 4 },
-    { t: 1, at: 'eyeL', az: -6, el: 2, r: 0.6, fov: 30, roll: 7, pitch: -3 },
+    { t: 0, at: 'head', az: 0, el: 8, r: 9, fov: 35, roll: 0, pitch: 0 },
+    { t: 0.3, at: 'head', az: -80, el: 5, r: 4.8, fov: 34, roll: -9, pitch: 4 },
+    { t: 1, at: 'eyeR', az: 8, el: 2, r: 0.6, fov: 30, roll: 7, pitch: -3 },
   ],
   [ // 2스텝
-    { t: 0, at: 'eyeR', az: 18, el: 2, r: 0.5, fov: 30, roll: -8, pitch: 3 },
-    { t: 1, at: 'bust', az: 0, el: 4, r: 7.5, fov: 32, roll: 0, pitch: 0 },
+    { t: 0, at: 'eyeL', az: 12, el: 2, r: 0.5, fov: 30, roll: -8, pitch: 3 },
+    { t: 1, at: 'bust', az: -15, el: 4, r: 7.5, fov: 32, roll: 0, pitch: 0 },
   ],
 ];
 
@@ -58,12 +62,15 @@ export function cameraAt(p, points) {
   return { pos, target, fov: lerp(a.fov, b.fov, t), roll, pitch };
 }
 
-/** 흉상 기준 대상점(정수리 y=2.15, 얼굴 +Z). 스캔 모델은 opts.points로 눈 위치를 맞춘다 */
+/**
+ * 흉상 기준 대상점(모델 좌표: 정수리 y=2.15, 얼굴 +Z, 회전 전). 스캔 모델은 opts.points로 눈 위치를 맞춘다.
+ * eyeR = 인물의 오른쪽 눈(모델 −X), eyeL = 인물의 왼쪽 눈(모델 +X). 장면에서는 FACE만큼 돌려 쓴다
+ */
 const POINTS = {
   head: [0, 1.6, 0],
   bust: [0, 1.15, 0],
-  eyeL: [-0.26, 1.72, 0.74], // 화면 왼쪽 눈 = 인물의 오른쪽 눈
-  eyeR: [0.26, 1.72, 0.74], // 화면 오른쪽 눈 = 인물의 왼쪽 눈
+  eyeR: [-0.26, 1.72, 0.74],
+  eyeL: [0.26, 1.72, 0.74],
 };
 
 const DEFAULTS = {
@@ -214,10 +221,15 @@ export function createHero(canvas, options = {}) {
   scene.add(key, rim, new THREE.HemisphereLight(0xffffff, 0x222222, 0.35));
 
   let subject = placeholderBust(accentMat);
+  subject.rotation.y = THREE.MathUtils.degToRad(FACE); // 인물이 화면 왼쪽 대각을 본다
   scene.add(subject);
 
   const camera = new THREE.PerspectiveCamera(35, 16 / 9, 0.05, 100);
-  const points = Object.fromEntries(Object.entries({ ...POINTS, ...(opts.points ?? {}) }).map(([k, v]) => [k, new THREE.Vector3(...v)]));
+  const faceRad = THREE.MathUtils.degToRad(FACE);
+  const yAxis = new THREE.Vector3(0, 1, 0);
+  const points = Object.fromEntries(
+    Object.entries({ ...POINTS, ...(opts.points ?? {}) }).map(([k, v]) => [k, new THREE.Vector3(...v).applyAxisAngle(yAxis, faceRad)]),
+  );
 
   const rt = new THREE.WebGLRenderTarget(64, 36, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
   const post = new THREE.ShaderMaterial({
@@ -325,7 +337,8 @@ export function createHero(canvas, options = {}) {
     loader.setMeshoptDecoder(MeshoptDecoder);
     const gltf = await loader.loadAsync(url);
     scene.remove(subject);
-    subject = fitModel(gltf.scene, accentMat);
+    subject = new THREE.Group().add(fitModel(gltf.scene, accentMat));
+    subject.rotation.y = THREE.MathUtils.degToRad(FACE);
     scene.add(subject);
     drawn = -1;
     render();
