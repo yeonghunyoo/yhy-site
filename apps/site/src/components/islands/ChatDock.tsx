@@ -386,10 +386,14 @@ export default function ChatDock({ dict, locale }: Props) {
         data-action="chat"
         data-chat-fab
         aria-label={dict.chat.open}
-        // 모바일: 우하단 작은 알약 / 데스크톱: 아래 가운데 긴 바(11/05). 둘 다 `$`와 깜빡이는 커서만 — 누르면 대화창이 펼쳐진다
-        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-2 rounded-full bg-surface/95 px-5 font-mono text-base text-fg shadow-[0_12px_32px_rgb(0_0_0/0.5)] backdrop-blur md:inset-x-0 md:mx-auto md:min-h-14 md:w-[min(720px,calc(100vw-2rem))] md:rounded-2xl md:bg-surface/90 md:px-6 md:ring-1 md:ring-white/5"
+        // 모바일: 우하단 작은 알약 / 데스크톱: 아래 가운데 긴 바(11/05). 둘 다 프롬프트 `better-curl:~$`와 깜빡이는 커서만 — 누르면 대화창이 펼쳐진다
+        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-1.5 rounded-full bg-surface/95 px-5 font-mono text-sm text-fg shadow-[0_12px_32px_rgb(0_0_0/0.5)] md:text-base backdrop-blur md:inset-x-0 md:mx-auto md:min-h-14 md:w-[min(720px,calc(100vw-2rem))] md:rounded-2xl md:bg-surface/90 md:px-6 md:ring-1 md:ring-white/5"
       >
-        <span className="text-accent" aria-hidden="true">$</span>
+        {/* 셸 프롬프트처럼 도메인을 루트 경로로(11/05): better-curl:~$ ▍ */}
+        <span aria-hidden="true">
+          <span className="text-muted">better-curl</span>
+          <span className="text-accent">:~$</span>
+        </span>
         <span className="chat-fab-caret" aria-hidden="true" />
       </button>
     );
