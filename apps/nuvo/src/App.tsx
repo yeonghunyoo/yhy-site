@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AppShell } from "./components/AppShell";
 import { Spinner } from "./components/ui";
 import { useMe } from "./lib/queries";
+import { AccountDeletePage } from "./pages/AccountDelete";
 import { DesignPage } from "./pages/Design";
 import { DuplicatesPage } from "./pages/Duplicates";
 import { InvitePage } from "./pages/Invite";
@@ -36,6 +37,8 @@ export function App() {
       <Route path="/spaces/:id/duplicates" element={<AppShell><RequireAuth><DuplicatesPage /></RequireAuth></AppShell>} />
       <Route path="/invite/:token" element={<AppShell><InvitePage /></AppShell>} />
       <Route path="/settings" element={<AppShell><SettingsPage /></AppShell>} />
+      {/* 스토어 등록정보에 넣는 계정 삭제 주소 (Google Play 요건) */}
+      <Route path="/account/delete" element={<AppShell><AccountDeletePage /></AppShell>} />
       <Route path="/design" element={<AppShell><DesignPage /></AppShell>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

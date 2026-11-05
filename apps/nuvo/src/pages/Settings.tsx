@@ -162,6 +162,7 @@ export function SettingsPage() {
             >
               계정 삭제
             </button>
+            <Link to="/account/delete" className="ml-3 text-xs text-faint underline-offset-2 hover:underline">무엇이 지워지나요?</Link>
           </Section>
         </>
       )}

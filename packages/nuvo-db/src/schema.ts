@@ -270,6 +270,23 @@ export const spaceBlocks = pgTable(
   (t) => [primaryKey({ columns: [t.spaceId, t.userId] })],
 );
 
+/**
+ * 로그인할 수 없는 사람의 계정 삭제 요청 (Google Play 요건: 앱 밖 웹에서 삭제를 요청할 수 있어야 한다, docs/work-plan.md ⑦).
+ * 운영자가 이메일로 본인 확인 후 처리한다(1차는 수동). 요청 여부는 응답에 드러내지 않는다
+ */
+export const deletionRequests = pgTable(
+  "deletion_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    note: text("note"),
+    status: text("status").notNull().default("open"),
+    createdAt: createdAt(),
+    handledAt: ts("handled_at"),
+  },
+  (t) => [index("deletion_requests_email_idx").on(t.email, t.createdAt)],
+);
+
 export const subscriptionSource = pgEnum("subscription_source", ["manual", "apple", "google"]);
 export const subscriptionStatus = pgEnum("subscription_status", ["active", "grace", "expired", "canceled"]);
 

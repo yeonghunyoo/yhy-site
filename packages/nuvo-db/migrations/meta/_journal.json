@@ -43,6 +43,13 @@
       "when": 1793855293870,
       "tag": "0005_reports_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793855571616,
+      "tag": "0006_deletion_requests",
+      "breakpoints": true
     }
   ]
 }

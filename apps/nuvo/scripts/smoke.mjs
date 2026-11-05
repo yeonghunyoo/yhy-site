@@ -245,6 +245,10 @@ ok(repList?.length === 1 && repList[0].status === "open" && repList[0].reporterN
 ok((await a(`/api/spaces/${space.id}`)).data.openReports === 1, "Space 화면에 열린 신고 1건");
 const repDone = await a(`/api/spaces/${space.id}/reports/${repList[0].id}`, { method: "POST", json: { status: "dismissed" } });
 ok(repDone.status === 200 && (await a(`/api/spaces/${space.id}`)).data.openReports === 0, "신고 처리 → 열린 신고 0");
+// 로그인 없이 계정 삭제 요청 (Google Play 요건): 가입 여부와 상관없이 같은 응답
+const delReq1 = await fetch(`${BASE}/api/account-deletion-requests`, { method: "POST", headers: { "content-type": "application/json", origin: BASE }, body: JSON.stringify({ email: `nobody${Date.now()}@test.nuvo` }) });
+const delReq2 = await fetch(`${BASE}/api/account-deletion-requests`, { method: "POST", headers: { "content-type": "application/json", origin: BASE }, body: JSON.stringify({ email: "not-an-email" }) });
+ok(delReq1.status === 202 && delReq2.status === 400, `계정 삭제 요청 (${delReq1.status}, 잘못된 이메일 ${delReq2.status})`);
 const cfg = await fetch(`${BASE}/api/config`).then((r) => r.json());
 ok("supportEmail" in cfg, "공개 설정에 지원 연락처 자리");
 

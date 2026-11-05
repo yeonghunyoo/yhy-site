@@ -9,6 +9,7 @@ import { requireUser, withContext, withSession, type AppEnv } from "./context";
 import { setManualSubscription } from "./lib/subscription";
 import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
+import { deletionRequestRoutes } from "./routes/deletion-requests";
 import { reportRoutes } from "./routes/reports";
 import { inviteRoutes, spaceRoutes } from "./routes/spaces";
 import { uploads } from "./routes/uploads";
@@ -28,6 +29,8 @@ const api = new Hono<AppEnv>()
   })
   .use(withContext)
   .on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw))
+  /** 로그인 없이: 계정 삭제 요청 (Google Play 요건, docs/work-plan.md ⑦) */
+  .route("/account-deletion-requests", deletionRequestRoutes)
   .use(withSession)
   /** 로컬 개발 전용: 내 계정의 수동 구독 켜기/끄기 (스모크·E2E용). 운영에서는 404 */
   .post("/dev/subscribe", async (c) => {

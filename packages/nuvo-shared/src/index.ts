@@ -174,6 +174,11 @@ export const ReportInput = z
     note: z.string().trim().max(500).optional(),
   })
   .refine((v) => v.assetId || v.userId, { message: "신고할 사진이나 멤버를 골라 주세요" });
+/** 로그인할 수 없는 사람의 계정 삭제 요청 (docs/work-plan.md ⑦) */
+export const DeletionRequestInput = z.object({
+  email: z.string().trim().toLowerCase().email().max(200),
+  note: z.string().trim().max(500).optional(),
+});
 export const ReportResolveInput = z.object({ status: z.enum(["resolved", "dismissed"]) });
 export type SpaceReport = {
   id: string;

@@ -105,6 +105,7 @@ assets       라이브러리 안 사진 1장 (blobId, uploadedBy, takenAt, gps, 
 subscriptions 구독 (userId, source manual|apple|google, status, currentPeriodEnd, externalId). 구독자 판단은 worker/lib/subscription.ts
 reports      Space 안 사진·멤버 신고 (reason, note, status open|resolved|dismissed, 당시 사진 해시). worker/routes/reports.ts
 space_blocks Space 차단 (spaceId, userId). 차단된 사람은 초대 링크로 들어올 수 없음
+deletion_requests 로그인할 수 없는 사람의 계정 삭제 요청 (email, note, status). /account/delete에서 들어오고 운영자가 처리
 spaces / space_members(owner|admin|editor|viewer) / invites(7일, 10명)
 activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한 줄로 합침
 ```

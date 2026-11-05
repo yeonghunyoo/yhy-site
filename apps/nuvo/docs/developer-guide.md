@@ -279,6 +279,16 @@ WHERE source = 'manual' AND user_id = (SELECT id FROM "user" WHERE email = 'some
 
 로컬 개발 서버는 로그인한 계정으로 `POST /api/dev/subscribe`(끄기는 `?off`)를 부르면 됩니다. 운영에서는 404입니다.
 
+## 계정 삭제 요청 (로그인할 수 없는 사람)
+
+`/account/delete`에서 로그인할 수 없는 사람이 이메일로 삭제를 요청하면 `deletion_requests` 표에 쌓이고 `SUPPORT_EMAIL`로 메일이 옵니다. Google Play 요건이라 스토어 등록정보에 이 페이지 주소를 넣습니다.
+
+1. 그 이메일로 본인 확인 메일을 보냅니다(답장을 받으면 본인). 요청을 아무나 넣을 수 있어서 **확인 없이 지우지 않습니다**
+2. 확인되면 그 계정으로 로그인한 것과 같은 결과가 나오게 지웁니다 — 가장 안전한 방법은 비밀번호 재설정 링크를 보내 본인이 `/account/delete`에서 지우게 하는 것. 소셜 로그인만 쓰는 사람은 DB에서 `DELETE FROM "user" WHERE email = ...` 전에 개인 사진함 사진을 정리해야 하므로, 코드로 지우는 관리자 스크립트를 쓰기 전까지는 수동 처리를 미룹니다
+3. 처리하면 `UPDATE deletion_requests SET status = 'done', handled_at = now() WHERE id = ...`
+
+> 운영자용 삭제 스크립트(사용자 id로 `/api/me` DELETE와 같은 정리)는 아직 없습니다 — 요청이 생기기 시작하면 만듭니다.
+
 ## 결정이 필요한 것
 
 - [ ] 서비스 도메인 (10단계)
