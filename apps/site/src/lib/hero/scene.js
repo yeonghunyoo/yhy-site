@@ -32,13 +32,13 @@ export const FACE = -35;
  */
 const SHOTS = [
   [ // 1스텝
-    { t: 0, at: 'head', az: 0, el: 8, r: 9, fov: 35, roll: 0, pitch: 0 },
+    { t: 0, at: 'head', az: 0, el: 8, r: 6.5, fov: 35, roll: 0, pitch: 0 },
     { t: 0.3, at: 'head', az: -80, el: 5, r: 4.8, fov: 34, roll: -9, pitch: 4 },
     { t: 1, at: 'eyeR', az: 8, el: 2, r: 0.6, fov: 30, roll: 7, pitch: -3 },
   ],
   [ // 2스텝
     { t: 0, at: 'eyeL', az: 12, el: 2, r: 0.5, fov: 30, roll: -8, pitch: 3 },
-    { t: 1, at: 'bust', az: -15, el: 4, r: 7.5, fov: 32, roll: 0, pitch: 0 },
+    { t: 1, at: 'bust', az: -15, el: 4, r: 4.4, fov: 32, roll: 0, pitch: 0 },
   ],
 ];
 
@@ -70,7 +70,7 @@ export function cameraAt(p, points) {
  */
 const POINTS = {
   head: [0, 1.6, 0],
-  bust: [0, 1.15, 0],
+  bust: [0, 1.35, 0], // 가슴 위가 화면에 들어오는 높이(11/05)
   eyeR: [-0.26, 1.72, 0.74],
   eyeL: [0.26, 1.72, 0.74],
 };
@@ -182,9 +182,6 @@ function placeholderBust(accentMat) {
   cap.scale.copy(head.scale);
   cap.position.set(0, 1.66, -0.04);
   cap.rotation.x = -0.25;
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.3, 16), skin);
-  nose.rotation.x = Math.PI / 2;
-  nose.position.set(0, 1.55, 0.86);
   const earL = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), skin);
   earL.scale.set(0.5, 1, 0.8);
   earL.position.set(-0.74, 1.58, 0);
@@ -196,9 +193,10 @@ function placeholderBust(accentMat) {
   const brow2 = brow.clone();
   brow2.position.set(0.26, 1.9, 0.74);
   brow2.rotation.z = -0.32; // 한쪽 눈썹만 올린 표정
-  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
-  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 20, 14), eyeMat);
-  eyeL.position.set(-0.26, 1.72, 0.7);
+  // 눈(11/05 임시): 기계처럼 — 가로로 긴 발광 슬릿. 마젠타 표식 재질이라 화면에서는 강조색으로 빛난다
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 1, roughness: 0.3 });
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.06), eyeMat);
+  eyeL.position.set(-0.26, 1.72, 0.78); // 머리 표면(타원체) 바로 바깥
   const eyeR = eyeL.clone();
   eyeR.position.x = 0.26;
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.55, 24), skin);
@@ -212,17 +210,8 @@ function placeholderBust(accentMat) {
   front.position.set(0, 0.32, 0.5);
   const tie = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.78, 0.05), accentMat);
   tie.position.set(0, 0.2, 0.56);
-  // 가리키는 손: 주먹 + 검지(카메라 쪽)
-  const fist = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.3), skin);
-  fist.position.set(0.95, 0.9, 0.9);
-  fist.rotation.y = -0.3;
-  const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.32, 4, 12), skin);
-  finger.rotation.x = Math.PI / 2;
-  finger.position.set(0.9, 0.98, 1.2);
-  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.8, 16), suit);
-  sleeve.rotation.x = Math.PI / 2.6;
-  sleeve.position.set(1.05, 0.62, 0.45);
-  g.add(head, cap, nose, earL, earR, brow, brow2, eyeL, eyeR, neck, torso, front, tie, fist, finger, sleeve);
+  // 11/05: 코·손은 뺐다(입처럼 읽혀서, 손은 안 보이게). 가슴 위로만 화면에 들어오게 카메라를 맞춘다(SHOTS)
+  g.add(head, cap, earL, earR, brow, brow2, eyeL, eyeR, neck, torso, front, tie);
   return g;
 }
 
