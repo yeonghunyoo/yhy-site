@@ -3,19 +3,24 @@
 // 'three'와 'three/addons/'는 import map으로 푼다(브라우저 ES 모듈, 빌드 도구 없이 동작).
 import * as THREE from 'three';
 
-/** 스크롤 진행도(0~1)에 따른 연출 값. 프레임 렌더와 실시간이 같은 곡선을 쓴다 */
-export function look(p, opts) {
+/** 스크롤 진행도(0~1)에 따른 연출 값. 프레임 렌더와 실시간이 같은 곡선을 쓴다. cols = 가장 고운 격자 */
+export function look(p, cols) {
   const s = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const min = Math.max(8, Math.round(cols * 0.3)); // 시작은 고운 격자의 30%
   return {
-    cols: Math.round(opts.minCols + (opts.cols - opts.minCols) * s(0, 0.55, p)), // 거친 픽셀 → 고운 픽셀
+    cols: Math.round(min + (cols - min) * s(0, 0.55, p)), // 거친 픽셀 → 고운 픽셀
     blur: 1 - s(0, 0.45, p), // 흐림 → 선명
     zoom: s(0.82, 1, p) ** 3, // 마지막에 확 줌인(밈의 순간)
   };
 }
 
 const DEFAULTS = {
-  cols: 104, // 가장 고운 격자의 가로 칸 수(11/05: 160 → 104, 칸을 키움)
-  minCols: 20, // 시작 격자
+  // 기본 단위는 칸 크기(px)다(11/05). 가로 칸 수 = 화면 폭 ÷ cell, [minCols, maxCols]로 묶는다.
+  // cols를 주면 그 칸 수로 고정(프레임 렌더처럼 화면 폭과 상관없을 때)
+  cell: 24,
+  minCols: 32, // 좁은 화면에서도 얼굴을 알아볼 최소
+  maxCols: 56, // 넓은 화면에서도 칸이 잘아지지 않게
+  cols: null,
   levels: 6, // 흑백 계조 단계(11/05: 12 → 6)
   dither: true,
   aspect: null, // 프레임 비율(null = 캔버스 비율)
@@ -162,13 +167,13 @@ export function createHero(canvas, options = {}) {
     new THREE.Vector3(0, 1.6, 3.4),
   ]);
 
-  const rt = new THREE.WebGLRenderTarget(opts.cols, 90, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+  const rt = new THREE.WebGLRenderTarget(64, 36, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
   const post = new THREE.ShaderMaterial({
     vertexShader: VERT,
     fragmentShader: FRAG,
     uniforms: {
       tScene: { value: rt.texture },
-      uGrid: { value: new THREE.Vector2(opts.cols, 90) },
+      uGrid: { value: new THREE.Vector2(64, 36) },
       uLevels: { value: opts.levels },
       uBlur: { value: 0 },
       uDither: { value: opts.dither ? 1 : 0 },
@@ -185,7 +190,7 @@ export function createHero(canvas, options = {}) {
 
   // 픽셀 결과는 격자 크기(예: 104×58)의 작은 타깃에 한 번만 계산하고, 화면에는 칸을 그대로 키워 옮긴다.
   // 셰이더(블러 25탭·디더)를 화면 픽셀마다 돌리지 않아 가볍다(11/05: 스크롤 버벅임)
-  const pixelRT = new THREE.WebGLRenderTarget(opts.cols, 90, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  const pixelRT = new THREE.WebGLRenderTarget(64, 36, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
   const blit = new THREE.ShaderMaterial({
     vertexShader: VERT,
     fragmentShader: 'uniform sampler2D tPixel; varying vec2 vUv; void main() { gl_FragColor = texture2D(tPixel, vUv); }',
@@ -204,6 +209,11 @@ export function createHero(canvas, options = {}) {
     return opts.aspect ?? width / height;
   }
 
+  /** 가장 고운 격자의 가로 칸 수 */
+  function gridCols() {
+    return opts.cols ?? Math.min(opts.maxCols, Math.max(opts.minCols, Math.round(width / opts.cell)));
+  }
+
   function resize(w = canvas.clientWidth, h = canvas.clientHeight) {
     width = Math.max(1, w);
     height = Math.max(1, h);
@@ -215,11 +225,12 @@ export function createHero(canvas, options = {}) {
   /** 장면 → 저해상도 → 픽셀(pixelRT). 화면에는 옮기지 않는다 */
   function paint() {
     const a = aspect();
-    const l = look(progress, opts);
+    const cols = gridCols();
+    const l = look(progress, cols);
     const rows = Math.max(1, Math.round(l.cols / a));
-    const fineRows = Math.max(1, Math.round(opts.cols / a));
-    if (rt.width !== opts.cols || rt.height !== fineRows) rt.setSize(opts.cols, fineRows);
-    if (pixelRT.width !== opts.cols || pixelRT.height !== fineRows) pixelRT.setSize(opts.cols, fineRows);
+    const fineRows = Math.max(1, Math.round(cols / a));
+    if (rt.width !== cols || rt.height !== fineRows) rt.setSize(cols, fineRows);
+    if (pixelRT.width !== cols || pixelRT.height !== fineRows) pixelRT.setSize(cols, fineRows);
 
     const pos = path.getPointAt(Math.min(1, progress));
     camera.position.copy(pos).lerp(new THREE.Vector3(0.05, 1.6, 2.9), l.zoom); // 얼굴이 화면을 채우는 거리
@@ -235,7 +246,7 @@ export function createHero(canvas, options = {}) {
     renderer.setRenderTarget(pixelRT);
     renderer.render(postScene, postCam);
     renderer.setRenderTarget(null);
-    return fineRows;
+    return { cols, fineRows };
   }
 
   function render() {
@@ -247,10 +258,10 @@ export function createHero(canvas, options = {}) {
 
   /** 프레임 캡처: 격자 크기 결과를 픽셀 배열로(frames.mjs) */
   function snapshot() {
-    const fineRows = paint();
-    const data = new Uint8Array(opts.cols * fineRows * 4);
-    renderer.readRenderTargetPixels(pixelRT, 0, 0, opts.cols, fineRows, data);
-    return { width: opts.cols, height: fineRows, data: Array.from(data) };
+    const { cols, fineRows } = paint();
+    const data = new Uint8Array(cols * fineRows * 4);
+    renderer.readRenderTargetPixels(pixelRT, 0, 0, cols, fineRows, data);
+    return { width: cols, height: fineRows, data: Array.from(data) };
   }
 
   async function loadModel(url) {
