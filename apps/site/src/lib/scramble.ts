@@ -36,7 +36,7 @@ function wrap(el: HTMLElement) {
     const holder = document.createElement('span');
     for (const ch of text) {
       if (/\s/.test(ch)) {
-        holder.append(ch);
+        holder.appendChild(document.createTextNode(ch));
         continue;
       }
       const s = document.createElement('span');
@@ -44,7 +44,7 @@ function wrap(el: HTMLElement) {
       s.textContent = ch;
       s.dataset.c = rand();
       spans.push(s);
-      holder.append(s);
+      holder.appendChild(s);
     }
     node.replaceWith(holder);
     restore.push({ holder, text });
