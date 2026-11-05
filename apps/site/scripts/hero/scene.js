@@ -3,16 +3,63 @@
 // 'three'와 'three/addons/'는 import map으로 푼다(브라우저 ES 모듈, 빌드 도구 없이 동작).
 import * as THREE from 'three';
 
-/** 스크롤 진행도(0~1)에 따른 연출 값. 프레임 렌더와 실시간이 같은 곡선을 쓴다. cols = 가장 고운 격자 */
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+
+/** 1스텝이 끝나는 진행도. 0~STEP1 = 1스텝, STEP1~1 = 2스텝 */
+export const STEP1 = 0.55;
+
+/** 스크롤 진행도(0~1)에 따른 픽셀 연출. 프레임 렌더와 실시간이 같은 곡선을 쓴다. cols = 가장 고운 격자 */
 export function look(p, cols) {
-  const s = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-  const min = Math.max(8, Math.round(cols * 0.3)); // 시작은 고운 격자의 30%
-  return {
-    cols: Math.round(min + (cols - min) * s(0, 0.55, p)), // 거친 픽셀 → 고운 픽셀
-    blur: 1 - s(0, 0.45, p), // 흐림 → 선명
-    zoom: s(0.82, 1, p) ** 3, // 마지막에 확 줌인(밈의 순간)
-  };
+  const min = Math.max(12, Math.round(cols * 0.3)); // 시작은 고운 격자의 30%(최소 12칸 — 형체는 보이게)
+  const s1 = p / STEP1;
+  let c = lerp(min, cols, smooth(0, 1, s1)); // 1스텝: 거친 픽셀 → 고운 픽셀
+  if (p > STEP1) c = lerp(cols * 0.6, cols, smooth(STEP1, STEP1 + 0.12, p)); // 2스텝 컷: 잠깐 거칠어졌다 다시 맺힘
+  return { cols: Math.round(c), blur: 0.55 * (1 - smooth(0, 0.8, s1)) }; // 시작 블러를 줄여 처음부터 형체가 보이게
 }
+
+/**
+ * 카메라 키프레임(11/05 사용자 동선). 대상점 주위 구면 좌표: az(도, 0 = 정면, − = 화면 왼쪽), el(도), r(거리), fov.
+ * 1스텝: 왼쪽으로 돌며 다가감(처음 25%) → 방향을 바꿔 오른쪽으로 돌며 오른쪽 눈 클로즈업
+ * 2스텝: 왼쪽 눈 클로즈업에서 시작(컷) → 줌아웃해 상반신
+ */
+const SHOTS = [
+  [ // 1스텝
+    { t: 0, at: 'head', az: -35, el: 10, r: 9, fov: 35 },
+    { t: 0.25, at: 'head', az: -75, el: 6, r: 5.2, fov: 34 },
+    { t: 1, at: 'eyeR', az: 22, el: 2, r: 0.6, fov: 30 },
+  ],
+  [ // 2스텝
+    { t: 0, at: 'eyeL', az: -18, el: 2, r: 0.5, fov: 30 },
+    { t: 1, at: 'bust', az: 0, el: 4, r: 7.5, fov: 32 },
+  ],
+];
+
+/** 진행도 → 카메라 위치·대상·화각. points: 대상점(head·eyeL·eyeR·bust) */
+export function cameraAt(p, points) {
+  const step = p <= STEP1 ? 0 : 1;
+  const u = step === 0 ? p / STEP1 : (p - STEP1) / (1 - STEP1);
+  const keys = SHOTS[step];
+  let i = 0;
+  while (i < keys.length - 2 && u > keys[i + 1].t) i++;
+  const a = keys[i];
+  const b = keys[i + 1];
+  const t = smooth(a.t, b.t, u);
+  const target = new THREE.Vector3().lerpVectors(points[a.at], points[b.at], t);
+  const az = THREE.MathUtils.degToRad(lerp(a.az, b.az, t));
+  const el = THREE.MathUtils.degToRad(lerp(a.el, b.el, t));
+  const r = Math.exp(lerp(Math.log(a.r), Math.log(b.r), t)); // 거리는 로그로 — 다가가는 속도가 고르게 느껴진다
+  const pos = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(r).add(target);
+  return { pos, target, fov: lerp(a.fov, b.fov, t) };
+}
+
+/** 흉상 기준 대상점(정수리 y=2.15, 얼굴 +Z). 스캔 모델은 opts.points로 눈 위치를 맞춘다 */
+const POINTS = {
+  head: [0, 1.6, 0],
+  bust: [0, 1.15, 0],
+  eyeL: [-0.26, 1.72, 0.74], // 화면 왼쪽 눈
+  eyeR: [0.26, 1.72, 0.74], // 화면 오른쪽 눈
+};
 
 const DEFAULTS = {
   // 기본 단위는 칸 크기(px)다(11/05). 가로 칸 수 = 화면 폭 ÷ cell, [minCols, maxCols]로 묶는다.
@@ -26,6 +73,7 @@ const DEFAULTS = {
   aspect: null, // 프레임 비율(null = 캔버스 비율)
   palette: { dark: '#17191c', light: '#e9ebe6', accent: '#8c98ff' },
   modelUrl: null, // 없으면 임시 흉상
+  points: null, // 대상점 덮어쓰기(스캔 모델의 눈 위치 등) — { eyeL: [x, y, z], … }
   preserve: false, // 프레임 캡처용
 };
 
@@ -101,6 +149,11 @@ function placeholderBust(accentMat) {
   const brow2 = brow.clone();
   brow2.position.set(0.26, 1.9, 0.74);
   brow2.rotation.z = -0.32; // 한쪽 눈썹만 올린 표정
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 20, 14), eyeMat);
+  eyeL.position.set(-0.26, 1.72, 0.7);
+  const eyeR = eyeL.clone();
+  eyeR.position.x = 0.26;
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.55, 24), skin);
   neck.position.y = 0.82;
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 0.7, 8, 24), suit);
@@ -122,7 +175,7 @@ function placeholderBust(accentMat) {
   const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.8, 16), suit);
   sleeve.rotation.x = Math.PI / 2.6;
   sleeve.position.set(1.05, 0.62, 0.45);
-  g.add(head, cap, nose, earL, earR, brow, brow2, neck, torso, front, tie, fist, finger, sleeve);
+  g.add(head, cap, nose, earL, earR, brow, brow2, eyeL, eyeR, neck, torso, front, tie, fist, finger, sleeve);
   return g;
 }
 
@@ -158,14 +211,8 @@ export function createHero(canvas, options = {}) {
   let subject = placeholderBust(accentMat);
   scene.add(subject);
 
-  const camera = new THREE.PerspectiveCamera(35, 16 / 9, 0.1, 100);
-  const target = new THREE.Vector3(0, 1.55, 0);
-  const path = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(3.2, 2.6, 10),
-    new THREE.Vector3(-2.6, 2.0, 7),
-    new THREE.Vector3(-1.6, 1.7, 4.6),
-    new THREE.Vector3(0, 1.6, 3.4),
-  ]);
+  const camera = new THREE.PerspectiveCamera(35, 16 / 9, 0.05, 100);
+  const points = Object.fromEntries(Object.entries({ ...POINTS, ...(opts.points ?? {}) }).map(([k, v]) => [k, new THREE.Vector3(...v)]));
 
   const rt = new THREE.WebGLRenderTarget(64, 36, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
   const post = new THREE.ShaderMaterial({
@@ -232,12 +279,12 @@ export function createHero(canvas, options = {}) {
     if (rt.width !== cols || rt.height !== fineRows) rt.setSize(cols, fineRows);
     if (pixelRT.width !== cols || pixelRT.height !== fineRows) pixelRT.setSize(cols, fineRows);
 
-    const pos = path.getPointAt(Math.min(1, progress));
-    camera.position.copy(pos).lerp(new THREE.Vector3(0.05, 1.6, 2.9), l.zoom); // 얼굴이 화면을 채우는 거리
-    camera.fov = 35 - 17 * l.zoom;
+    const shot = cameraAt(progress, points);
+    camera.position.copy(shot.pos);
+    camera.fov = shot.fov;
     camera.aspect = a;
     camera.updateProjectionMatrix();
-    camera.lookAt(target);
+    camera.lookAt(shot.target);
 
     renderer.setRenderTarget(rt);
     renderer.render(scene, camera);
