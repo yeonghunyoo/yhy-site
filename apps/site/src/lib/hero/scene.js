@@ -143,6 +143,8 @@ void main() {
   }
   // 강조색 표식: 마젠타 계열 재질(넥타이)만 강조색으로 남긴다
   bool accent = c.r > c.g * 1.6 && c.b > c.g * 1.6 && c.r > 0.12;
+  // 눈 표식(청록, 11/05): pixel 모드에서 눈 칸만 ASCII 숫자(0·1)로 — 화면 패스가 알파로 알아본다
+  bool eye = c.g > 0.45 && c.b > 0.45 && c.r < c.g * 0.5;
   float lum = dot(c, vec3(0.299, 0.587, 0.114));
   if (accent) lum = max(c.r, c.b);
   lum = clamp((lum - 0.06) * 1.2, 0.0, 1.0); // 검은 바탕은 계조 0에 붙여 디더 잡음이 없게
@@ -163,6 +165,8 @@ void main() {
   float d = mix(0.5, bayer4(cell), uDither);
   float q = clamp(floor(lum * (uLevels - 1.0) + d) / (uLevels - 1.0), 0.0, 1.0);
   vec3 col = accent ? mix(uDark, uAccent, q) : mix(uDark, uLight, q);
+  // 알파 1 = 보통 픽셀, 0.5 = 눈 글자 '0', 0.75 = 눈 글자 '1'(칸마다 고정 무작위)
+  if (eye && !gone) { gl_FragColor = vec4(uAccent, hash(cell + 17.0) < 0.5 ? 0.5 : 0.75); return; }
   gl_FragColor = vec4(gone ? uDark : col, 1.0);
 }`;
 
@@ -188,8 +192,9 @@ function placeholderBust(accentMat) {
   const earR = earL.clone();
   earR.position.x = 0.74;
   // 눈(11/05 임시): 기계처럼 — 가로로 긴 발광 슬릿. 마젠타 표식 재질이라 화면에서는 강조색으로 빛난다
-  const eyeMat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 1, roughness: 0.3 });
-  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.06), eyeMat);
+  // 청록 표식 재질: 화면에서는 눈 칸만 ASCII 숫자(강조색)로 그린다(11/05)
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 1, roughness: 0.3 });
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.09, 0.06), eyeMat); // 11/05 조금 크게(0.24×0.07 →)
   eyeL.position.set(-0.26, 1.8, 0.77); // 머리 표면(타원체) 바로 바깥, 11/05 조금 위로(1.72 → 1.8)
   const eyeR = eyeL.clone();
   eyeR.position.x = 0.26;
@@ -284,7 +289,7 @@ export function createHero(canvas, options = {}) {
   atlas.minFilter = THREE.LinearFilter;
   atlas.generateMipmaps = false;
   function drawAtlas() {
-    const chars = [...opts.ramp, '-', '/', '|', '\\'];
+    const chars = [...opts.ramp, '-', '/', '|', '\\', '0', '1']; // 끝의 0·1은 pixel 모드 눈 글자
     atlasCanvas.width = GLYPH * chars.length;
     atlasCanvas.height = GLYPH;
     const ctx = atlasCanvas.getContext('2d');
@@ -310,7 +315,17 @@ uniform float uMode, uGlyphs, uTotal;
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
 void main() {
-  if (uMode < 0.5) { gl_FragColor = texture2D(tPixel, vUv); return; }
+  if (uMode < 0.5) {
+    vec4 px = texture2D(tPixel, vUv);
+    if (px.a > 0.95) { gl_FragColor = vec4(px.rgb, 1.0); return; }
+    // 눈 칸: 칸 안 위치로 글자 아틀라스의 '0'·'1'을 찍는다
+    vec2 inCellP = fract(vUv * uGrid);
+    float digit = px.a > 0.62 ? 1.0 : 0.0;
+    float ga = texture2D(tAtlas, vec2((uGlyphs + 4.0 + digit + inCellP.x) / uTotal, inCellP.y)).r;
+    // 눈 칸 바탕은 강조색을 아주 옅게 — 숫자 사이도 은은히 빛나 보이게
+    gl_FragColor = vec4(mix(mix(uDark, px.rgb, 0.14), px.rgb, ga), 1.0);
+    return;
+  }
   vec2 cell = floor(vUv * uGrid);
   vec2 inCell = fract(vUv * uGrid);
   vec4 d = texture2D(tPixel, (cell + 0.5) / uGrid);
@@ -403,6 +418,7 @@ void main() {
     const { cols, fineRows } = paint();
     const data = new Uint8Array(cols * fineRows * 4);
     renderer.readRenderTargetPixels(pixelRT, 0, 0, cols, fineRows, data);
+    for (let i = 3; i < data.length; i += 4) data[i] = 255; // 눈 글자 표식(알파)은 그림으로는 불투명하게
     return { width: cols, height: fineRows, data: Array.from(data) };
   }
 
