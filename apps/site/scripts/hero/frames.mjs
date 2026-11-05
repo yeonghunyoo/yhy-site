@@ -10,7 +10,7 @@ import { serve, ROOT } from './serve.mjs';
 
 const arg = (k, d) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split('=')[1] ?? d;
 const frames = Number(arg('frames', 48));
-const cols = Number(arg('cols', 52)); // 프레임은 칸 수 고정(데스크톱 1280px ÷ 24px ≈ 53)
+const cols = Number(arg('cols', 80)); // 프레임은 칸 수 고정(데스크톱 1280px ÷ 16px = 80)
 const aspect = Number(arg('aspect', 16 / 9));
 const model = arg('model', '');
 const out = join(ROOT, 'hero-src/out');

@@ -64,9 +64,9 @@ const POINTS = {
 const DEFAULTS = {
   // 기본 단위는 칸 크기(px)다(11/05). 가로 칸 수 = 화면 폭 ÷ cell, [minCols, maxCols]로 묶는다.
   // cols를 주면 그 칸 수로 고정(프레임 렌더처럼 화면 폭과 상관없을 때)
-  cell: 24,
-  minCols: 32, // 좁은 화면에서도 얼굴을 알아볼 최소
-  maxCols: 56, // 넓은 화면에서도 칸이 잘아지지 않게
+  cell: 16, // 11/05: 24 → 16 — 1280px에서 80칸(처음 104칸의 약 75%)
+  minCols: 40, // 좁은 화면에서도 얼굴을 알아볼 최소(폰 390px ≈ 칸 10px)
+  maxCols: 84, // 넓은 화면에서도 칸이 잘아지지 않게
   cols: null,
   levels: 6, // 흑백 계조 단계(11/05: 12 → 6)
   dither: true,
