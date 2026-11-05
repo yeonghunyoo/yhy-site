@@ -21,8 +21,8 @@
 - [ ] 코드 후속: `STORAGE_CAP_GB` 제거(또는 0), 비용 알림을 대시보드에서 설정(15단계), `mvp.md`·site `cost-guard.md`의 "계정 공용 한도" 표 삭제, `docs/monorepo.md` 계정 표 갱신
 
 ### ② 용량 모델 — 코드
-- [ ] `PERSONAL_QUOTA_GB` 2 → **10**. `SPACE_QUOTA_GB`는 "Space 용량을 누구 몫으로 셀지" 결정에 따라: 소유자 몫이면 **제거**하고 Space 업로드도 소유자의 개인 한도에서 차감
-- [ ] 업로드 허용 조건에 **구독 상태** 추가: 구독자만 자기 라이브러리·자기 Space에 업로드. 초대받은 가족의 Space 업로드는 "올리기 허용" 결정에 따름(제안: 허용, 소유자 한도 차감)
+- [ ] `PERSONAL_QUOTA_GB` 2 → **10**. `SPACE_QUOTA_GB` **제거** — Space 업로드는 소유자의 개인 한도에서 차감(D-016)
+- [ ] 업로드 허용 조건 = (구독자 and 자기 사진함) **or** (Space 멤버 and 소유자 한도 남음). 구독 없는 멤버가 올리면 소유자 몫 차감. 한도가 차면 Space 전체 업로드 멈춤 + 소유자에게 알림(피드·메일)
 - [ ] 한도 초과 응답(지금 507)과 화면 안내 문구를 "구독 용량"에 맞게. 구독 없는 사용자에게는 "앱에서 구독" 안내(⑧)
 - [ ] 스모크 테스트 갱신(용량·구독 시나리오)
 - 관련 코드: `worker/lib/capacity.ts`, `worker/routes/uploads.ts`, `wrangler.jsonc` vars, `packages/nuvo-shared` 상수
@@ -62,7 +62,7 @@
 - [ ] `public/_headers`에 `/` 외 `X-Robots-Tag: noindex`, Worker `/api/*`·`/m/*` 응답에도. robots.txt. `index.html`에 description·OG([mvp.md](mvp.md) "검색 노출")
 
 ### 보안 제안 중 1차에 넣을 것 — 코드 ([media-security.md](media-security.md))
-- [ ] Space로 보낼 때 DB 위치(lat/lng) 복사 안 함 (2.1, 제안 확정 필요)
+- [ ] Space로 보낼 때 DB 위치(lat/lng) 기본 복사 안 함 + "위치도 공유" 옵션 (2.1, D-016 확정)
 - [ ] 업로드 매직 넘버 검사 (1.2)
 - [ ] SPA `script-src` CSP (5.2)
 - [ ] 세션 목록·개별 로그아웃 (5.4)
@@ -76,9 +76,11 @@
 4. **①·④·⑥**은 사람 작업이 끝나는 대로 끼워 넣음
 
 ## 코드 전에 정할 것 (②·③에 영향)
-- [ ] 구독 없는 가족이 Space에 올리기도 되는지 (제안: 가능)
-- [ ] Space 용량은 소유자의 10GB에서 차감 (제안: 예)
-- [ ] Space로 보낼 때 위치 복사 안 함 (제안: 예)
+- [x] 구독 없는 가족(Space 멤버)도 소속 Space에 올리기 가능 — 11/05 D-016
+- [x] Space 용량은 소유자의 10GB에서 차감 — 11/05 D-016
+- [x] Space로 보낼 때 위치 기본 복사 안 함, "위치도 공유" 선택 옵션 — 11/05 D-016
+
+→ ②·③ 코드 시작 가능.
 
 ## 2차 모바일 (요약, 상세는 때가 되면)
 Capacitor 감싸기 → 사진첩 보기 + 초대받은 Space 보기 → iOS IAP·Google Play 결제 + 영수증 검증·서버 간 통지(③의 예약 라우트) → 백업(골라서 → 자동, WorkManager / URLSession 백그라운드) → 스토어 심사 문서(Privacy Manifest, Data safety, 사진 권한 선언 폼, 연령 등급, CSAE 범위 밖 확인)
