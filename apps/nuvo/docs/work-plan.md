@@ -25,7 +25,7 @@
 - [x] 업로드 허용 조건 = (구독자 and 자기 사진함) **or** (Space 멤버 and 소유자 구독 and 소유자 한도 남음) — `worker/lib/capacity.ts` `assertUploadAllowed`. prepare·blob·complete·copy 모두 거침 (11/05)
 - [ ] 한도가 찼을 때 소유자에게 알림(피드·메일) — 아직 413 응답만
 - [x] 화면: 설정에 구독 상태·"내 사진함 + 내가 만든 Space" 용량, Space 화면에 소유자 용량·구독 종료 안내, 업로드 큐 402 처리 (11/05). "앱에서 구독" 링크는 ⑧
-- [x] 스모크 테스트 갱신: 402, 가족 업로드 → 소유자 차감, 구독 켬/끔 (11/05). **로컬 Postgres가 있는 환경에서 `pnpm nuvo:smoke`로 확인 필요**
+- [x] 스모크 테스트 갱신: 402, 가족 업로드 → 소유자 차감, 구독 켬/끔 (11/05). 11/05 로컬 Postgres로 스모크 93개·E2E 6개 통과 확인
 - 관련 코드: `worker/lib/capacity.ts`, `worker/routes/uploads.ts`, `wrangler.jsonc` vars, `packages/nuvo-shared` 상수
 
 ### ③ 구독 상태 모델 — 코드
