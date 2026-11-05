@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type SubmitEvent } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type SubmitEvent } from 'react';
 import type { Dict, Locale } from '../../i18n';
 import type { Diagram } from '../../lib/diagram';
 import followupSet from '../../content/rag/followups.json';
@@ -32,6 +32,13 @@ const MAX_QUESTION = 500;
 // client:demand의 이어가기 키(src/directives/demand.ts) — 다음 페이지에서 챗을 바로 연다
 const RESUME_KEY = 'uiResume';
 const FOLLOWUP_MAX = 3;
+// 데스크톱 표시 방식(11/05): 위젯(우하단 패널) / 하단 바(아래 가운데 넓은 패널). 브라우저에 기억
+const MODE_KEY = 'chatMode';
+type Mode = 'widget' | 'bar';
+const desktop = () => window.innerWidth >= 768;
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** 독 버튼 자리(열 때 출발점, 닫을 때 도착점) */
+const fabRect = (): DOMRect | null => document.querySelector('[data-chat-fab]')?.getBoundingClientRect() ?? null;
 
 type FollowupSet = Record<string, Partial<Record<Locale, string[]>>>;
 const sameQuestion = (a: string, b: string) => a.replace(/[\s?？.!]/g, '').toLowerCase() === b.replace(/[\s?？.!]/g, '').toLowerCase();
@@ -68,18 +75,29 @@ export default function ChatDock({ dict, locale }: Props) {
   // 모바일 풀스크린이면 { keyboard }. 높이·위치는 프레임마다 DOM에 바로 쓴다(viewport.ts) — 상태로 받으면 늦게 그려져 창이 출렁인다
   const [frame, setFrame] = useState<{ keyboard: boolean } | null>(null);
   const panelRef = useRef<HTMLElement>(null);
+  const [mode, setMode] = useState<Mode>('widget');
+  // 열기 전 독 버튼 자리 — 패널이 그 자리에서 커진다(히어로 전환, 11/05)
+  const fromRef = useRef<DOMRect | null>(null);
+  const closing = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setTurns(load());
+    try {
+      if (localStorage.getItem(MODE_KEY) === 'bar') setMode('bar');
+    } catch {}
     // 하이드레이트를 일으킨 독 버튼 클릭(client:demand)
     if (window.__uiPending === 'chat') {
       window.__uiPending = undefined;
+      fromRef.current = fabRect();
       setOpen(true);
     }
     const onClick = (e: MouseEvent) => {
-      if ((e.target as Element | null)?.closest('[data-action="chat"]')) setOpen(true);
+      if ((e.target as Element | null)?.closest('[data-action="chat"]')) {
+        fromRef.current = fabRect();
+        setOpen(true);
+      }
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
@@ -99,7 +117,7 @@ export default function ChatDock({ dict, locale }: Props) {
     if (!open) return;
     inputRef.current?.focus({ preventScroll: true });
     // Esc는 맨 위 레이어만 닫는다 — 챗 위에 시트(로그인 등, aria-modal)가 떠 있으면 시트가 닫는다
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('[aria-modal="true"]') && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('[aria-modal="true"]') && minimize();
     document.addEventListener('keydown', onKey);
     if (window.innerWidth >= 768) {
       setFrame(null);
@@ -134,6 +152,64 @@ export default function ChatDock({ dict, locale }: Props) {
       setFrame(null);
     };
   }, [open]);
+
+  // 히어로 전환(데스크톱): 패널이 독 버튼 자리·크기에서 제자리로 커진다. 안의 내용은 조금 늦게 나타난다
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    const from = fromRef.current;
+    fromRef.current = null;
+    if (!open || !panel || !from || !desktop() || reduced()) return;
+    const to = panel.getBoundingClientRect();
+    panel.animate(
+      [
+        { transformOrigin: '0 0', transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})`, borderRadius: '12px' },
+        { transformOrigin: '0 0', transform: 'none', borderRadius: '20px' },
+      ],
+      { duration: 420, easing: 'cubic-bezier(0.2, 0.9, 0.25, 1)' },
+    );
+    panel.querySelectorAll('[data-chat-inner]').forEach((el) =>
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, delay: 200, easing: 'ease-out', fill: 'backwards' }),
+    );
+  }, [open, mode]);
+
+  /** 닫기 = 최소화: 대화는 남고, 데스크톱이면 패널이 독 버튼 자리로 줄어든 뒤 버튼이 된다 */
+  function minimize() {
+    const panel = panelRef.current;
+    if (!panel || !desktop() || reduced() || closing.current) {
+      setOpen(false);
+      return;
+    }
+    closing.current = true;
+    const to = panel.getBoundingClientRect();
+    // 버튼은 닫힌 뒤에 그려지므로 마지막 자리(우하단, 대략 크기)로 간다
+    const w = 220;
+    const h = 48;
+    const left = window.innerWidth - 16 - w;
+    const top = window.innerHeight - 16 - h;
+    panel.querySelectorAll('[data-chat-inner]').forEach((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }));
+    panel
+      .animate(
+        [
+          { transformOrigin: '0 0', transform: 'none', opacity: 1 },
+          { transformOrigin: '0 0', transform: `translate(${left - to.left}px, ${top - to.top}px) scale(${w / to.width}, ${h / to.height})`, opacity: 0.6 },
+        ],
+        { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' },
+      )
+      .finished.finally(() => {
+        closing.current = false;
+        setOpen(false);
+      });
+  }
+
+  function switchMode() {
+    const next: Mode = mode === 'widget' ? 'bar' : 'widget';
+    try {
+      localStorage.setItem(MODE_KEY, next);
+    } catch {}
+    // 지금 자리에서 새 자리로 옮겨 가게 한다
+    fromRef.current = panelRef.current?.getBoundingClientRect() ?? null;
+    setMode(next);
+  }
 
   async function ask(question: string) {
     const q = question.trim().slice(0, MAX_QUESTION);
@@ -211,7 +287,7 @@ export default function ChatDock({ dict, locale }: Props) {
   // 모바일은 화면 전체를 덮으므로 다시 열지 않는다 — 대화는 sessionStorage에 남아 독 버튼으로 이어진다.
   const followSource = (href: string) => {
     if (href.split('#')[0] === location.pathname) {
-      setOpen(false);
+      minimize();
       return;
     }
     if (window.innerWidth >= 768) {
@@ -229,9 +305,9 @@ export default function ChatDock({ dict, locale }: Props) {
         data-action="chat"
         data-chat-fab
         aria-label={dict.chat.open}
-        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-2 rounded-[var(--radius)] border border-border bg-surface/95 px-4 font-mono text-sm text-fg shadow-lg backdrop-blur"
+        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-2 rounded-full bg-surface/95 px-5 font-mono text-sm text-fg shadow-[0_12px_32px_rgb(0_0_0/0.5)] backdrop-blur"
       >
-        {/* 터미널 프롬프트 모양(11/05): $ + 문구 + 깜빡이는 커서. 숨김·보임은 src/lib/chat-fab.ts가 <html data-fab>로 */}
+        {/* 터미널 프롬프트 모양(11/05): $ + 문구 + 깜빡이는 커서, 테두리 없이 둥글게. 홈에서는 프로젝트 즈음부터 보인다(src/lib/chat-fab.ts) */}
         <span className="text-accent" aria-hidden="true">$</span>
         <span>{dict.chat.fab}</span>
         <span className="chat-fab-caret" aria-hidden="true" />
@@ -248,17 +324,43 @@ export default function ChatDock({ dict, locale }: Props) {
       ref={panelRef}
       role="dialog"
       aria-label={dict.chat.title}
-      className="fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:inset-auto md:right-4 md:bottom-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px] md:rounded-[var(--radius)] md:border md:border-border md:shadow-2xl"
+      // 테두리 없이 그림자와 둥근 모서리(11/05). 데스크톱: 위젯(우하단 380px) / 하단 바(아래 가운데, 최대 760px)
+      className={`fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:top-auto md:bottom-4 md:rounded-[20px] md:shadow-[0_24px_64px_rgb(0_0_0/0.55)] ${
+        mode === 'bar'
+          ? 'md:mx-auto md:h-[min(62dvh,600px)] md:w-[min(760px,calc(100vw-2rem))]'
+          : 'md:left-auto md:right-4 md:h-[560px] md:max-h-[calc(100dvh-2rem)] md:w-[380px]'
+      }`}
     >
-      <header className={`flex shrink-0 items-center justify-between border-b border-border pr-2 pl-4 ${frame?.keyboard ? '' : 'pt-[env(safe-area-inset-top)]'}`}>
-        <h2 className="font-bold">{dict.chat.title}</h2>
-        <button type="button" onClick={() => setOpen(false)} className="grid size-11 place-items-center text-xl" aria-label={dict.ui.close}>
-          ×
-        </button>
+      <header data-chat-inner className={`flex shrink-0 items-center justify-between pr-2 pl-5 ${frame?.keyboard ? '' : 'pt-[env(safe-area-inset-top)]'}`}>
+        <h2 className="font-mono text-sm text-muted">
+          <span className="text-accent">$</span> {dict.chat.title}
+        </h2>
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={switchMode}
+            className="hidden size-11 place-items-center rounded-full text-muted hover:text-fg md:grid"
+            aria-label={mode === 'widget' ? dict.chat.mode.bar : dict.chat.mode.widget}
+            title={mode === 'widget' ? dict.chat.mode.bar : dict.chat.mode.widget}
+          >
+            {mode === 'widget' ? (
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <rect x="3" y="13" width="18" height="7" rx="2" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <rect x="11" y="8" width="10" height="12" rx="2" />
+              </svg>
+            )}
+          </button>
+          <button type="button" onClick={minimize} className="grid size-11 place-items-center rounded-full text-xl text-muted hover:text-fg" aria-label={dict.ui.close}>
+            ×
+          </button>
+        </div>
       </header>
 
-      <div ref={listRef} data-scroll-allow className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
-        <p className="rounded-[var(--radius)] bg-bg px-3 py-2">{dict.chat.greeting}</p>
+      <div ref={listRef} data-chat-inner data-scroll-allow className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-2" aria-live="polite">
+        <p className="rounded-2xl bg-bg px-4 py-2.5">{dict.chat.greeting}</p>
         {/* 개인정보 고지 — 입력란 아래에서 옮겼다(11/03, 입력 영역을 좁게) */}
         <p className="px-1 text-xs text-muted">{dict.chat.notice}</p>
         {turns.length === 0 && (
@@ -279,13 +381,13 @@ export default function ChatDock({ dict, locale }: Props) {
         )}
         {turns.map((t, i) =>
           t.role === 'user' ? (
-            <p key={i} className="ml-8 rounded-[var(--radius)] bg-accent px-3 py-2 break-words text-accent-fg">
+            <p key={i} className="ml-8 rounded-2xl rounded-br-md bg-accent px-4 py-2.5 break-words text-accent-fg">
               {t.content}
             </p>
           ) : (
             <div key={i} className="mr-8">
               {/* 답은 작은 마크다운(목록·굵게)으로 그린다 — HTML로 해석하지 않는다(chat-markdown.tsx) */}
-              <div className={`rounded-[var(--radius)] bg-bg px-3 py-2 break-words ${t.notice === 'error' ? 'text-danger' : ''}`}>
+              <div className={`rounded-2xl rounded-bl-md bg-bg px-4 py-2.5 break-words ${t.notice === 'error' ? 'text-danger' : ''}`}>
                 {(visibleAnswer(t.content) && <ChatMarkdown text={visibleAnswer(t.content)} />) ||
                   (busy && i === turns.length - 1 ? (
                     // 슈퍼바이저 판단(약 1초) → 검색 → 첫 글자까지 걸리는 동안
@@ -371,16 +473,18 @@ export default function ChatDock({ dict, locale }: Props) {
       <form
         onSubmit={submit}
         aria-busy={busy}
-        className={`shrink-0 border-t border-border px-3 pt-2 ${frame?.keyboard ? 'pb-2' : 'pb-[max(0.5rem,env(safe-area-inset-bottom))]'}`}
+        data-chat-inner
+        className={`shrink-0 px-3 pt-2 ${frame?.keyboard ? 'pb-2' : 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'}`}
       >
-        <div className="flex items-center gap-2">
+        {/* 입력란과 보내기 버튼은 같은 높이(44px, 11/05). 여러 줄이면 입력란만 커지고 버튼은 아래에 붙는다 */}
+        <div className="flex items-end gap-2 rounded-2xl bg-bg p-1.5">
           <textarea
             data-scroll-allow
             ref={inputRef}
             rows={1}
             readOnly={busy}
-            // 슬림한 한 줄 입력(40px). iOS 자동 완성 막대(패스키·카드·주소)가 덜 뜨도록 자동 완성 대상이 아님을 알린다
-            className="field max-h-32 min-h-10 flex-1 resize-none py-1.5"
+            // 한 줄 입력(44px = 보내기 버튼과 같은 높이, 16px 글자로 iOS 확대 방지). iOS 자동 완성 막대(패스키·카드·주소)가 덜 뜨도록 자동 완성 대상이 아님을 알린다
+            className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-3 py-[0.6875rem] text-base leading-[1.375rem] outline-none placeholder:text-quiet"
             autoComplete="off"
             enterKeyHint="send"
             placeholder={dict.chat.placeholder}
@@ -395,7 +499,7 @@ export default function ChatDock({ dict, locale }: Props) {
             }}
             aria-label={dict.chat.placeholder}
           />
-          <button type="submit" className="btn btn-primary" disabled={busy || !input.trim()} aria-busy={busy}>
+          <button type="submit" className="btn btn-primary h-11 min-h-11 shrink-0 rounded-xl" disabled={busy || !input.trim()} aria-busy={busy}>
             {dict.chat.send}
           </button>
         </div>

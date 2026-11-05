@@ -153,13 +153,14 @@ const groups = stack(locale);
   .story-final em { font-style: normal; color: var(--color-accent); }
   /* 데스크톱(11/05): 문구를 화면 세로 가운데, 왼쪽·오른쪽 번갈아. 그늘도 그쪽 옆으로 */
   @media (min-width: 768px) {
-    .story-cap[data-side] { top: 50%; bottom: auto; width: min(44%, 34rem); padding-inline: max(3rem, env(safe-area-inset-left)) max(3rem, env(safe-area-inset-right)); transform: translateY(calc(-50% + 8px)); }
+    /* 가장자리가 아니라 가운데 쪽으로 당겨(11/05): 바깥 여백을 화면 폭의 12% */
+    .story-cap[data-side] { top: 50%; bottom: auto; width: min(40%, 32rem); padding-inline: 0; transform: translateY(calc(-50% + 8px)); }
     .story-cap[data-side].on { transform: translateY(-50%); }
-    .story-cap[data-side='l'] { left: 0; right: auto; }
-    .story-cap[data-side='r'] { left: auto; right: 0; align-items: flex-end; text-align: right; }
+    .story-cap[data-side='l'] { left: 12vw; right: auto; }
+    .story-cap[data-side='r'] { left: auto; right: 12vw; align-items: flex-end; text-align: right; }
     .story-cap[data-side]::before { top: -50vh; bottom: -50vh; }
-    .story-cap[data-side='l']::before { left: 0; right: -40%; background: linear-gradient(to right, rgb(14 15 17 / 0.9) 45%, rgb(14 15 17 / 0)); }
-    .story-cap[data-side='r']::before { left: -40%; right: 0; background: linear-gradient(to left, rgb(14 15 17 / 0.9) 45%, rgb(14 15 17 / 0)); }
+    .story-cap[data-side='l']::before { left: -12vw; right: -40%; background: linear-gradient(to right, rgb(14 15 17 / 0.9) 45%, rgb(14 15 17 / 0)); }
+    .story-cap[data-side='r']::before { left: -40%; right: -12vw; background: linear-gradient(to left, rgb(14 15 17 / 0.9) 45%, rgb(14 15 17 / 0)); }
   }
   /* 정적 히어로: 첫 문구 대신 마지막 문구 */
   .story:not(.is-live) .story-cap { opacity: 0; }

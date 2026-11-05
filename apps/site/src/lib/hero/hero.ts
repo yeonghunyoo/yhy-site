@@ -5,8 +5,12 @@ import type { Hero } from './scene.js';
 
 /** 히어로 구간 길이(화면 높이 배수). CSS의 .story.is-live 높이(100 + 252 + 100 + 100vh)와 맞춘다 */
 const HERO_VH = 2.52;
-/** 마지막 문장에 머무는 구간 — 앞 70% 동안 픽셀이 가운데로 모여 사라진다(11/05) */
+/** 마지막 문장에 머무는 구간(11/05) */
 const HOLD_VH = 1;
+/** 카메라가 다 빠지면(p ≥ OUTRO_AT) 픽셀이 가운데로 모여 사라지는 정리를 시간으로 자동 재생한다 — 스크롤과 무관(11/05) */
+const OUTRO_AT = 0.98;
+const OUTRO_IN_MS = 1400;
+const OUTRO_OUT_MS = 600;
 /** 커튼 구간에서 뒤 장면이 올라가는 속도(본문 대비) */
 const PARALLAX = 0.35;
 
@@ -34,7 +38,8 @@ export function initHero(): void {
   // 휠은 한 번에 100px씩 뛰어 장면이 뚝뚝 끊긴다(11/05) — 스크롤 위치는 목표로만 쓰고,
   // 화면에 쓰는 값은 매 프레임 목표를 부드럽게 따라간다(시간 상수 TAU, 프레임 수와 무관)
   const TAU = 110;
-  const cur = { p: -1, o: 0, q: 0 };
+  const cur = { p: -1, q: 0 };
+  let outroT = 0; // 0~1 시간 진행(정리 애니메이션), 화면에는 부드럽게 휜 값
   let running = false;
   let lastT = 0;
 
@@ -43,14 +48,13 @@ export function initHero(): void {
     const y = scrollY - root.offsetTop;
     return {
       p: clamp(y / (vh * HERO_VH)),
-      o: clamp((y - vh * HERO_VH) / (vh * HOLD_VH * 0.7)),
       q: clamp((y - vh * (HERO_VH + HOLD_VH)) / vh),
     };
   };
 
   const apply = () => {
     hero?.setProgress(cur.p);
-    hero?.setOutro(cur.o);
+    hero?.setOutro(outroT * outroT * (3 - 2 * outroT));
     for (const c of caps) c.classList.toggle('on', cur.p >= Number(c.dataset.from) && cur.p < Number(c.dataset.to));
     shade.style.opacity = String(cur.q * 0.75);
     stage.style.transform = cur.q > 0 ? `translate3d(0, ${(-cur.q * innerHeight * PARALLAX).toFixed(1)}px, 0)` : '';
@@ -58,10 +62,17 @@ export function initHero(): void {
 
   const step = (t: number) => {
     const goal = targets();
-    const k = lastT ? 1 - Math.exp(-(t - lastT) / TAU) : 1;
+    const dt = lastT ? t - lastT : 0;
+    const k = lastT ? 1 - Math.exp(-dt / TAU) : 1;
     lastT = t;
     let moving = false;
-    for (const key of ['p', 'o', 'q'] as const) {
+    // 정리: 카메라가 끝에 닿으면 1까지 시간으로, 다시 올라가면 0으로
+    const outroGoal = cur.p >= OUTRO_AT ? 1 : 0;
+    if (outroT !== outroGoal) {
+      outroT = outroGoal ? Math.min(1, outroT + dt / OUTRO_IN_MS) : Math.max(0, outroT - dt / OUTRO_OUT_MS);
+      moving = true;
+    }
+    for (const key of ['p', 'q'] as const) {
       const d = goal[key] - cur[key];
       if (cur[key] < 0 || Math.abs(d) < 0.0004) cur[key] = goal[key];
       else {

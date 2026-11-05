@@ -128,7 +128,11 @@
       "hint": "두 손가락으로 확대 · 두 번 탭하면 맞춤",
       "fit": "화면에 맞추기"
     },
-    "fab": "yh에게 물어보기"
+    "fab": "yh에게 물어보기",
+    "mode": {
+      "widget": "위젯으로 보기",
+      "bar": "하단 바로 보기"
+    }
   },
   "home": {
     "role": "유영훈 · Software Engineer · iOS · Builder",

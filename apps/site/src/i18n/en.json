@@ -128,7 +128,11 @@
       "hint": "Pinch to zoom · double-tap to fit",
       "fit": "Fit to screen"
     },
-    "fab": "ask yh"
+    "fab": "ask yh",
+    "mode": {
+      "widget": "Show as widget",
+      "bar": "Show as bottom bar"
+    }
   },
   "home": {
     "role": "Yeonghun Yoo · Software Engineer · iOS · Builder",
