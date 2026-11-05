@@ -1,4 +1,4 @@
-import { formatBytes, roleAtLeast, ROLE_LABEL, type Member, type SpaceRole } from "@nuvo/shared";
+import { formatBytes, REPORT_REASON_LABEL, roleAtLeast, ROLE_LABEL, type Member, type ReportReason, type SpaceRole } from "@nuvo/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -6,7 +6,7 @@ import { Gallery } from "../components/Gallery";
 import { Icon } from "../components/icons";
 import { Avatar, Button, Dialog, Empty, IconButton, Progress, Segmented, Spinner } from "../components/ui";
 import { api, unwrap } from "../lib/api";
-import { useActivities, useCopyAssets, useDeleteAssets, useLibraryAssets, useMe, useSpace, useSpaceLive } from "../lib/queries";
+import { useActivities, useBlocks, useConfig, useCopyAssets, useDeleteAssets, useLibraryAssets, useMe, useReports, useSpace, useSpaceLive } from "../lib/queries";
 import { mergeItems, type TItem } from "../lib/timeline";
 import { toast, toastError } from "../lib/toast";
 import { useSetUploadTarget } from "../lib/upload/target";
@@ -30,7 +30,9 @@ export function SpaceDetailPage() {
   const del = useDeleteAssets();
   const copy = useCopyAssets();
   const [who, setWho] = useState<string>("all");
-  const [dialog, setDialog] = useState<"invite" | "members" | null>(null);
+  const [dialog, setDialog] = useState<"invite" | "members" | "reports" | null>(null);
+  /** 신고 대상: 사진(assetId) 또는 멤버(userId) */
+  const [reportTarget, setReportTarget] = useState<{ assetId?: string; userId?: string; label: string } | null>(null);
   const [feedOpen, setFeedOpen] = useState(false);
   const myId = me.data?.user.id;
 
@@ -78,6 +80,9 @@ export function SpaceDetailPage() {
             </button>
           </div>
           <div className="ml-auto flex items-center gap-2 max-sm:ml-0">
+            {isAdmin && s.openReports > 0 && (
+              <Button size="sm" variant="danger" icon="flag" onClick={() => setDialog("reports")} data-testid="open-reports">신고 {s.openReports}</Button>
+            )}
             {isAdmin && <Button size="sm" icon="link" onClick={() => setDialog("invite")}>초대</Button>}
             <Button size="sm" variant="ghost" icon="users" onClick={() => setDialog("members")}>멤버</Button>
             <Button size="sm" variant="ghost" icon="layers" className="xl:hidden" onClick={() => setFeedOpen((v) => !v)}>소식</Button>
@@ -119,6 +124,9 @@ export function SpaceDetailPage() {
               </a>
               <IconButton icon="copy" label="내 라이브러리에 저장" onClick={() => saveToMine([t])} />
               {canDelete(t) && <IconButton icon="trash" label="삭제" onClick={() => remove([t])} />}
+              {t.cloud?.uploadedBy !== myId && (
+                <IconButton icon="flag" label="신고" onClick={() => setReportTarget({ assetId: t.cloud!.id, label: "이 사진" })} />
+              )}
             </>
           )}
           empty={
@@ -148,7 +156,17 @@ export function SpaceDetailPage() {
       </aside>
 
       <InviteDialog open={dialog === "invite"} onClose={() => setDialog(null)} spaceId={s.id} spaceName={s.name} />
-      <MembersDialog open={dialog === "members"} onClose={() => setDialog(null)} spaceId={s.id} members={s.members} myRole={s.myRole} myId={myId} />
+      <MembersDialog
+        open={dialog === "members"}
+        onClose={() => setDialog(null)}
+        spaceId={s.id}
+        members={s.members}
+        myRole={s.myRole}
+        myId={myId}
+        onReport={(m) => setReportTarget({ userId: m.id, label: `${m.name}님` })}
+      />
+      <ReportDialog spaceId={s.id} target={reportTarget} onClose={() => setReportTarget(null)} />
+      {isAdmin && <ReportsDialog open={dialog === "reports"} onClose={() => setDialog(null)} spaceId={s.id} />}
     </div>
   );
 }
@@ -222,10 +240,27 @@ function InviteDialog({ open, onClose, spaceId, spaceName }: { open: boolean; on
   );
 }
 
-function MembersDialog({ open, onClose, spaceId, members, myRole, myId }: { open: boolean; onClose: () => void; spaceId: string; members: Member[]; myRole: SpaceRole; myId?: string }) {
+function MembersDialog({
+  open,
+  onClose,
+  spaceId,
+  members,
+  myRole,
+  myId,
+  onReport,
+}: {
+  open: boolean;
+  onClose: () => void;
+  spaceId: string;
+  members: Member[];
+  myRole: SpaceRole;
+  myId?: string;
+  onReport: (m: Member) => void;
+}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [removePhotos, setRemovePhotos] = useState(false);
+  const blocks = useBlocks(spaceId, open && roleAtLeast(myRole, "admin"));
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["space", spaceId] });
     void qc.invalidateQueries({ queryKey: ["me"] });
@@ -236,11 +271,23 @@ function MembersDialog({ open, onClose, spaceId, members, myRole, myId }: { open
     onError: toastError,
   });
   const removeM = useMutation({
-    mutationFn: (userId: string) => unwrap(api.spaces[":id"].members[":userId"].$delete({ param: { id: spaceId, userId }, query: removePhotos ? { removePhotos: "1" } : {} })),
-    onSuccess: (_, userId) => {
+    mutationFn: (v: { userId: string; block?: boolean }) =>
+      unwrap(
+        api.spaces[":id"].members[":userId"].$delete({
+          param: { id: spaceId, userId: v.userId },
+          query: { ...(removePhotos && v.userId === myId ? { removePhotos: "1" as const } : {}), ...(v.block ? { block: "1" as const } : {}) },
+        }),
+      ),
+    onSuccess: (_, v) => {
       refresh();
-      if (userId === myId) navigate("/spaces");
+      void qc.invalidateQueries({ queryKey: ["blocks", spaceId] });
+      if (v.userId === myId) navigate("/spaces");
     },
+    onError: toastError,
+  });
+  const unblock = useMutation({
+    mutationFn: (userId: string) => unwrap(api.spaces[":id"].blocks[":userId"].$delete({ param: { id: spaceId, userId } })),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["blocks", spaceId] }),
     onError: toastError,
   });
   const delSpace = useMutation({
@@ -281,15 +328,36 @@ function MembersDialog({ open, onClose, spaceId, members, myRole, myId }: { open
                     <option value="editor">{ROLE_LABEL.editor}</option>
                     <option value="viewer">{ROLE_LABEL.viewer}</option>
                   </select>
-                  <IconButton icon="close" label={`${m.name} 내보내기`} onClick={() => confirm(`${m.name}님을 내보낼까요? 올린 사진은 Space에 남아요.`) && removeM.mutate(m.id)} />
+                  <IconButton icon="close" label={`${m.name} 내보내기`} onClick={() => confirm(`${m.name}님을 내보낼까요? 올린 사진은 Space에 남아요.`) && removeM.mutate({ userId: m.id })} />
+                  <IconButton
+                    icon="flag"
+                    label={`${m.name} 내보내고 차단`}
+                    onClick={() => confirm(`${m.name}님을 내보내고 차단할까요? 초대 링크로 다시 들어올 수 없어요. 올린 사진은 Space에 남아요.`) && removeM.mutate({ userId: m.id, block: true })}
+                  />
                 </>
               ) : (
                 <span className="text-xs text-faint">{ROLE_LABEL[m.role]}</span>
+              )}
+              {!self && !manageable && (
+                <IconButton icon="flag" label={`${m.name} 신고`} onClick={() => onReport(m)} />
               )}
             </li>
           );
         })}
       </ul>
+      {!!blocks.data?.length && (
+        <div className="mt-6 border-t border-line pt-4">
+          <h3 className="mb-2 text-xs text-faint">차단한 사람</h3>
+          <ul className="flex flex-col gap-1" data-testid="blocks">
+            {blocks.data.map((b) => (
+              <li key={b.id} className="flex items-center gap-3 text-sm">
+                <span className="min-w-0 flex-1 truncate">{b.name}</span>
+                <Button size="sm" variant="ghost" onClick={() => confirm(`${b.name}님 차단을 풀까요? 다시 초대할 수 있게 돼요.`) && unblock.mutate(b.id)}>차단 풀기</Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-6 flex flex-col gap-3 border-t border-line pt-4">
         {myRole !== "owner" ? (
           <>
@@ -297,7 +365,7 @@ function MembersDialog({ open, onClose, spaceId, members, myRole, myId }: { open
               <input type="checkbox" checked={removePhotos} onChange={(e) => setRemovePhotos(e.target.checked)} />
               내가 올린 사진도 함께 삭제
             </label>
-            <Button variant="danger" onClick={() => myId && confirm("이 Space에서 나갈까요?") && removeM.mutate(myId)}>Space 나가기</Button>
+            <Button variant="danger" onClick={() => myId && confirm("이 Space에서 나갈까요?") && removeM.mutate({ userId: myId })}>Space 나가기</Button>
           </>
         ) : (
           <>
@@ -306,6 +374,119 @@ function MembersDialog({ open, onClose, spaceId, members, myRole, myId }: { open
           </>
         )}
       </div>
+    </Dialog>
+  );
+}
+
+const REASONS = Object.keys(REPORT_REASON_LABEL) as ReportReason[];
+
+/** 사진·멤버 신고 (스토어 UGC 요건, docs/work-plan.md ⑤). Space 관리자와 운영자에게 전달된다 */
+function ReportDialog({ spaceId, target, onClose }: { spaceId: string; target: { assetId?: string; userId?: string; label: string } | null; onClose: () => void }) {
+  const config = useConfig();
+  const [reason, setReason] = useState<ReportReason | null>(null);
+  const [note, setNote] = useState("");
+  const close = () => {
+    setReason(null);
+    setNote("");
+    onClose();
+  };
+  const send = useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.spaces[":id"].reports.$post({
+          param: { id: spaceId },
+          json: { assetId: target?.assetId, userId: target?.userId, reason: reason!, note: note.trim() || undefined },
+        }),
+      ),
+    onSuccess: () => {
+      toast("신고했어요. Space 관리자와 nuvo 운영자가 확인해요.");
+      close();
+    },
+    onError: toastError,
+  });
+  return (
+    <Dialog open={!!target} onClose={close} title={`${target?.label ?? ""} 신고`}>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (reason) send.mutate();
+        }}
+        data-testid="report-form"
+      >
+        <fieldset className="flex flex-col gap-1.5">
+          {REASONS.map((r) => (
+            <label key={r} className="flex items-center gap-2 text-sm">
+              <input type="radio" name="reason" value={r} checked={reason === r} onChange={() => setReason(r)} />
+              {REPORT_REASON_LABEL[r]}
+            </label>
+          ))}
+        </fieldset>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          maxLength={500}
+          rows={3}
+          placeholder="자세한 내용 (선택)"
+          className="rounded-xl border border-line bg-bg px-3 py-2 text-sm"
+        />
+        {reason === "child_safety" && (
+          <p className="text-xs text-danger">아동이 위험한 상황이라면 112에도 바로 신고해 주세요.</p>
+        )}
+        <p className="text-xs text-faint">
+          Space 관리자와 nuvo 운영자에게 전달돼요. 신고한 사람의 이름은 관리자에게 보여요.
+          {config.data?.supportEmail && <> 급한 일은 <a className="underline" href={`mailto:${config.data.supportEmail}`}>{config.data.supportEmail}</a>로 알려 주세요.</>}
+        </p>
+        <Button variant="danger" type="submit" disabled={!reason || send.isPending}>신고하기</Button>
+      </form>
+    </Dialog>
+  );
+}
+
+/** 관리자(admin+): 신고 목록과 처리 */
+function ReportsDialog({ open, onClose, spaceId }: { open: boolean; onClose: () => void; spaceId: string }) {
+  const qc = useQueryClient();
+  const reports = useReports(spaceId, open);
+  const resolve = useMutation({
+    mutationFn: (v: { id: string; status: "resolved" | "dismissed" }) =>
+      unwrap(api.spaces[":id"].reports[":reportId"].$post({ param: { id: spaceId, reportId: v.id }, json: { status: v.status } })),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["reports", spaceId] });
+      void qc.invalidateQueries({ queryKey: ["space", spaceId] });
+    },
+    onError: toastError,
+  });
+  return (
+    <Dialog open={open} onClose={onClose} title="신고">
+      {reports.isPending ? (
+        <div className="flex justify-center py-6"><Spinner /></div>
+      ) : !reports.data?.length ? (
+        <p className="text-sm text-faint">신고가 없어요</p>
+      ) : (
+        <ul className="flex flex-col gap-4" data-testid="reports">
+          {reports.data.map((r) => (
+            <li key={r.id} className={`flex gap-3 ${r.status === "open" ? "" : "opacity-50"}`}>
+              {r.thumb ? <img src={r.thumb} alt="" className="size-14 shrink-0 rounded-md object-cover" /> : <span className="flex size-14 shrink-0 items-center justify-center rounded-md bg-surface text-faint"><Icon name="users" /></span>}
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="font-medium">{REPORT_REASON_LABEL[r.reason]}</p>
+                <p className="text-xs text-faint">
+                  {r.reporterName ?? "떠난 멤버"}님이 신고{r.targetName ? ` · 대상 ${r.targetName}` : ""} · {ago(r.createdAt)}
+                </p>
+                {r.note && <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{r.note}</p>}
+                {r.status === "open" ? (
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={() => resolve.mutate({ id: r.id, status: "resolved" })}>처리함</Button>
+                    <Button size="sm" variant="ghost" onClick={() => resolve.mutate({ id: r.id, status: "dismissed" })}>문제 없음</Button>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs text-faint">{r.status === "resolved" ? "처리함" : "문제 없음"}</p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-4 text-xs text-faint">사진 삭제나 멤버 내보내기·차단은 사진 보기와 멤버 화면에서 해요. 처리한 뒤 ‘처리함’을 눌러 주세요.</p>
     </Dialog>
   );
 }

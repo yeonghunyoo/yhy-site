@@ -1,5 +1,5 @@
 import { validate } from "../lib/validate";
-import { activities, assets, blobs, invites, libraries, spaceMembers, spaces, user as userTable } from "@nuvo/db";
+import { activities, assets, blobs, invites, libraries, spaceBlocks, spaceMembers, spaces, user as userTable } from "@nuvo/db";
 import { InviteCreateInput, MemberRoleInput, SpaceNameInput, roleAtLeast, type Activity } from "@nuvo/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -9,6 +9,7 @@ import { requireUser, type AppEnv } from "../context";
 import { requireSpaceRole } from "../lib/access";
 import { billingOwner, ownerUsage } from "../lib/capacity";
 import { requireSubscriber, subscriptionOf } from "../lib/subscription";
+import { openReportCount } from "./reports";
 import { kickFromHub, lockLibraries, notifyHub, recordSpaceActivity, removeAssets } from "../lib/assets";
 import { collectGarbage, type Tx } from "../lib/gc";
 import { HUB_USER_HEADER } from "../hub";
@@ -72,6 +73,8 @@ export const spaceRoutes = new Hono<AppEnv>()
       // 용량은 소유자 것 (개인 + 소유 Space 합). 소유자 구독이 끝나면 올리기가 막히니 화면이 알 수 있게 함께 준다
       library: { id: lib.id, type: "space" as const, usedBytes: usage.usedBytes, quotaBytes: usage.quotaBytes, ownBytes: lib.usedBytes },
       ownerSubscribed: owner ? (await subscriptionOf(c.var.db, owner)).active : false,
+      // 관리자에게만: 처리 안 된 신고 수
+      openReports: roleAtLeast(myRole, "admin") ? await openReportCount(c.var.db, spaceId) : 0,
       members,
     });
   })
@@ -151,46 +154,77 @@ export const spaceRoutes = new Hono<AppEnv>()
   /**
    * 내보내기(admin+) 또는 나가기(본인). 기본 정책: 올린 사진은 Space에 남는다.
    * ?removePhotos=1 이면 그 사람이 올린 사진도 함께 삭제.
+   * ?block=1 이면 내보내면서 차단 — 초대 링크로 다시 들어올 수 없다 (docs/work-plan.md ⑤). 본인 나가기에는 쓸 수 없다
    */
-  .delete("/:id/members/:userId", validate("query", z.object({ removePhotos: z.literal("1").optional() })), async (c) => {
+  .delete(
+    "/:id/members/:userId",
+    validate("query", z.object({ removePhotos: z.literal("1").optional(), block: z.literal("1").optional() })),
+    async (c) => {
+      const user = requireUser(c);
+      const { id: spaceId, userId } = c.req.param();
+      const self = userId === user.id;
+      await requireSpaceRole(c.var.db, user.id, spaceId, "viewer");
+      const removePhotos = c.req.valid("query").removePhotos === "1";
+      const block = c.req.valid("query").block === "1";
+      if (block && self) throw new HTTPException(400, { message: "자기 자신은 차단할 수 없어요" });
+      const lib = await spaceLibrary(c, spaceId);
+
+      const { orphanShas } = await c.var.db.transaction(async (tx) => {
+        const roles = await lockMemberRoles(tx, spaceId);
+        const myRole = roles.get(user.id);
+        const targetRole = roles.get(userId);
+        if (!myRole) throw new HTTPException(404, { message: "Space를 찾을 수 없어요" });
+        if (!targetRole) throw new HTTPException(404, { message: "멤버를 찾을 수 없어요" });
+        if (!self && !roleAtLeast(myRole, "admin")) throw new HTTPException(403, { message: "권한이 없어요" });
+        if (targetRole === "owner")
+          throw new HTTPException(400, { message: "소유자는 나가기 전에 다른 멤버에게 소유권을 넘겨야 해요" });
+        if (!self && targetRole === "admin" && myRole !== "owner")
+          throw new HTTPException(403, { message: "관리자는 소유자만 내보낼 수 있어요" });
+
+        let removed = { orphanShas: [] as string[] };
+        if (removePhotos) {
+          const ids = (
+            await tx
+              .select({ id: assets.id })
+              .from(assets)
+              .where(and(eq(assets.libraryId, lib.id), eq(assets.uploadedBy, userId)))
+          ).map((r) => r.id);
+          removed = await removeAssets(tx, ids);
+        }
+        await tx.delete(spaceMembers).where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.userId, userId)));
+        if (block) await tx.insert(spaceBlocks).values({ spaceId, userId, blockedBy: user.id }).onConflictDoNothing();
+        return removed;
+      });
+      // 내보낸 사람의 실시간 연결을 끊는다 (연결할 때만 권한을 확인하므로)
+      c.executionCtx.waitUntil(kickFromHub(c.env, spaceId, userId));
+      await collectGarbage(c.var.db, c.env.MEDIA, orphanShas);
+
+      const [target] = await c.var.db.select({ id: userTable.id, name: userTable.name }).from(userTable).where(eq(userTable.id, userId));
+      await recordSpaceActivity(c.env, c.var.db, spaceId, target ?? user, "member_left", {}, { type: "members_changed" });
+      return c.json({ ok: true });
+    },
+  )
+
+  /** 관리자(admin+): 차단 목록 */
+  .get("/:id/blocks", async (c) => {
+    const user = requireUser(c);
+    const spaceId = c.req.param("id");
+    await requireSpaceRole(c.var.db, user.id, spaceId, "admin");
+    const rows = await c.var.db
+      .select({ id: spaceBlocks.userId, name: userTable.name, createdAt: spaceBlocks.createdAt })
+      .from(spaceBlocks)
+      .innerJoin(userTable, eq(userTable.id, spaceBlocks.userId))
+      .where(eq(spaceBlocks.spaceId, spaceId))
+      .orderBy(desc(spaceBlocks.createdAt));
+    return c.json({ blocks: rows.map((r) => ({ ...r, createdAt: r.createdAt.getTime() })) });
+  })
+
+  /** 관리자(admin+): 차단 풀기 (다시 초대할 수 있게) */
+  .delete("/:id/blocks/:userId", async (c) => {
     const user = requireUser(c);
     const { id: spaceId, userId } = c.req.param();
-    const self = userId === user.id;
-    await requireSpaceRole(c.var.db, user.id, spaceId, "viewer");
-    const removePhotos = c.req.valid("query").removePhotos === "1";
-    const lib = await spaceLibrary(c, spaceId);
-
-    const { orphanShas } = await c.var.db.transaction(async (tx) => {
-      const roles = await lockMemberRoles(tx, spaceId);
-      const myRole = roles.get(user.id);
-      const targetRole = roles.get(userId);
-      if (!myRole) throw new HTTPException(404, { message: "Space를 찾을 수 없어요" });
-      if (!targetRole) throw new HTTPException(404, { message: "멤버를 찾을 수 없어요" });
-      if (!self && !roleAtLeast(myRole, "admin")) throw new HTTPException(403, { message: "권한이 없어요" });
-      if (targetRole === "owner")
-        throw new HTTPException(400, { message: "소유자는 나가기 전에 다른 멤버에게 소유권을 넘겨야 해요" });
-      if (!self && targetRole === "admin" && myRole !== "owner")
-        throw new HTTPException(403, { message: "관리자는 소유자만 내보낼 수 있어요" });
-
-      let removed = { orphanShas: [] as string[] };
-      if (removePhotos) {
-        const ids = (
-          await tx
-            .select({ id: assets.id })
-            .from(assets)
-            .where(and(eq(assets.libraryId, lib.id), eq(assets.uploadedBy, userId)))
-        ).map((r) => r.id);
-        removed = await removeAssets(tx, ids);
-      }
-      await tx.delete(spaceMembers).where(and(eq(spaceMembers.spaceId, spaceId), eq(spaceMembers.userId, userId)));
-      return removed;
-    });
-    // 내보낸 사람의 실시간 연결을 끊는다 (연결할 때만 권한을 확인하므로)
-    c.executionCtx.waitUntil(kickFromHub(c.env, spaceId, userId));
-    await collectGarbage(c.var.db, c.env.MEDIA, orphanShas);
-
-    const [target] = await c.var.db.select({ id: userTable.id, name: userTable.name }).from(userTable).where(eq(userTable.id, userId));
-    await recordSpaceActivity(c.env, c.var.db, spaceId, target ?? user, "member_left", {}, { type: "members_changed" });
+    await requireSpaceRole(c.var.db, user.id, spaceId, "admin");
+    await c.var.db.delete(spaceBlocks).where(and(eq(spaceBlocks.spaceId, spaceId), eq(spaceBlocks.userId, userId)));
     return c.json({ ok: true });
   })
 
@@ -315,6 +349,13 @@ export const inviteRoutes = new Hono<AppEnv>()
       if (m) return { spaceId: inv.spaceId, joined: false };
       if (inv.expiresAt.getTime() < Date.now() || inv.uses >= inv.maxUses)
         throw new HTTPException(410, { message: "만료된 초대 링크예요" });
+      // 차단된 사람은 링크가 유효해도 들어올 수 없다
+      const [blocked] = await tx
+        .select({ userId: spaceBlocks.userId })
+        .from(spaceBlocks)
+        .where(and(eq(spaceBlocks.spaceId, inv.spaceId), eq(spaceBlocks.userId, user.id)))
+        .limit(1);
+      if (blocked) throw new HTTPException(403, { message: "이 Space에는 참여할 수 없어요" });
       await tx.insert(spaceMembers).values({ spaceId: inv.spaceId, userId: user.id, role: inv.role });
       await tx.update(invites).set({ uses: sql`${invites.uses} + 1` }).where(eq(invites.token, token));
       return { spaceId: inv.spaceId, joined: true };

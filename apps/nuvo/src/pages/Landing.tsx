@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Icon, type IconName } from "../components/icons";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { Button } from "../components/ui";
-import { useMe } from "../lib/queries";
+import { useConfig, useMe } from "../lib/queries";
 import { canUseWebGL, isLowEnd, prefersReducedMotion } from "../three/support";
 
 const LandingField = lazy(() => import("../three/LandingField"));
@@ -16,6 +16,7 @@ const FEATURES: { icon: IconName; title: string; body: string }[] = [
 
 export function LandingPage() {
   const me = useMe();
+  const config = useConfig();
   const gl = useMemo(() => canUseWebGL(), []);
   const motion = useMemo(() => !prefersReducedMotion(), []);
   const low = useMemo(() => isLowEnd(), []);
@@ -76,6 +77,12 @@ export function LandingPage() {
 
       <footer className="border-t border-line px-6 py-8 text-center text-xs text-faint">
         nuvo · 사진은 비공개가 기본이에요. 초대받은 사람만 볼 수 있어요.
+        {config.data?.supportEmail && (
+          <>
+            {" · "}
+            <a className="underline underline-offset-2" href={`mailto:${config.data.supportEmail}`}>문의 {config.data.supportEmail}</a>
+          </>
+        )}
       </footer>
     </div>
   );

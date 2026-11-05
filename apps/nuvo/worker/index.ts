@@ -9,6 +9,7 @@ import { requireUser, withContext, withSession, type AppEnv } from "./context";
 import { setManualSubscription } from "./lib/subscription";
 import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
+import { reportRoutes } from "./routes/reports";
 import { inviteRoutes, spaceRoutes } from "./routes/spaces";
 import { uploads } from "./routes/uploads";
 
@@ -18,6 +19,8 @@ const api = new Hono<AppEnv>()
   .basePath("/api")
   .get("/health", (c) => c.json({ ok: true, service: "nuvo" }))
   .get("/auth-config", (c) => c.json(enabledProviders(c.env)))
+  /** 공개 설정: 지원 연락처 (스토어 UGC 요건 — 화면 어디서나 보이게) */
+  .get("/config", (c) => c.json({ supportEmail: c.env.SUPPORT_EMAIL || null }))
   /** 로컬 개발 전용: 보낸 메일 보관함 (인증·재설정 링크 확인용). 운영에서는 404 */
   .get("/dev/outbox", (c) => {
     if (c.env.ENVIRONMENT === "production") return c.json({ error: "not found" }, 404);
@@ -40,6 +43,7 @@ const api = new Hono<AppEnv>()
   })
   .route("/uploads", uploads)
   .route("/spaces", spaceRoutes)
+  .route("/spaces", reportRoutes)
   .route("/invites", inviteRoutes)
   .route("/", assetRoutes);
 

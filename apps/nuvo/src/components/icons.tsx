@@ -12,6 +12,7 @@ const paths = {
   left: "M15 18l-6-6 6-6",
   right: "M9 6l6 6-6 6",
   info: "M12 11v5m0-8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+  flag: "M5 21V4m0 0h11l-1.5 4L16 12H5",
   download: "M12 4v12m0 0 4.5-4.5M12 16l-4.5-4.5M5 20h14",
   trash: "M4 7h16M10 11v6m4-6v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3",
   check: "M5 12.5 10 17l9-10",

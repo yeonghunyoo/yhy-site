@@ -103,6 +103,8 @@ blobs        물리 파일 (sha256 유일, refCount). 여러 Asset이 공유, �
 libraries    personal(userId) | space(spaceId), quotaBytes, usedBytes
 assets       라이브러리 안 사진 1장 (blobId, uploadedBy, takenAt, gps, camera, dhash, blurhash)
 subscriptions 구독 (userId, source manual|apple|google, status, currentPeriodEnd, externalId). 구독자 판단은 worker/lib/subscription.ts
+reports      Space 안 사진·멤버 신고 (reason, note, status open|resolved|dismissed, 당시 사진 해시). worker/routes/reports.ts
+space_blocks Space 차단 (spaceId, userId). 차단된 사람은 초대 링크로 들어올 수 없음
 spaces / space_members(owner|admin|editor|viewer) / invites(7일, 10명)
 activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한 줄로 합침
 ```
@@ -116,6 +118,8 @@ activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한
 - 로그인 상태에서는 "백업됐는지" 확인하려고 해시(sha256)만 서버에 보냅니다. 서버는 저장하지 않고, 내가 접근할 수 있는 사진함 안에서만 비교합니다.
 
 ## 보안 설계 (smoke 테스트로 검증)
+
+- **신고·차단 (스토어 UGC 요건, 11/05).** 멤버 누구나 Space 안 사진·멤버를 신고하고(하루 20건), 관리자만 목록을 봅니다. 운영자에게 `SUPPORT_EMAIL`로 메일이 갑니다. 지운 사진은 신고 목록에서 썸네일을 서명하지 않습니다. 내보내면서 차단하면 초대 링크로 다시 들어올 수 없습니다.
 
 - **남의 사진 존재 여부를 알 수 없음.** 업로드 전 "이미 있음" 판정은 내가 접근할 수 있는 라이브러리 안에서만 합니다. 썸네일 업로드도 영수증이 없으면 사진이 있든 없든 똑같이 403입니다.
 - **해시만 알아서는 남의 사진을 가져올 수 없음.** 업로드 완료 시 원본을 실제로 올렸다는 서버 영수증(HMAC)이 필요합니다.

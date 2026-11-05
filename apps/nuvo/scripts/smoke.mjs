@@ -234,6 +234,20 @@ const momAssetInSpace = spTl.assets.find((x) => x.uploadedBy === meA.user.id);
 const denied = await b("/api/assets/delete", { method: "POST", json: { assetIds: [momAssetInSpace.id] } });
 ok(denied.status === 403, "참여자는 남이 올린 사진 삭제 불가");
 
+// 신고 (스토어 UGC 요건): 멤버는 사진·멤버를 신고할 수 있고, 관리자만 목록을 보고 처리한다
+const rep = await b(`/api/spaces/${space.id}/reports`, { method: "POST", json: { assetId: momAssetInSpace.id, reason: "inappropriate", note: "테스트" } });
+ok(rep.status === 201, `동생이 사진 신고 (${rep.status})`);
+const repEmpty = await b(`/api/spaces/${space.id}/reports`, { method: "POST", json: { reason: "other" } });
+ok(repEmpty.status === 400, `대상 없는 신고 거부 (${repEmpty.status})`);
+ok((await b(`/api/spaces/${space.id}/reports`)).status === 403, "참여자는 신고 목록을 볼 수 없음");
+const repList = (await a(`/api/spaces/${space.id}/reports`)).data.reports;
+ok(repList?.length === 1 && repList[0].status === "open" && repList[0].reporterName === "동생" && repList[0].thumb, "소유자가 신고 목록 확인 (신고자·썸네일)");
+ok((await a(`/api/spaces/${space.id}`)).data.openReports === 1, "Space 화면에 열린 신고 1건");
+const repDone = await a(`/api/spaces/${space.id}/reports/${repList[0].id}`, { method: "POST", json: { status: "dismissed" } });
+ok(repDone.status === 200 && (await a(`/api/spaces/${space.id}`)).data.openReports === 0, "신고 처리 → 열린 신고 0");
+const cfg = await fetch(`${BASE}/api/config`).then((r) => r.json());
+ok("supportEmail" in cfg, "공개 설정에 지원 연락처 자리");
+
 // 백업 상태 조회
 const bs = await b("/api/backup-status", { method: "POST", json: { sha256s: [img.sha256, imgB.sha256, fake.sha256] } });
 ok(bs.data.backedUp?.length === 2, "백업 상태: 접근 가능한 사진만 (2개)");
@@ -311,6 +325,27 @@ const ownerCall = owners[0]?.id === meC.user.id ? c : d;
 ok((await ownerCall(`/api/spaces/${s2.id}`, { method: "DELETE" })).status === 200, "새 소유자가 Space 삭제");
 await c("/api/me", { method: "DELETE" });
 await d("/api/me", { method: "DELETE" });
+
+// 차단: 내보내면서 차단하면 초대 링크로 다시 들어올 수 없다. 차단을 풀면 다시 들어올 수 있다
+{
+  const e = client();
+  await signUp(e, "이웃");
+  const s3 = (await a("/api/spaces", { method: "POST", json: { name: "차단 테스트" } })).data;
+  const inv4 = (await a(`/api/spaces/${s3.id}/invites`, { method: "POST", json: { role: "viewer" } })).data;
+  await e(`/api/invites/${inv4.token}/accept`, { method: "POST" });
+  const meE = (await e("/api/me")).data;
+  const kickBlock = await a(`/api/spaces/${s3.id}/members/${meE.user.id}?block=1`, { method: "DELETE" });
+  const rejoin = await e(`/api/invites/${inv4.token}/accept`, { method: "POST" });
+  ok(kickBlock.status === 200 && rejoin.status === 403, `내보내고 차단 → 같은 링크로 재참여 불가 (${kickBlock.status}, ${rejoin.status})`);
+  const bl = (await a(`/api/spaces/${s3.id}/blocks`)).data.blocks;
+  ok(bl?.length === 1 && bl[0].name === "이웃", "차단 목록");
+  await a(`/api/spaces/${s3.id}/blocks/${meE.user.id}`, { method: "DELETE" });
+  const rejoin2 = await e(`/api/invites/${inv4.token}/accept`, { method: "POST" });
+  ok(rejoin2.data.joined === true, "차단을 풀면 다시 참여 가능");
+  ok((await a(`/api/spaces/${s3.id}/members/${meA.user.id}?block=1`, { method: "DELETE" })).status === 400, "자기 자신은 차단 불가");
+  await a(`/api/spaces/${s3.id}`, { method: "DELETE" });
+  await e("/api/me", { method: "DELETE" });
+}
 
 // 삭제와 Blob 정리: 개인 라이브러리에서 지워도 Space 사본은 남는다
 const delAsset = await a("/api/assets/delete", { method: "POST", json: { assetIds: [asset.id] } });

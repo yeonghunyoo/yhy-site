@@ -1,4 +1,4 @@
-import type { Activity, CloudAsset, HubEvent, Member, SpaceRole } from "@nuvo/shared";
+import type { Activity, CloudAsset, HubEvent, Member, SpaceReport, SpaceRole } from "@nuvo/shared";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { api, unwrap } from "./api";
@@ -8,6 +8,29 @@ import { toast, toastError } from "./toast";
 
 export function useAuthConfig() {
   return useQuery({ queryKey: ["auth-config"], queryFn: () => unwrap(api["auth-config"].$get()), staleTime: Infinity });
+}
+
+/** 공개 설정 (지원 연락처). 로그인 없이도 */
+export function useConfig() {
+  return useQuery({ queryKey: ["config"], queryFn: () => unwrap(api.config.$get()), staleTime: Infinity });
+}
+
+/** 관리자: Space 신고 목록 */
+export function useReports(spaceId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["reports", spaceId],
+    enabled: !!spaceId && enabled,
+    queryFn: async () => (await unwrap(api.spaces[":id"].reports.$get({ param: { id: spaceId! } }))).reports as SpaceReport[],
+  });
+}
+
+/** 관리자: Space 차단 목록 */
+export function useBlocks(spaceId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["blocks", spaceId],
+    enabled: !!spaceId && enabled,
+    queryFn: async () => (await unwrap(api.spaces[":id"].blocks.$get({ param: { id: spaceId! } }))).blocks,
+  });
 }
 
 export function useMe() {
@@ -55,6 +78,7 @@ export function useSpace(spaceId: string | undefined) {
       /** usedBytes·quotaBytes는 소유자 것(개인 + 소유 Space 합), ownBytes는 이 Space만 */
       library: { id: string; type: "space"; usedBytes: number; quotaBytes: number; ownBytes: number };
       ownerSubscribed: boolean;
+      openReports: number;
       members: Member[];
     }>,
   });

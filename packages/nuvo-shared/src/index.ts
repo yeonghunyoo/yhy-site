@@ -154,6 +154,39 @@ export type HubEvent =
 export const SpaceNameInput = z.object({ name: z.string().trim().min(1).max(40) });
 export const InviteCreateInput = z.object({ role: z.enum(["editor", "viewer"]).default("editor") });
 export const MemberRoleInput = z.object({ role: SpaceRole });
+
+/** 신고 사유 (docs/work-plan.md ⑤). child_safety는 운영자가 가장 먼저 본다 */
+export const ReportReason = z.enum(["inappropriate", "privacy", "harassment", "child_safety", "other"]);
+export type ReportReason = z.infer<typeof ReportReason>;
+export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
+  inappropriate: "부적절한 사진",
+  privacy: "내 사진·개인정보가 동의 없이 올라감",
+  harassment: "괴롭힘·불쾌한 행동",
+  child_safety: "아동 안전 문제",
+  other: "기타",
+};
+/** 사진 또는 멤버 중 하나는 있어야 한다 */
+export const ReportInput = z
+  .object({
+    assetId: z.string().uuid().optional(),
+    userId: z.string().min(1).max(64).optional(),
+    reason: ReportReason,
+    note: z.string().trim().max(500).optional(),
+  })
+  .refine((v) => v.assetId || v.userId, { message: "신고할 사진이나 멤버를 골라 주세요" });
+export const ReportResolveInput = z.object({ status: z.enum(["resolved", "dismissed"]) });
+export type SpaceReport = {
+  id: string;
+  reason: ReportReason;
+  note: string | null;
+  status: "open" | "resolved" | "dismissed";
+  reporterName: string | null;
+  targetUserId: string | null;
+  targetName: string | null;
+  assetId: string | null;
+  thumb: string | null;
+  createdAt: number;
+};
 export const CopyAssetsInput = z.object({
   assetIds: z.array(z.string().uuid()).min(1).max(500),
   targetLibraryId: z.string().uuid(),

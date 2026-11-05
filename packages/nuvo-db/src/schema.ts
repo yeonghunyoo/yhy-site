@@ -224,6 +224,52 @@ export const r2Gc = pgTable(
   (t) => [primaryKey({ columns: [t.sha256, t.owner] }), index("r2_gc_due_idx").on(t.dueAt)],
 );
 
+export const reportReason = pgEnum("report_reason", ["inappropriate", "privacy", "harassment", "child_safety", "other"]);
+export const reportStatus = pgEnum("report_status", ["open", "resolved", "dismissed"]);
+
+/**
+ * Space 안 사진·멤버 신고 (docs/work-plan.md ⑤, 스토어 UGC 요건 — docs/media-security.md 3.3·4.4).
+ * Space 관리자(admin+)가 보고 처리하고, 운영자에게도 메일이 간다(SUPPORT_EMAIL).
+ * 사진이 지워져도 신고 기록은 남는다(assetId·assetSha는 당시 값).
+ */
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    spaceId: uuid("space_id")
+      .notNull()
+      .references(() => spaces.id, { onDelete: "cascade" }),
+    assetId: uuid("asset_id").references(() => assets.id, { onDelete: "set null" }),
+    /** 신고 당시 사진 해시 (사진이 지워진 뒤에도 운영자가 같은 원본을 찾을 수 있게) */
+    assetSha: text("asset_sha"),
+    targetUserId: text("target_user_id").references(() => user.id, { onDelete: "set null" }),
+    reporterId: text("reporter_id").references(() => user.id, { onDelete: "set null" }),
+    reason: reportReason("reason").notNull(),
+    note: text("note"),
+    status: reportStatus("status").notNull().default("open"),
+    resolvedBy: text("resolved_by").references(() => user.id, { onDelete: "set null" }),
+    resolvedAt: ts("resolved_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("reports_space_status_idx").on(t.spaceId, t.status)],
+);
+
+/** Space 차단: 내보내면서 차단한 사람은 초대 링크로 다시 들어올 수 없다 (docs/work-plan.md ⑤) */
+export const spaceBlocks = pgTable(
+  "space_blocks",
+  {
+    spaceId: uuid("space_id")
+      .notNull()
+      .references(() => spaces.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    blockedBy: text("blocked_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.spaceId, t.userId] })],
+);
+
 export const subscriptionSource = pgEnum("subscription_source", ["manual", "apple", "google"]);
 export const subscriptionStatus = pgEnum("subscription_status", ["active", "grace", "expired", "canceled"]);
 

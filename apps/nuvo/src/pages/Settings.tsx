@@ -9,7 +9,7 @@ import { api, unwrap } from "../lib/api";
 import { signOut } from "../lib/auth";
 import { toastError } from "../lib/toast";
 import { initLocal, removeFolder, scanFolder, useLocal } from "../lib/local/store";
-import { useMe } from "../lib/queries";
+import { useConfig, useMe } from "../lib/queries";
 import { setAccent, setThemePref, useTheme, type Accent } from "../theme/theme";
 
 const ACCENTS: { value: Accent; label: string; light: string; dark: string }[] = [
@@ -30,6 +30,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function SettingsPage() {
   const theme = useTheme();
   const me = useMe();
+  const config = useConfig();
   const local = useLocal();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -163,6 +164,14 @@ export function SettingsPage() {
             </button>
           </Section>
         </>
+      )}
+      {config.data?.supportEmail && (
+        <Section title="문의">
+          <p className="text-sm">
+            <a className="underline underline-offset-2" href={`mailto:${config.data.supportEmail}`}>{config.data.supportEmail}</a>
+          </p>
+          <p className="mt-2 text-xs text-faint">신고·개인정보·계정 문제를 알려 주세요. Space 안의 사진이나 멤버는 사진 보기·멤버 화면에서 바로 신고할 수 있어요.</p>
+        </Section>
       )}
     </div>
   );
