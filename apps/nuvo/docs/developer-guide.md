@@ -260,6 +260,7 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 | `ENVIRONMENT` | `wrangler.jsonc` vars (`production`) / `.dev.vars` (`development`) | — | `development`일 때만 이메일 로그인 |
 | `PERSONAL_QUOTA_GB` | `wrangler.jsonc` vars | — | 개인 구독 용량 10. Space는 별도 용량 없이 소유자 용량에서 차감([mvp.md](mvp.md) "용량·구독"). 바꿔도 이미 만든 사진함에는 반영되지 않음 |
 | `STORAGE_CAP_GB` | `wrangler.jsonc` vars | — | 서비스 전체 저장 상한, 지금 8 — 계정을 옮기면 비용 알림으로 대체 ([service-plan.md](service-plan.md)) (R2 무료 10GB는 portfolio-web과 계정 공용, [mvp.md](mvp.md) "계정 공용 한도"). 0이면 상한 없음 |
+| `APP_STORE_URL` / `PLAY_STORE_URL` | `wrangler.jsonc` vars | 앱 출시 때 | 웹의 "앱에서 구독" 안내 창에 나오는 스토어 링크. 비면 "앱 준비 중" |
 | `SUPPORT_EMAIL` | `wrangler.jsonc` vars | 도메인 결정 뒤, 스토어 출시 전 | 공개 지원 연락처. 랜딩·설정·신고 창에 표시되고 신고 메일이 이 주소로 감. 비면 숨김 |
 | `MAIL_DAILY_CAP` / `MAIL_MONTHLY_CAP` | `wrangler.jsonc` vars | — | 서비스 전체 메일 상한 80 / 2,800 (Resend 무료 100 / 3,000 아래, [mvp.md](mvp.md) "메일 상한") |
 | Hyperdrive `id` | `wrangler.jsonc` | 8단계 | |

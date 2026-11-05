@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { api, ApiError, putWithProgress, unwrap } from "../api";
 import { queryClient } from "../query";
 import { mediaPool } from "../media/pool";
+import { handlePaymentRequired } from "../subscribe-prompt";
 
 export type UploadStatus = "queued" | "processing" | "uploading" | "done" | "skipped" | "error";
 
@@ -162,6 +163,7 @@ async function run(job: Job) {
     }
     const msg = e instanceof ApiError || e instanceof Error ? e.message : "업로드 실패";
     update(id, { status: "error", error: msg });
+    if (e instanceof ApiError && e.status === 402) handlePaymentRequired(e);
     if (e instanceof ApiError && (e.status === 402 || e.status === 413 || e.status === 507)) {
       // 402: 구독 필요(내 사진함) 또는 Space 소유자 구독 종료 → 같은 라이브러리 작업 중단
       // 413: 소유자 용량 초과 → 같은 라이브러리 작업 중단 (Space는 소유자 용량에서 차감)

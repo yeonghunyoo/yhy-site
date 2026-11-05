@@ -4,6 +4,8 @@ import { useEffect, useSyncExternalStore } from "react";
 export interface UploadTarget {
   libraryId: string;
   label: string;
+  /** 구독이 없어 올릴 수 없으면 "올리기"가 안내 창을 연다 (docs/work-plan.md ⑧) */
+  needsSubscription?: boolean;
 }
 
 let target: UploadTarget | null = null;
@@ -19,10 +21,10 @@ export function useUploadTargetValue() {
   );
 }
 
-export function useSetUploadTarget(libraryId: string | undefined, label: string) {
+export function useSetUploadTarget(libraryId: string | undefined, label: string, needsSubscription = false) {
   useEffect(() => {
     if (!libraryId) return;
-    const t = { libraryId, label };
+    const t = { libraryId, label, needsSubscription };
     target = t;
     listeners.forEach((l) => l());
     return () => {
@@ -31,5 +33,5 @@ export function useSetUploadTarget(libraryId: string | undefined, label: string)
         listeners.forEach((l) => l());
       }
     };
-  }, [libraryId, label]);
+  }, [libraryId, label, needsSubscription]);
 }

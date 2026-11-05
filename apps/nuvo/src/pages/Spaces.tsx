@@ -5,6 +5,7 @@ import { Icon } from "../components/icons";
 import { Button, Dialog, Empty, Field, inputClass, Spinner } from "../components/ui";
 import { api, unwrap } from "../lib/api";
 import { useMe } from "../lib/queries";
+import { openSubscribePrompt } from "../lib/subscribe-prompt";
 import { toastError } from "../lib/toast";
 
 export function SpacesPage() {
@@ -19,7 +20,13 @@ export function SpacesPage() {
           <h1 className="text-2xl font-light tracking-tight">Space</h1>
           <p className="mt-1 text-sm text-faint">가족·친구와 함께 쌓아가는 사진 보관함</p>
         </div>
-        <Button variant="primary" icon="plus" className="ml-auto" onClick={() => setOpen(true)}>
+        <Button
+          variant="primary"
+          icon="plus"
+          className="ml-auto"
+          // Space 만들기는 구독자만. 초대받은 Space는 구독 없이 (docs/decisions.md D-016)
+          onClick={() => (me.data && !me.data.subscription.active ? openSubscribePrompt() : setOpen(true))}
+        >
           새 Space
         </Button>
       </div>

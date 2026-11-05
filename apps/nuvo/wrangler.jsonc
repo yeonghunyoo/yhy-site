@@ -17,6 +17,9 @@
     "STORAGE_CAP_GB": "8",
     // 공개 지원 연락처 (스토어 UGC 요건, docs/work-plan.md ⑤). 신고도 이 주소로 간다. 도메인이 정해지면 채운다 — 비면 화면에 연락처를 숨기고 신고 메일은 건너뛴다
     "SUPPORT_EMAIL": "",
+    // 앱 스토어 링크 (docs/work-plan.md ⑧). 웹은 결제 대신 이 링크로 안내한다. 비면 "앱 준비 중"
+    "APP_STORE_URL": "",
+    "PLAY_STORE_URL": "",
     // 서비스 전체 메일 상한(Resend 무료 하루 100통·월 3,000통 아래). Resend로 실제 보낼 때만 센다 (worker/lib/usage.ts)
     "MAIL_DAILY_CAP": "80",
     "MAIL_MONTHLY_CAP": "2800"

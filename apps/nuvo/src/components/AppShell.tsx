@@ -3,7 +3,9 @@ import { Link, NavLink } from "react-router";
 import { useMe } from "../lib/queries";
 import { toast, useToasts } from "../lib/toast";
 import { clearFinished, enqueueFiles, useUploads } from "../lib/upload/queue";
+import { openSubscribePrompt } from "../lib/subscribe-prompt";
 import { useUploadTargetValue } from "../lib/upload/target";
+import { SubscribePrompt } from "./SubscribePrompt";
 import { Icon } from "./icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { Avatar, Button, IconButton, Progress } from "./ui";
@@ -57,7 +59,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                     e.target.value = "";
                   }}
                 />
-                <Button variant="primary" icon="upload" size="sm" onClick={() => fileRef.current?.click()} className="mr-1">
+                <Button
+                  variant="primary"
+                  icon="upload"
+                  size="sm"
+                  onClick={() => (target.needsSubscription ? openSubscribePrompt() : fileRef.current?.click())}
+                  className="mr-1"
+                >
                   <span className="max-sm:hidden">올리기</span>
                 </Button>
               </>
@@ -81,9 +89,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-[1600px] px-3 pb-28 sm:px-5">{children}</main>
-      {target && <DropZone onFiles={(f) => startUpload(target.libraryId, target.label, f)} label={target.label} />}
+      {target && (
+        <DropZone
+          onFiles={(f) => (target.needsSubscription ? openSubscribePrompt() : startUpload(target.libraryId, target.label, f))}
+          label={target.label}
+        />
+      )}
       <UploadPanel />
       <Toasts />
+      <SubscribePrompt />
     </div>
   );
 }

@@ -21,7 +21,14 @@ const api = new Hono<AppEnv>()
   .get("/health", (c) => c.json({ ok: true, service: "nuvo" }))
   .get("/auth-config", (c) => c.json(enabledProviders(c.env)))
   /** 공개 설정: 지원 연락처 (스토어 UGC 요건 — 화면 어디서나 보이게) */
-  .get("/config", (c) => c.json({ supportEmail: c.env.SUPPORT_EMAIL || null }))
+  .get("/config", (c) =>
+    c.json({
+      supportEmail: c.env.SUPPORT_EMAIL || null,
+      // 웹은 결제 대신 앱 설치를 안내한다 (docs/decisions.md D-010)
+      appStoreUrl: c.env.APP_STORE_URL || null,
+      playStoreUrl: c.env.PLAY_STORE_URL || null,
+    }),
+  )
   /** 로컬 개발 전용: 보낸 메일 보관함 (인증·재설정 링크 확인용). 운영에서는 404 */
   .get("/dev/outbox", (c) => {
     if (c.env.ENVIRONMENT === "production") return c.json({ error: "not found" }, 404);

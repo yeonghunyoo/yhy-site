@@ -250,7 +250,7 @@ const delReq1 = await fetch(`${BASE}/api/account-deletion-requests`, { method: "
 const delReq2 = await fetch(`${BASE}/api/account-deletion-requests`, { method: "POST", headers: { "content-type": "application/json", origin: BASE }, body: JSON.stringify({ email: "not-an-email" }) });
 ok(delReq1.status === 202 && delReq2.status === 400, `계정 삭제 요청 (${delReq1.status}, 잘못된 이메일 ${delReq2.status})`);
 const cfg = await fetch(`${BASE}/api/config`).then((r) => r.json());
-ok("supportEmail" in cfg, "공개 설정에 지원 연락처 자리");
+ok("supportEmail" in cfg && "appStoreUrl" in cfg && "playStoreUrl" in cfg, "공개 설정에 지원 연락처·스토어 링크 자리");
 
 // 백업 상태 조회
 const bs = await b("/api/backup-status", { method: "POST", json: { sha256s: [img.sha256, imgB.sha256, fake.sha256] } });

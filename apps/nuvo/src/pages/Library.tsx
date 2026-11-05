@@ -32,7 +32,8 @@ export function LibraryPage() {
   const backup = useBackupStatus(local.items, me.signedIn);
 
   useEffect(() => void initLocal(), []);
-  useSetUploadTarget(personal?.id, "내 라이브러리");
+  // 내 사진함 백업은 구독자만 (docs/decisions.md D-016). 구독이 없으면 "올리기"가 안내 창을 연다
+  useSetUploadTarget(personal?.id, "내 라이브러리", me.data ? !me.data.subscription.active : false);
 
   const items = useMemo(() => mergeItems(cloud.assets, local.items, filter), [cloud.assets, local.items, filter]);
   const localOnly = (t: TItem) => !!t.local && !t.cloud && !backup.data?.has(t.local.sha256);
