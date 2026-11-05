@@ -51,8 +51,11 @@ async function signUp(call, name) {
   return email;
 }
 
+/** 앞부분만 JPEG 매직 넘버인 가짜 이미지 (서버가 앞부분 바이트로 형식을 확인한다) */
+const jpegBytes = (n = 2048) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), randomBytes(n - 4)]);
+
 function fakeImage() {
-  const bytes = randomBytes(2048);
+  const bytes = jpegBytes();
   return { bytes, sha256: createHash("sha256").update(bytes).digest("hex") };
 }
 
@@ -162,7 +165,7 @@ ok((await fetch(BASE + tampered)).status === 403, "변조된 서명 → 403");
 // 해시 위조 업로드 차단
 const fake = fakeImage();
 const bad = await a(`/api/uploads/blob/${fake.sha256}?libraryId=${meA.personal.id}`, {
-  method: "PUT", body: randomBytes(2048), headers: { "content-type": "image/jpeg" },
+  method: "PUT", body: jpegBytes(), headers: { "content-type": "image/jpeg" },
 });
 ok(bad.status === 400, `해시와 내용이 다른 업로드 거부 (${bad.status})`);
 
@@ -173,6 +176,11 @@ const xss = await a(`/api/uploads/blob/${htmlSha}?libraryId=${meA.personal.id}`,
   method: "PUT", body: html, headers: { "content-type": "text/html" },
 });
 ok(xss.status === 415, `HTML 업로드 거부 (${xss.status})`);
+// 형식을 속인 업로드: 헤더는 image/jpeg인데 내용이 HTML → 앞부분 바이트 검사로 415
+const liar = await a(`/api/uploads/blob/${htmlSha}?libraryId=${meA.personal.id}`, {
+  method: "PUT", body: html, headers: { "content-type": "image/jpeg" },
+});
+ok(liar.status === 415, `형식을 속인 업로드 거부 (${liar.status})`);
 ok(orig.headers.get("content-security-policy")?.includes("sandbox"), "미디어 응답에 CSP sandbox");
 
 // Space

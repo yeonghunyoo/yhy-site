@@ -17,6 +17,7 @@ import { assertServiceCapacity, assertUploadAllowed, billingOwner, ownerUsage } 
 import { assetColumns, recordSpaceActivity, toCloudAsset } from "../lib/assets";
 import { lockShas, PENDING_UPLOAD_TTL_MS } from "../lib/gc";
 import { r2Key, signReceipt, verifyReceipt } from "../lib/sign";
+import { sniffAndRewrap } from "../lib/sniff";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
 
@@ -96,6 +97,9 @@ export const uploads = new Hono<AppEnv>()
       .where(and(eq(r2Gc.owner, user.id), gt(r2Gc.dueAt, now), ne(r2Gc.sha256, sha)));
     await assertUploadAllowed(db, lib, len, Number(pending));
     if (!existing) await assertServiceCapacity(db, c.env, len);
+    // 앞부분 바이트로 실제 이미지인지 확인 (헤더만 믿지 않는다, docs/media-security.md 1.2)
+    const sniffed = await sniffAndRewrap(body, len, contentType);
+    if (!sniffed) throw new HTTPException(415, { message: "이미지 파일이 아니에요" });
     const row = { sha256: sha, owner: user.id, bytes: len, dueAt: new Date(now.getTime() + PENDING_UPLOAD_TTL_MS) };
     await db
       .insert(r2Gc)
@@ -103,7 +107,8 @@ export const uploads = new Hono<AppEnv>()
       .onConflictDoUpdate({ target: [r2Gc.sha256, r2Gc.owner], set: { bytes: row.bytes, dueAt: row.dueAt } });
 
     try {
-      await c.env.MEDIA.put(r2Key.original(sha), body, { sha256: sha, httpMetadata: { contentType } });
+      await c.env.MEDIA.put(r2Key.original(sha), sniffed.stream, { sha256: sha, httpMetadata: { contentType } });
+      await sniffed.done;
     } catch (e) {
       console.warn("r2 put failed", e);
       await db.delete(r2Gc).where(and(eq(r2Gc.sha256, sha), eq(r2Gc.owner, user.id)));

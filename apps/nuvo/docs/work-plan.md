@@ -67,7 +67,7 @@
 
 ### 보안 제안 중 1차에 넣을 것 — 코드 ([media-security.md](media-security.md))
 - [x] Space로 보낼 때·Space에 직접 올릴 때 DB 위치(lat/lng) 기본 저장 안 함 + 보내기 창의 "찍은 장소도 함께 보내기" 옵션 (2.1, D-016) (11/05). 원본 파일 EXIF는 그대로 — 화면에 그렇게 안내(media-security 2.1 선택지 a)
-- [ ] 업로드 매직 넘버 검사 (1.2)
+- [x] 업로드 매직 넘버 검사 (1.2) — `worker/lib/sniff.ts`, 앞 12바이트로 JPEG·PNG·GIF·WebP·HEIC/HEIF/AVIF(ftyp 브랜드) 확인, 헤더와 계열이 다르면 415. 단위 테스트 (11/05)
 - [ ] SPA `script-src` CSP (5.2)
 - [ ] 세션 목록·개별 로그아웃 (5.4)
 - [ ] 초대 링크 즉시 무효화 (2.3)
