@@ -148,7 +148,7 @@ activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한
 - **초대 링크(`/invite/*`)와 사진(`/m/*`)은 어떤 경우에도 색인하지 않습니다.** 링크가 공유되거나 유출돼도 검색 결과에 남으면 안 됩니다.
 - robots.txt는 `/`만 허용하고 나머지는 Disallow합니다. robots.txt는 요청일 뿐이라 noindex 헤더가 실제 방어입니다.
 - 랜딩을 노출할 때는 `index.html`에 `description`·OG 정적 메타만 넣습니다. SPA라 본문이 스크립트로 그려지므로, 그 이상(본문 색인·AI 인용)이 필요해지면 랜딩만 정적 HTML로 떼는 것을 그때 정합니다.
-- 상태: 미구현.
+- 상태: **구현(11/05)** — `public/_headers`(`/*`에 noindex, `/`·`/index.html`에서 `! X-Robots-Tag`로 떼어 냄), Worker 전체 응답에 noindex(`worker/index.ts`), `public/robots.txt`, `index.html` description·OG. 링크 미리보기용 OG 이미지는 아직 없음. **배포 뒤 `curl -I https://<도메인>/library`로 헤더 확인** — Workers 정적 자산의 SPA 대체 응답에도 `_headers`가 붙는지 실제로 봐야 합니다
 
 ## 테스트
 

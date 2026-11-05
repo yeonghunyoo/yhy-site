@@ -64,6 +64,17 @@ api.onError((err, c) => {
 });
 
 const app = new Hono<{ Bindings: Env }>();
+// Worker가 직접 답하는 /api·/m 응답은 검색에 내보내지 않는다 (docs/mvp.md "검색 노출"). 정적 화면은 public/_headers
+app.use("*", async (c, next) => {
+  await next();
+  // WebSocket 업그레이드(101)와 헤더를 바꿀 수 없는 응답은 건너뛴다
+  if (c.res.status === 101) return;
+  try {
+    c.res.headers.set("x-robots-tag", "noindex, nofollow");
+  } catch {
+    /* immutable headers */
+  }
+});
 app.route("/m", media);
 app.route("/", api);
 

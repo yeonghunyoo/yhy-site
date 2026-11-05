@@ -63,7 +63,7 @@
 - [ ] QR 코드(PC에서 휴대폰으로 앱 받기) — 스토어 링크가 생기면
 
 ### 검색 노출(기본 noindex) — 코드, 순서 무관
-- [ ] `public/_headers`에 `/` 외 `X-Robots-Tag: noindex`, Worker `/api/*`·`/m/*` 응답에도. robots.txt. `index.html`에 description·OG([mvp.md](mvp.md) "검색 노출")
+- [x] `public/_headers`에 `/` 외 `X-Robots-Tag: noindex`, Worker `/api/*`·`/m/*` 응답에도. robots.txt. `index.html`에 description·OG([mvp.md](mvp.md) "검색 노출") (11/05). 배포 뒤 헤더 실측 필요
 
 ### 보안 제안 중 1차에 넣을 것 — 코드 ([media-security.md](media-security.md))
 - [ ] Space로 보낼 때 DB 위치(lat/lng) 기본 복사 안 함 + "위치도 공유" 옵션 (2.1, D-016 확정)

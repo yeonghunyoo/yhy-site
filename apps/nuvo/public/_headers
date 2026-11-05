@@ -1,7 +1,15 @@
 # 정적 파일(SPA) 응답 보안 헤더 — Cloudflare Workers Static Assets
+# 검색 노출: 기본은 X-Robots-Tag noindex. 랜딩(/)만 아래에서 떼어 낸다 (docs/mvp.md "검색 노출", docs/decisions.md D-004)
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'
+  X-Robots-Tag: noindex, nofollow
+
+/
+  ! X-Robots-Tag
+
+/index.html
+  ! X-Robots-Tag
