@@ -21,6 +21,8 @@ interface Job {
   item: UploadItem;
   getFile: () => Promise<File | null>;
   retried?: boolean;
+  /** Space에 올릴 때 위치도 남길지 (기본 false, D-016) */
+  shareLocation?: boolean;
 }
 
 let items: UploadItem[] = [];
@@ -58,11 +60,15 @@ export function clearFinished() {
 /**
  * 업로드 대기열에 추가. getFile을 늦게 부르는 이유: 로컬 폴더 사진은 차례가 올 때 PC에서 읽는다.
  */
-export function enqueue(libraryId: string, files: { name: string; size: number; getFile: () => Promise<File | null> }[]) {
+export function enqueue(
+  libraryId: string,
+  files: { name: string; size: number; getFile: () => Promise<File | null> }[],
+  opts: { shareLocation?: boolean } = {},
+) {
   for (const f of files) {
     const item: UploadItem = { id: ++seq, name: f.name, size: f.size, libraryId, status: "queued", loaded: 0 };
     items.push(item);
-    jobs.push({ item, getFile: f.getFile });
+    jobs.push({ item, getFile: f.getFile, shareLocation: opts.shareLocation });
   }
   emit();
   pump();
@@ -151,7 +157,7 @@ async function run(job: Job) {
       blurhash: p.blurhash,
       receipt,
     };
-    await unwrap(api.uploads.complete.$post({ json: { libraryId, items: [meta] } }));
+    await unwrap(api.uploads.complete.$post({ json: { libraryId, items: [meta], shareLocation: job.shareLocation } }));
     touched.add(libraryId);
     update(id, { status: "done", loaded: item.size });
   } catch (e) {

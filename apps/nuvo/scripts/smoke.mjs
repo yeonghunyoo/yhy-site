@@ -181,6 +181,18 @@ ok(sp.status === 201, "Space 생성");
 const space = sp.data;
 const copy = await a("/api/assets/copy", { method: "POST", json: { assetIds: [asset.id], targetLibraryId: space.libraryId } });
 ok(copy.data.added === 1, "내 사진 → Space로 보내기 (복사 없이 참조)");
+// 위치: Space에 직접 올리면 기본으로 위치를 남기지 않는다 (D-016)
+{
+  const geo = fakeImage();
+  const prep = await a("/api/uploads/prepare", { method: "POST", json: { libraryId: space.libraryId, files: [{ sha256: geo.sha256, size: geo.bytes.length, mime: "image/jpeg" }] } });
+  const put = await a(`/api/uploads/blob/${geo.sha256}?libraryId=${space.libraryId}`, { method: "PUT", body: geo.bytes, headers: { "content-type": "image/jpeg" } });
+  for (const size of [512, 2048]) await a(`/api/uploads/blob/${geo.sha256}/thumb/${size}?receipt=${encodeURIComponent(put.data.receipt)}`, { method: "PUT", body: randomBytes(100), headers: { "content-type": "image/webp" } });
+  const meta = { sha256: geo.sha256, size: geo.bytes.length, mime: "image/jpeg", width: 1, height: 1, filename: "geo.jpg", takenAt: Date.now(), lat: 37.5, lng: 127.0, camera: null, dhash: null, blurhash: null, receipt: put.data.receipt };
+  const done = await a("/api/uploads/complete", { method: "POST", json: { libraryId: space.libraryId, items: [meta] } });
+  const g = done.data.assets?.[0];
+  ok(prep.status === 200 && g && g.lat == null && g.lng == null, `Space 직접 업로드는 위치 없이 (${g?.lat}, ${g?.lng})`);
+  if (g) await a("/api/assets/delete", { method: "POST", json: { assetIds: [g.id] } });
+}
 
 const inv = await a(`/api/spaces/${space.id}/invites`, { method: "POST", json: { role: "editor" } });
 ok(inv.status === 201, "초대 링크 생성");

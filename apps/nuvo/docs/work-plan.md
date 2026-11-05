@@ -66,7 +66,7 @@
 - [x] `public/_headers`에 `/` 외 `X-Robots-Tag: noindex`, Worker `/api/*`·`/m/*` 응답에도. robots.txt. `index.html`에 description·OG([mvp.md](mvp.md) "검색 노출") (11/05). 배포 뒤 헤더 실측 필요
 
 ### 보안 제안 중 1차에 넣을 것 — 코드 ([media-security.md](media-security.md))
-- [ ] Space로 보낼 때 DB 위치(lat/lng) 기본 복사 안 함 + "위치도 공유" 옵션 (2.1, D-016 확정)
+- [x] Space로 보낼 때·Space에 직접 올릴 때 DB 위치(lat/lng) 기본 저장 안 함 + 보내기 창의 "찍은 장소도 함께 보내기" 옵션 (2.1, D-016) (11/05). 원본 파일 EXIF는 그대로 — 화면에 그렇게 안내(media-security 2.1 선택지 a)
 - [ ] 업로드 매직 넘버 검사 (1.2)
 - [ ] SPA `script-src` CSP (5.2)
 - [ ] 세션 목록·개별 로그아웃 (5.4)

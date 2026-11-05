@@ -128,7 +128,7 @@ export function useDeleteAssets() {
 export function useCopyAssets() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: { assetIds: string[]; targetLibraryId: string }) => unwrap(api.assets.copy.$post({ json: v })),
+    mutationFn: (v: { assetIds: string[]; targetLibraryId: string; shareLocation?: boolean }) => unwrap(api.assets.copy.$post({ json: v })),
     onSuccess: (r, v) => {
       toast(r.skipped ? `${r.added}장 추가 (${r.skipped}장은 이미 있어요)` : `${r.added}장을 추가했어요`);
       void qc.invalidateQueries({ queryKey: ["assets", v.targetLibraryId] });

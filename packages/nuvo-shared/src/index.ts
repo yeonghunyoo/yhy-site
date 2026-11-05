@@ -87,6 +87,8 @@ export type AssetMeta = z.infer<typeof AssetMeta>;
 export const UploadCompleteRequest = z.object({
   libraryId: z.string().uuid(),
   items: z.array(AssetMeta).min(1).max(200),
+  /** Space에 올릴 때 위치(lat/lng)도 남길지. 기본은 남기지 않는다 (docs/decisions.md D-016) */
+  shareLocation: z.boolean().optional(),
 });
 export type UploadCompleteRequest = z.infer<typeof UploadCompleteRequest>;
 
@@ -195,6 +197,8 @@ export type SpaceReport = {
 export const CopyAssetsInput = z.object({
   assetIds: z.array(z.string().uuid()).min(1).max(500),
   targetLibraryId: z.string().uuid(),
+  /** Space로 보낼 때 위치(lat/lng)도 함께 보낼지. 기본은 보내지 않는다 (docs/decisions.md D-016) */
+  shareLocation: z.boolean().optional(),
 });
 export const BackupStatusInput = z.object({ sha256s: z.array(Sha256Hex).min(1).max(1000) });
 

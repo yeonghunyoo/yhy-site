@@ -38,11 +38,11 @@ export function LibraryPage() {
   const items = useMemo(() => mergeItems(cloud.assets, local.items, filter), [cloud.assets, local.items, filter]);
   const localOnly = (t: TItem) => !!t.local && !t.cloud && !backup.data?.has(t.local.sha256);
 
-  const backupNow = (sel: TItem[], libraryId = personal?.id, label = "내 라이브러리") => {
+  const backupNow = (sel: TItem[], libraryId = personal?.id, label = "내 라이브러리", shareLocation = false) => {
     if (!me.signedIn) return navigate("/signin?next=/library");
     const jobs = backupJobs(sel);
     if (!libraryId || jobs.length === 0) return;
-    enqueue(libraryId, jobs);
+    enqueue(libraryId, jobs, { shareLocation });
     toast(`${label}에 ${jobs.length}장을 백업하는 중이에요`);
   };
 
@@ -182,12 +182,12 @@ export function LibraryPage() {
         open={!!chooser}
         onClose={() => setChooser(null)}
         spaces={me.data?.spaces ?? []}
-        onChoose={(s) => {
+        onChoose={(s, shareLocation) => {
           const sel = chooser ?? [];
           const ids = sel.flatMap((t) => (t.cloud ? [t.cloud.id] : []));
-          if (ids.length) copy.mutate({ assetIds: ids, targetLibraryId: s.libraryId });
+          if (ids.length) copy.mutate({ assetIds: ids, targetLibraryId: s.libraryId, shareLocation });
           // PC에만 있는 사진은 Space로 바로 올린다 (PC가 꺼져도 가족이 볼 수 있게)
-          backupNow(sel, s.libraryId, s.name);
+          backupNow(sel, s.libraryId, s.name, shareLocation);
         }}
       />
     </>

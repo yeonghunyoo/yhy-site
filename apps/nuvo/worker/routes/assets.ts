@@ -75,7 +75,7 @@ export const assetRoutes = new Hono<AppEnv>()
   /** 다른 라이브러리로 보내기 (같은 Blob 참조, 복사 없음). 예: 내 사진 → 가족 Space */
   .post("/assets/copy", validate("json", CopyAssetsInput), async (c) => {
     const user = requireUser(c);
-    const { assetIds, targetLibraryId } = c.req.valid("json");
+    const { assetIds, targetLibraryId, shareLocation } = c.req.valid("json");
     const db = c.var.db;
     const { lib } = await requireLibrary(db, user.id, targetLibraryId, "editor");
     const libs = await accessibleLibraryIds(db, user.id);
@@ -113,7 +113,15 @@ export const assetRoutes = new Hono<AppEnv>()
       if (rows.length === 0) return [];
       const ins = await tx
         .insert(assets)
-        .values(rows.map(({ size: _s, ...s }) => ({ ...s, libraryId: targetLibraryId, uploadedBy: user.id })))
+        .values(
+          rows.map(({ size: _s, ...s }) => ({
+            ...s,
+            // Space로 보낼 때 위치는 기본으로 빼고, "위치도 공유"를 고른 경우만 함께 보낸다 (D-016)
+            ...(lib.type === "space" && !shareLocation ? { lat: null, lng: null } : {}),
+            libraryId: targetLibraryId,
+            uploadedBy: user.id,
+          })),
+        )
         .onConflictDoNothing({ target: [assets.libraryId, assets.blobId] })
         .returning({ id: assets.id, blobId: assets.blobId });
       const sizeOf = new Map(src.map((s) => [s.blobId, s.size]));

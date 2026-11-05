@@ -139,7 +139,7 @@ export const uploads = new Hono<AppEnv>()
   /** 업로드 완료: Blob 등록(없으면), Asset 생성, 사용량 반영, Space 피드/알림 */
   .post("/complete", validate("json", UploadCompleteRequest), async (c) => {
     const user = requireUser(c);
-    const { libraryId, items } = c.req.valid("json");
+    const { libraryId, items, shareLocation } = c.req.valid("json");
     const db = c.var.db;
     const env = c.env;
     const { lib } = await requireLibrary(db, user.id, libraryId, "editor");
@@ -217,8 +217,9 @@ export const uploads = new Hono<AppEnv>()
             uploadedBy: user.id,
             filename: i.filename,
             takenAt: new Date(i.takenAt),
-            lat: i.lat,
-            lng: i.lng,
+            // Space에는 위치를 기본으로 남기지 않는다 — 집·학교 위치가 가족 밖으로 퍼지지 않게 (D-016)
+            lat: lib.type === "space" && !shareLocation ? null : i.lat,
+            lng: lib.type === "space" && !shareLocation ? null : i.lng,
             camera: i.camera,
             dhash: i.dhash,
             blurhash: i.blurhash,
