@@ -14,9 +14,9 @@ export function look(p, opts) {
 }
 
 const DEFAULTS = {
-  cols: 160, // 가장 고운 격자의 가로 칸 수
-  minCols: 28, // 시작 격자
-  levels: 12, // 흑백 계조 단계
+  cols: 104, // 가장 고운 격자의 가로 칸 수(11/05: 160 → 104, 칸을 키움)
+  minCols: 20, // 시작 격자
+  levels: 6, // 흑백 계조 단계(11/05: 12 → 6)
   dither: true,
   aspect: null, // 프레임 비율(null = 캔버스 비율)
   palette: { dark: '#17191c', light: '#e9ebe6', accent: '#8c98ff' },
@@ -269,8 +269,10 @@ export function createHero(canvas, options = {}) {
       render();
     },
     setOptions(next) {
-      Object.assign(opts, next);
-      if (next.palette) Object.assign(opts.palette, next.palette);
+      // palette는 합친다 — 통째로 덮으면 dark·light가 사라져 바탕이 흰색이 된다(11/05 버그)
+      const { palette, ...rest } = next;
+      Object.assign(opts, rest);
+      if (palette) opts.palette = { ...opts.palette, ...palette };
       post.uniforms.uLevels.value = opts.levels;
       post.uniforms.uDither.value = opts.dither ? 1 : 0;
       post.uniforms.uDark.value = hex(opts.palette.dark);

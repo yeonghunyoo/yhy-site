@@ -26,8 +26,8 @@
   const num = (k) => (q.has(k) ? Number(q.get(k)) : undefined);
   const hero = createHero(document.getElementById('c'), {
     modelUrl: q.get('model'),
-    cols: num('cols') ?? 160,
-    levels: num('levels') ?? 12,
+    cols: num('cols') ?? 104,
+    levels: num('levels') ?? 6,
     aspect: num('aspect') ?? null,
     preserve: q.get('preserve') === '1',
   });
