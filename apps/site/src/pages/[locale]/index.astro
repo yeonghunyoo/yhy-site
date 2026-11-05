@@ -88,7 +88,7 @@ const groups = stack(locale);
 
       <section id="project" aria-labelledby="project-heading">
         <h2 id="project-heading" class="home-kick">// {dict.nav.project} · {projects.length}</h2>
-        <ol class="home-works">
+        <ol class="home-works" data-focus-list>
           {
             projects.map((p) => (
               <li>
@@ -104,6 +104,8 @@ const groups = stack(locale);
                     <span class="name">{p.data.title}</span>
                     <span class="one">{p.data.short ?? p.data.summary}</span>
                     {p.data.stack && <span class="tech">{p.data.stack.join(' · ')}</span>}
+                    {/* 화면 가운데에 온 프로젝트만 펼쳐 보이는 설명(11/05, src/lib/focus-list.ts). 스크립트가 없으면 늘 보인다 */}
+                    <span class="more"><span>{p.data.summary}</span></span>
                   </span>
                   {p.data.metric && (
                     <span class="num">
@@ -209,7 +211,7 @@ const groups = stack(locale);
   .home-work:hover .thumb img { transform: scale(1.03); }
   .home-work .body { flex: 999 1 26rem; min-width: 0; display: flex; flex-direction: column; gap: 0.625rem; }
   .home-work .when, .home-work .tech { font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); }
-  .home-work .name { font-family: var(--font-display); font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1; overflow-wrap: anywhere; }
+  .home-work .name { font-family: var(--font-display); font-size: clamp(2.5rem, 5.4vw, 4rem); line-height: 1; overflow-wrap: anywhere; }
   /* 화살표는 자리를 차지하지 않게(긴 이름 뒤에서 줄이 바뀌어 빈 줄이 생기지 않게) */
   .home-work .name { position: relative; }
   .home-work .name::after { content: '→'; position: absolute; margin-left: 0.4em; font-size: 0.5em; line-height: 2; color: var(--color-accent); opacity: 0; transform: translateX(-0.5rem); transition: opacity 0.2s, transform 0.2s; }
@@ -219,6 +221,18 @@ const groups = stack(locale);
   .home-work .num { flex: 1 1 11rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
   .home-work .num b { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1; color: var(--color-accent); font-variant-numeric: tabular-nums; }
   .home-work .num span { font-size: 0.8125rem; color: var(--color-muted); max-width: 22ch; }
+  /* 스크롤 포커스(11/05): 화면 가운데 띠에 온 항목만 선명하게, 설명을 펼친다. focus-list.ts가 .is-focus-mode·.is-focus를 붙인다 */
+  .home-work .more { display: grid; grid-template-rows: 1fr; color: var(--color-muted); font-size: 0.9375rem; line-height: 1.7; max-width: 52ch; }
+  .home-work .more > span { overflow: hidden; }
+  .is-focus-mode > li { opacity: 0.35; transition: opacity 0.45s; }
+  .is-focus-mode > li.is-focus { opacity: 1; }
+  .is-focus-mode .home-work .more { grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.45s ease, opacity 0.35s; }
+  .is-focus-mode .is-focus .home-work .more { grid-template-rows: 1fr; opacity: 1; }
+  .is-focus-mode .is-focus .home-work .name::after { opacity: 1; transform: none; }
+  .is-focus-mode .is-focus .home-work .thumb img { transform: scale(1.03); }
+  @media (prefers-reduced-motion: reduce) {
+    .is-focus-mode > li, .is-focus-mode .home-work .more { transition: none; }
+  }
   .home-ask { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; }
   .home-ask .home-kick, .home-ask .home-lead, .home-ask .home-meta { margin: 0; }
   .home-big { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: 1.05; text-wrap: balance; }
@@ -234,5 +248,7 @@ const groups = stack(locale);
 
 <script>
   import { initHero } from '../../lib/hero/hero';
+  import { initFocusList } from '../../lib/focus-list';
   initHero();
+  initFocusList();
 </script>
