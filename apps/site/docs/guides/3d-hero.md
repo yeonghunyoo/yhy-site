@@ -66,6 +66,11 @@ pnpm site hero:frames --model=/hero-src/out/head.min.glb --frames=48
 
 ## 사이트 연결 (구현 전 — 홈 개편 S-007과 같이)
 
+**스크롤 구조 (11/05 프로토타입에서 확인, 사용자 OK)**
+- 히어로 구간 180vh: 화면 고정(sticky) 캔버스, 진행도 p 0→1(거친 픽셀·블러 → 고운 픽셀·선명, 마지막 줌인 + "BETTER CALL YH!"). 처음 520vh는 길다는 의견으로 줄였다
+- 커튼 구간 100vh: 본문이 위로 올라와 장면을 덮는다(`margin-top: -100vh`, 위쪽 그림자). 덮이는 동안 장면은 어두워지고(0 → 75%) 살짝 작아져(1 → 0.94) 뒤로 물러난다
+- 그 뒤는 평범한 본문 스크롤(소개 · 사건 기록(프로젝트) · 경력 · 상담)
+
 - **1차 스프라이트(모든 기기)**: `public/hero/hero-sprite.webp`를 `image-rendering: pixelated`로 키우고 스크롤 진행도로 프레임(y 오프셋)을 고른다. three.js를 보내지 않는다. `prefers-reduced-motion`이면 마지막 프레임 한 장
 - **2차 실시간(데스크톱·고성능)**: 화면에 들어올 때 `scene.js` + three.js를 동적 import. 모델은 `head.min.glb`를 `public/hero/`에(누구나 받을 수 있다 — 면 줄인 것만)
 - 파일은 `/media/`가 아니라 `public/`(비용, docs/01-frontend.md "SEO·GEO"). CSP: 같은 출처 스크립트 + WebGL이라 그대로
