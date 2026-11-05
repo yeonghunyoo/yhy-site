@@ -6,7 +6,7 @@ import { Gallery } from "../components/Gallery";
 import { Icon } from "../components/icons";
 import { Avatar, Button, Dialog, Empty, IconButton, Progress, Segmented, Spinner } from "../components/ui";
 import { api, unwrap } from "../lib/api";
-import { useActivities, useBlocks, useConfig, useCopyAssets, useDeleteAssets, useLibraryAssets, useMe, useReports, useSpace, useSpaceLive } from "../lib/queries";
+import { useActivities, useBlocks, useConfig, useCopyAssets, useDeleteAssets, useInvites, useLibraryAssets, useMe, useReports, useSpace, useSpaceLive } from "../lib/queries";
 import { mergeItems, type TItem } from "../lib/timeline";
 import { toast, toastError } from "../lib/toast";
 import { useSetUploadTarget } from "../lib/upload/target";
@@ -203,11 +203,25 @@ function Feed({ activities }: { activities: { id: string; type: string; actorNam
 }
 
 function InviteDialog({ open, onClose, spaceId, spaceName }: { open: boolean; onClose: () => void; spaceId: string; spaceName: string }) {
+  const qc = useQueryClient();
   const [role, setRole] = useState<"editor" | "viewer">("editor");
   const [url, setUrl] = useState<string | null>(null);
+  const active = useInvites(spaceId, open);
   const create = useMutation({
     mutationFn: () => unwrap(api.spaces[":id"].invites.$post({ param: { id: spaceId }, json: { role } })),
-    onSuccess: (r) => setUrl(`${location.origin}${r.path}`),
+    onSuccess: (r) => {
+      setUrl(`${location.origin}${r.path}`);
+      void qc.invalidateQueries({ queryKey: ["invites", spaceId] });
+    },
+    onError: toastError,
+  });
+  const revoke = useMutation({
+    mutationFn: (token: string) => unwrap(api.spaces[":id"].invites[":token"].$delete({ param: { id: spaceId, token } })),
+    onSuccess: () => {
+      toast("초대 링크를 끊었어요");
+      setUrl(null);
+      void qc.invalidateQueries({ queryKey: ["invites", spaceId] });
+    },
     onError: toastError,
   });
   const close = () => {
@@ -234,6 +248,22 @@ function InviteDialog({ open, onClose, spaceId, spaceName }: { open: boolean; on
             )}
           </div>
           <p className="text-xs text-faint">카카오톡·문자로 보내면, 받은 사람이 로그인 후 바로 참여해요.</p>
+        </div>
+      )}
+      {!!active.data?.length && (
+        <div className="mt-6 border-t border-line pt-4">
+          <h3 className="mb-2 text-xs text-faint">쓰는 중인 초대 링크</h3>
+          <ul className="flex flex-col gap-2" data-testid="active-invites">
+            {active.data.map((i) => (
+              <li key={i.token} className="flex items-center gap-3 text-xs">
+                <span className="min-w-0 flex-1 truncate text-muted">
+                  …{i.token.slice(-6)} · {i.role === "editor" ? "함께 올리기" : "보기만"} · {i.uses}/{i.maxUses}명 · {new Date(i.expiresAt).toLocaleDateString()}까지
+                </span>
+                <Button size="sm" variant="ghost" onClick={() => confirm("이 초대 링크를 끊을까요? 이미 참여한 사람은 그대로예요.") && revoke.mutate(i.token)}>끊기</Button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-faint">링크가 잘못 퍼졌다면 끊고 새로 만드세요.</p>
         </div>
       )}
     </Dialog>

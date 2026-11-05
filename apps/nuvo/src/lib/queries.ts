@@ -24,6 +24,15 @@ export function useReports(spaceId: string | undefined, enabled: boolean) {
   });
 }
 
+/** 관리자: 아직 쓸 수 있는 초대 링크 */
+export function useInvites(spaceId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["invites", spaceId],
+    enabled: !!spaceId && enabled,
+    queryFn: async () => (await unwrap(api.spaces[":id"].invites.$get({ param: { id: spaceId! } }))).invites,
+  });
+}
+
 /** 관리자: Space 차단 목록 */
 export function useBlocks(spaceId: string | undefined, enabled: boolean) {
   return useQuery({

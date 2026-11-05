@@ -368,6 +368,17 @@ await d("/api/me", { method: "DELETE" });
   await a(`/api/spaces/${s3.id}/blocks/${meE.user.id}`, { method: "DELETE" });
   const rejoin2 = await e(`/api/invites/${inv4.token}/accept`, { method: "POST" });
   ok(rejoin2.data.joined === true, "차단을 풀면 다시 참여 가능");
+  // 초대 링크 바로 끊기
+  const inv5 = (await a(`/api/spaces/${s3.id}/invites`, { method: "POST", json: { role: "viewer" } })).data;
+  const listed = (await a(`/api/spaces/${s3.id}/invites`)).data.invites;
+  ok(listed?.some((i) => i.token === inv5.token), "쓰는 중인 초대 링크 목록");
+  ok((await e(`/api/spaces/${s3.id}/invites`)).status === 403, "보기만 멤버는 초대 링크 목록 불가");
+  ok((await a(`/api/spaces/${s3.id}/invites/${inv5.token}`, { method: "DELETE" })).status === 200, "초대 링크 끊기");
+  const late = client();
+  await signUp(late, "늦은 사람");
+  const lateAcc = await late(`/api/invites/${inv5.token}/accept`, { method: "POST" });
+  ok(lateAcc.status === 410, `끊은 링크로는 참여 불가 (${lateAcc.status})`);
+  await late("/api/me", { method: "DELETE" });
   ok((await a(`/api/spaces/${s3.id}/members/${meA.user.id}?block=1`, { method: "DELETE" })).status === 400, "자기 자신은 차단 불가");
   await a(`/api/spaces/${s3.id}`, { method: "DELETE" });
   await e("/api/me", { method: "DELETE" });

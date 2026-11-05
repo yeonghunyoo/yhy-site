@@ -1,7 +1,7 @@
 import { validate } from "../lib/validate";
 import { activities, assets, blobs, invites, libraries, spaceBlocks, spaceMembers, spaces, user as userTable } from "@nuvo/db";
 import { InviteCreateInput, MemberRoleInput, SpaceNameInput, roleAtLeast, type Activity } from "@nuvo/shared";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
@@ -114,6 +114,41 @@ export const spaceRoutes = new Hono<AppEnv>()
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86400_000);
     await c.var.db.insert(invites).values({ token, spaceId, role: c.req.valid("json").role, createdBy: user.id, expiresAt });
     return c.json({ token, path: `/invite/${token}`, expiresAt: expiresAt.getTime() }, 201);
+  })
+
+  /** 관리자(admin+): 아직 쓸 수 있는 초대 링크 목록 (docs/media-security.md 2.3) */
+  .get("/:id/invites", async (c) => {
+    const user = requireUser(c);
+    const spaceId = c.req.param("id");
+    await requireSpaceRole(c.var.db, user.id, spaceId, "admin");
+    const rows = await c.var.db
+      .select({
+        token: invites.token,
+        role: invites.role,
+        uses: invites.uses,
+        maxUses: invites.maxUses,
+        expiresAt: invites.expiresAt,
+        createdByName: userTable.name,
+      })
+      .from(invites)
+      .leftJoin(userTable, eq(userTable.id, invites.createdBy))
+      .where(and(eq(invites.spaceId, spaceId), gt(invites.expiresAt, new Date()), lt(invites.uses, invites.maxUses)))
+      .orderBy(desc(invites.createdAt));
+    return c.json({ invites: rows.map((r) => ({ ...r, path: `/invite/${r.token}`, expiresAt: r.expiresAt.getTime() })) });
+  })
+
+  /** 관리자(admin+): 초대 링크 바로 끊기. 행은 남기고 만료시킨다 — 받은 사람은 "만료된 초대 링크"를 본다 */
+  .delete("/:id/invites/:token", async (c) => {
+    const user = requireUser(c);
+    const { id: spaceId, token } = c.req.param();
+    await requireSpaceRole(c.var.db, user.id, spaceId, "admin");
+    const [r] = await c.var.db
+      .update(invites)
+      .set({ expiresAt: new Date() })
+      .where(and(eq(invites.token, token), eq(invites.spaceId, spaceId)))
+      .returning({ token: invites.token });
+    if (!r) throw new HTTPException(404, { message: "초대 링크를 찾을 수 없어요" });
+    return c.json({ ok: true });
   })
 
   /** 역할 변경. owner 지정 = 소유권 이전 (기존 소유자는 admin이 된다) */
