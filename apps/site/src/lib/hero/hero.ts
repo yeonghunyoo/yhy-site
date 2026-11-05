@@ -95,6 +95,32 @@ export function initHero(): void {
     requestAnimationFrame(step);
   };
   addEventListener('scroll', request, { passive: true });
+
+  // 본문 스냅(11/05): 정리가 끝나 마지막 문구만 남은 뒤 아래로 조금이라도 내리면, 본문 첫 섹션(#about)까지
+  // 부드럽게 자동으로 올린다 — 커튼 구간을 손으로 끝까지 밀지 않아도 내용에 닿게. 위로 올릴 때는 하지 않는다
+  const about = document.getElementById('about');
+  let lastY = scrollY;
+  let snapping = false;
+  const snap = () => {
+    const y = scrollY;
+    const down = y > lastY;
+    lastY = y;
+    if (!about || snapping || !down || outroT < 1) return;
+    const start = root.offsetTop + innerHeight * HERO_VH * OUTRO_AT;
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const goal = about.getBoundingClientRect().top + y - pad;
+    if (y < start || y >= goal - 8) return;
+    snapping = true;
+    about.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const done = () => {
+      snapping = false;
+      lastY = scrollY;
+      removeEventListener('scrollend', done);
+    };
+    addEventListener('scrollend', done);
+    setTimeout(done, 1600); // scrollend가 없는 브라우저
+  };
+  addEventListener('scroll', snap, { passive: true });
   addEventListener('resize', request);
   request();
 

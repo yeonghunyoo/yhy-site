@@ -110,7 +110,6 @@ uniform float uMode;     // 0 = pixel, 1 = ascii(색 대신 글자 정보를 담
 uniform float uGlyphs;   // ascii ramp 글자 수
 uniform float uEdge;
 uniform float uOutro;    // 0~1: 마지막 문장 뒤 — 장면이 가운데로 줄어들며 칸이 흩어져 사라진다
-uniform float uTick;     // 눈 숫자 박자(정수, 11/05) — 칸마다 다른 박자로 0·1이 계속 바뀐다
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
 
@@ -166,12 +165,8 @@ void main() {
   float d = mix(0.5, bayer4(cell), uDither);
   float q = clamp(floor(lum * (uLevels - 1.0) + d) / (uLevels - 1.0), 0.0, 1.0);
   vec3 col = accent ? mix(uDark, uAccent, q) : mix(uDark, uLight, q);
-  // 알파 1 = 보통 픽셀, 0.5 = 눈 글자 '0', 0.75 = 눈 글자 '1'. 칸마다 2~4박자 주기·어긋난 위상으로 다시 뽑는다
-  if (eye && !gone) {
-    float beat = floor(uTick / (2.0 + floor(hash(cell + 5.0) * 3.0)) + hash(cell + 9.0) * 4.0);
-    gl_FragColor = vec4(uAccent, hash(cell + 17.0 + beat * 1.37) < 0.5 ? 0.5 : 0.75);
-    return;
-  }
+  // 알파 1 = 보통 픽셀, 0.5 = 눈 칸(숫자는 화면 패스가 칸을 2×2로 쪼개 찍는다)
+  if (eye && !gone) { gl_FragColor = vec4(uAccent, 0.5); return; }
   gl_FragColor = vec4(gone ? uDark : col, 1.0);
 }`;
 
@@ -273,7 +268,6 @@ export function createHero(canvas, options = {}) {
       uGlyphs: { value: opts.ramp.length },
       uEdge: { value: opts.edge },
       uOutro: { value: 0 },
-      uTick: { value: 0 },
       uDark: { value: hex(opts.palette.dark) },
       uLight: { value: hex(opts.palette.light) },
       uAccent: { value: hex(opts.palette.accent) },
@@ -318,15 +312,21 @@ precision highp float;
 uniform sampler2D tPixel, tAtlas;
 uniform vec2 uGrid;
 uniform float uMode, uGlyphs, uTotal;
+uniform float uTick;     // 눈 숫자 박자(정수, 11/05) — 칸마다 다른 박자로 0·1이 계속 바뀐다
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
   if (uMode < 0.5) {
     vec4 px = texture2D(tPixel, vUv);
     if (px.a > 0.95) { gl_FragColor = vec4(px.rgb, 1.0); return; }
-    // 눈 칸: 칸 안 위치로 글자 아틀라스의 '0'·'1'을 찍는다
-    vec2 inCellP = fract(vUv * uGrid);
-    float digit = px.a > 0.62 ? 1.0 : 0.0;
+    // 눈 칸: 픽셀 한 칸을 2×2로 쪼개(글자 크기 1/4, 11/05) 칸마다 '0'·'1'을 찍는다.
+    // 작은 칸마다 2~4박자 주기·어긋난 위상으로 다시 뽑는다
+    vec2 g = vUv * uGrid * 2.0;
+    vec2 sc = floor(g);
+    vec2 inCellP = fract(g);
+    float beat = floor(uTick / (2.0 + floor(hash(sc + 5.0) * 3.0)) + hash(sc + 9.0) * 4.0);
+    float digit = hash(sc + 17.0 + beat * 1.37) < 0.5 ? 0.0 : 1.0;
     float ga = texture2D(tAtlas, vec2((uGlyphs + 4.0 + digit + inCellP.x) / uTotal, inCellP.y)).r;
     // 눈 칸 바탕은 강조색을 아주 옅게 — 숫자 사이도 은은히 빛나 보이게
     gl_FragColor = vec4(mix(mix(uDark, px.rgb, 0.14), px.rgb, ga), 1.0);
@@ -348,6 +348,7 @@ void main() {
       uMode: { value: opts.mode === 'ascii' ? 1 : 0 },
       uGlyphs: { value: opts.ramp.length },
       uTotal: { value: glyphTotal },
+      uTick: { value: 0 },
       uDark: { value: hex(opts.palette.dark) },
       uLight: { value: hex(opts.palette.light) },
       uAccent: { value: hex(opts.palette.accent) },
@@ -360,7 +361,8 @@ void main() {
   let progress = 0;
   let outro = 0;
   let tick = 0; // 눈 숫자 박자(setTick)
-  let drawn = ''; // 마지막으로 그린 상태(진행도·outro) — 같으면 다시 그리지 않는다
+  let drawn = ''; // 마지막으로 그린 상태(진행도·outro·눈 박자) — 같으면 다시 그리지 않는다
+  let painted = ''; // 3D·후처리를 마지막으로 그린 상태 — 눈 박자만 바뀌면 화면 패스만 다시 돈다
   let width = 1;
   let height = 1;
 
@@ -377,7 +379,7 @@ void main() {
     width = Math.max(1, w);
     height = Math.max(1, h);
     renderer.setSize(width, height, false);
-    drawn = '';
+    drawn = painted = '';
     render();
   }
 
@@ -416,7 +418,9 @@ void main() {
     const key = `${progress}:${outro}:${tick}`;
     if (drawn === key) return;
     drawn = key;
-    paint();
+    const scene3d = `${progress}:${outro}`;
+    if (painted !== scene3d) paint();
+    painted = scene3d;
     renderer.render(blitScene, postCam);
   }
 
@@ -439,7 +443,7 @@ void main() {
     subject = new THREE.Group().add(fitModel(gltf.scene, accentMat));
     subject.rotation.y = THREE.MathUtils.degToRad(FACE);
     scene.add(subject);
-    drawn = '';
+    drawn = painted = '';
     render();
   }
 
@@ -463,7 +467,7 @@ void main() {
     /** 눈 숫자 박자(정수). 바꿀 때마다 눈 칸의 0·1이 칸마다 다른 주기로 다시 뽑힌다 */
     setTick(n) {
       tick = n;
-      post.uniforms.uTick.value = n;
+      blit.uniforms.uTick.value = n;
       render();
     },
     setOptions(next) {
@@ -483,7 +487,7 @@ void main() {
       blit.uniforms.uDark.value.copy(post.uniforms.uDark.value);
       blit.uniforms.uLight.value.copy(post.uniforms.uLight.value);
       blit.uniforms.uAccent.value.copy(post.uniforms.uAccent.value);
-      drawn = '';
+      drawn = painted = '';
       render();
     },
     dispose() {

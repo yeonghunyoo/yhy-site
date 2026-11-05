@@ -191,7 +191,7 @@ html.navigating .nav-progress {
 
 /* 챗 버튼(11/05): 터미널 프롬프트 모양 + 자동 숨김·보임(src/lib/chat-fab.ts가 <html data-fab>) */
 .chat-fab {
-  transition: transform 0.4s cubic-bezier(0.2, 1.5, 0.4, 1), opacity 0.25s;
+  transition: transform 0.4s cubic-bezier(0.2, 1.5, 0.4, 1), opacity 0.25s, background-color 0.2s, box-shadow 0.2s;
 }
 html[data-fab='hidden'] .chat-fab {
   transform: translateY(calc(100% + 2rem)) scale(0.9);
@@ -234,20 +234,20 @@ html[data-fab='hidden'] .chat-fab {
 }
 
 /* 누르는 느낌(11/05): 챗 버튼·홈 버튼·프로젝트 블록 — 마우스를 올리면 살짝 뜨고, 누르면 눌린다 */
+/* 챗 바(11/05 고침): 호버에 크기·위치·그림자를 바꾸지 않는다(그림자를 덮으면 테두리 링이 사라지고 둥근 그림자만 남아 어색했다).
+   바탕만 살짝 밝아진다. 누를 때만 살짝 눌림 */
 .chat-fab:hover {
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.6);
-  translate: 0 -2px;
+  background-color: rgb(44 48 54 / 0.95);
 }
 .chat-fab:active {
-  translate: 0 0;
-  scale: 0.97;
+  scale: 0.985;
 }
 .chat-fab:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 .home-btn {
-  transition: background-color 0.15s, color 0.15s, scale 0.15s;
+  transition: color 0.2s 0.1s, scale 0.15s;
 }
 .home-btn:active,
 .home-work:active {

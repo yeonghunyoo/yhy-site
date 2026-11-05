@@ -32,7 +32,8 @@ const MAX_QUESTION = 500;
 // client:demand의 이어가기 키(src/directives/demand.ts) — 다음 페이지에서 챗을 바로 연다
 const RESUME_KEY = 'uiResume';
 const FOLLOWUP_MAX = 3;
-// 데스크톱 표시 방식(11/05): 위젯(우하단 패널) / 하단 바(아래 가운데 넓은 패널). 브라우저에 기억
+// 데스크톱 표시 방식(11/05): 하단 바(아래 가운데 넓은 패널) / 위젯(우하단 패널). 열 때는 늘 하단 바 —
+// 바를 누르면 그 자리에서 입력란이 되어야 해서(11/05 2차) 위젯 선택은 기억하지 않는다. 예전에 기억한 값은 지운다
 const MODE_KEY = 'chatMode';
 // 위젯 위치(드래그로 옮긴 자리, 11/05)
 const POS_KEY = 'chatPos';
@@ -70,6 +71,15 @@ function load(): Turn[] {
   }
 }
 
+/** 챗 아이콘 한 벌(11/05): 20px, 선 1.75, 둥근 끝·이음 */
+function Icon({ children }: { children: React.ReactNode }) {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
 /** 우하단 챗 독. 모바일은 풀스크린, 데스크톱은 380px 패널. 대화는 sessionStorage에만. */
 export default function ChatDock({ dict, locale }: Props) {
   const [open, setOpen] = useState(false);
@@ -96,7 +106,7 @@ export default function ChatDock({ dict, locale }: Props) {
   useEffect(() => {
     setTurns(load());
     try {
-      if (localStorage.getItem(MODE_KEY) === 'widget') setMode('widget');
+      localStorage.removeItem(MODE_KEY);
       const saved = JSON.parse(localStorage.getItem(POS_KEY) ?? 'null') as { x: number; y: number } | null;
       if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) setPos(saved);
     } catch {}
@@ -211,6 +221,7 @@ export default function ChatDock({ dict, locale }: Props) {
       .finished.finally(() => {
         closing.current = false;
         setCollapsed(false);
+        setMode('bar');
         setOpen(false);
       });
   }
@@ -282,9 +293,6 @@ export default function ChatDock({ dict, locale }: Props) {
 
   function switchMode() {
     const next: Mode = mode === 'widget' ? 'bar' : 'widget';
-    try {
-      localStorage.setItem(MODE_KEY, next);
-    } catch {}
     // 지금 자리에서 새 자리로 옮겨 가게 한다
     fromRef.current = panelRef.current?.getBoundingClientRect() ?? null;
     setMode(next);
@@ -387,7 +395,7 @@ export default function ChatDock({ dict, locale }: Props) {
         data-chat-fab
         aria-label={dict.chat.open}
         // 모바일: 우하단 작은 알약 / 데스크톱: 아래 가운데 긴 바(11/05). 둘 다 프롬프트 `better-curl:~$`와 깜빡이는 커서만 — 누르면 대화창이 펼쳐진다
-        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-1.5 rounded-full bg-surface/95 px-5 font-mono text-sm text-fg shadow-[0_12px_32px_rgb(0_0_0/0.5)] md:text-base backdrop-blur md:inset-x-0 md:mx-auto md:min-h-14 md:w-[min(720px,calc(100vw-2rem))] md:rounded-2xl md:bg-surface/90 md:px-6 md:ring-1 md:ring-white/5"
+        className="chat-fab fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-12 items-center gap-1.5 rounded-full bg-surface/95 px-5 font-mono text-sm text-fg shadow-(--shadow-float) md:text-base backdrop-blur md:inset-x-0 md:mx-auto md:min-h-14 md:w-[min(720px,calc(100vw-2rem))] md:rounded-2xl md:bg-surface/90 md:px-6"
       >
         {/* 셸 프롬프트처럼 도메인을 루트 경로로(11/05): better-curl:~$ ▍ */}
         <span aria-hidden="true">
@@ -410,7 +418,7 @@ export default function ChatDock({ dict, locale }: Props) {
       aria-label={dict.chat.title}
       // 테두리 없이 그림자와 둥근 모서리(11/05). 데스크톱: 위젯(380px, 드래그로 옮김) / 하단 바(아래 가운데, 넓고 낮게)
       style={floating ? { left: pos!.x, top: pos!.y, right: 'auto', bottom: 'auto' } : undefined}
-      className={`fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:top-auto md:bottom-4 md:rounded-[20px] md:shadow-[0_24px_64px_rgb(0_0_0/0.55)] ${
+      className={`fixed inset-x-0 top-0 bottom-0 z-40 flex flex-col bg-surface md:top-auto md:bottom-4 md:rounded-[20px] md:shadow-(--shadow-pop) ${
         snapping ? 'chat-snap' : ''
       } ${
         mode === 'bar'
@@ -433,35 +441,39 @@ export default function ChatDock({ dict, locale }: Props) {
           <button
             type="button"
             onClick={switchMode}
-            className="hidden size-11 place-items-center rounded-full text-muted hover:bg-bg hover:text-fg md:grid transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="hidden md:grid size-10 place-items-center rounded-xl text-muted hover:bg-bg hover:text-fg transition-[background-color,color,transform] duration-150 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             aria-label={mode === 'widget' ? dict.chat.mode.bar : dict.chat.mode.widget}
             title={mode === 'widget' ? dict.chat.mode.bar : dict.chat.mode.widget}
           >
+            {/* 아이콘 한 벌(11/05): 20px, 선 1.75, 둥근 끝 — 바깥 틀(화면) 안에 어디에 붙는지만 다르다 */}
             {mode === 'widget' ? (
-              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                <rect x="3" y="14" width="18" height="6" rx="2" />
-              </svg>
+              <Icon>
+                <rect x="3" y="4.5" width="18" height="15" rx="3" />
+                <path d="M7 15.5h10" />
+              </Icon>
             ) : (
-              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-                <rect x="11" y="8" width="10" height="12" rx="2" />
-              </svg>
+              <Icon>
+                <rect x="3" y="4.5" width="18" height="15" rx="3" />
+                <rect x="12.5" y="11" width="5" height="5" rx="1" />
+              </Icon>
             )}
           </button>
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className="hidden size-11 place-items-center rounded-full text-muted hover:bg-bg hover:text-fg md:grid transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="hidden md:grid size-10 place-items-center rounded-xl text-muted hover:bg-bg hover:text-fg transition-[background-color,color,transform] duration-150 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             aria-label={collapsed ? dict.chat.expand : dict.chat.minimize}
             aria-expanded={!collapsed}
             title={collapsed ? dict.chat.expand : dict.chat.minimize}
           >
-            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-              {collapsed ? <path d="M6 14l6-6 6 6" /> : <path d="M6 12h12" />}
-            </svg>
+            {/* 최소화 = 이력만 접는다(입력란은 그대로, 11/05 2차) — 접힘 ⌃ / 펼침 ⌄ */}
+            <Icon>{collapsed ? <path d="M7 14.5l5-5 5 5" /> : <path d="M7 9.5l5 5 5-5" />}</Icon>
           </button>
           {/* 닫기(×)는 모바일 풀스크린에서만 — 데스크톱은 최소화(–)가 같은 역할이라 뺐다(11/05). Esc는 어디서나 닫기 */}
-          <button type="button" onClick={closePanel} className={`grid size-11 place-items-center rounded-full text-xl text-muted hover:bg-bg hover:text-fg md:hidden transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`} aria-label={dict.ui.close} title={dict.ui.close}>
-            ×
+          <button type="button" onClick={closePanel} className="size-11 md:hidden grid place-items-center rounded-xl text-muted hover:bg-bg hover:text-fg transition-[background-color,color,transform] duration-150 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" aria-label={dict.ui.close} title={dict.ui.close}>
+            <Icon>
+              <path d="M7 7l10 10M17 7 7 17" />
+            </Icon>
           </button>
         </div>
       </header>
@@ -579,8 +591,8 @@ export default function ChatDock({ dict, locale }: Props) {
         )}
       </div>
 
+      {/* 입력란은 최소화해도 그대로(11/05 2차). 하단 바 모드에서는 닫힌 바와 같은 프롬프트(better-curl:~$)가 앞에 붙는다 */}
       <form
-        hidden={collapsed}
         onSubmit={submit}
         aria-busy={busy}
         data-chat-inner
@@ -588,6 +600,12 @@ export default function ChatDock({ dict, locale }: Props) {
       >
         {/* 입력란과 보내기 버튼은 같은 높이(44px, 11/05). 여러 줄이면 입력란만 커지고 버튼은 아래에 붙는다 */}
         <div className="flex items-end gap-2 rounded-2xl bg-bg p-1.5">
+          {mode === 'bar' && (
+            <span className="hidden h-11 shrink-0 items-center pl-3 font-mono text-base md:flex" aria-hidden="true">
+              <span className="text-muted">better-curl</span>
+              <span className="text-accent">:~$</span>
+            </span>
+          )}
           <textarea
             data-scroll-allow
             ref={inputRef}
@@ -609,8 +627,18 @@ export default function ChatDock({ dict, locale }: Props) {
             }}
             aria-label={dict.chat.placeholder}
           />
-          <button type="submit" className="btn btn-primary h-11 min-h-11 shrink-0 rounded-xl transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" disabled={busy || !input.trim()} aria-busy={busy}>
-            {dict.chat.send}
+          {/* 보내기: 입력란과 같은 44px 정사각 아이콘 버튼(머리 아이콘과 같은 선·끝, 11/05) */}
+          <button
+            type="submit"
+            className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-fg transition-[background-color,opacity,transform] duration-150 hover:bg-accent/85 active:scale-[0.94] disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            disabled={busy || !input.trim()}
+            aria-busy={busy}
+            aria-label={dict.chat.send}
+            title={dict.chat.send}
+          >
+            <Icon>
+              <path d="M12 18.5v-13M6.5 11 12 5.5 17.5 11" />
+            </Icon>
           </button>
         </div>
       </form>
