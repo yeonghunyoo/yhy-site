@@ -9,8 +9,9 @@ const { locale } = Astro.props;
 const dict = t(locale);
 ---
 
-<!-- 아래 여백: 우하단 챗 버튼(높이 48px + 아래 16px)에 개인정보처리방침 링크가 가리지 않게(11/05) -->
-<footer class="pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+<!-- 아래 여백: 챗 버튼(모바일 우하단 알약 48px·데스크톱 하단 바 56px, 아래 16px)에 개인정보처리방침 링크가 가리지 않게.
+     맨 아래로 내려도 링크와 챗 사이에 2.5rem 이상 빈칸(11/05) -->
+<footer class="pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-[calc(7.5rem+env(safe-area-inset-bottom))]">
   <div class="container-page flex min-h-16 flex-wrap items-center justify-between gap-2 py-4 font-mono text-xs text-quiet">
     <span>© {new Date().getFullYear()} {dict.intro.name}</span>
     <a href={`/${locale}/privacy/`} class="flex min-h-11 items-center underline-offset-4 hover:underline"

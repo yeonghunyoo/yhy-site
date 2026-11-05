@@ -103,10 +103,13 @@ const groups = stack(locale);
             projects.map((p) => (
               <li>
                 <a class="home-work" href={`/${locale}/projects/${p.slug}/`}>
-                  {/* 썸네일(11/05): 상세 갤러리 첫 장. 없으면 같은 크기의 빈 칸 — 나중에 이미지만 넣으면 채워진다 */}
-                  <span class="thumb" aria-hidden="true">
+                  {/* 썸네일(11/05): 상세 갤러리 첫 장. 없으면 같은 크기의 빈 칸 — 나중에 이미지만 넣으면 채워진다.
+                      호버하면 원래 비율로 커진다(src/lib/thumb-peek.ts) */}
+                  <span class="thumb" aria-hidden="true" data-peek={p.data.images[0] ? `${p.data.images[0].src.width}x${p.data.images[0].src.height}` : undefined}>
                     {p.data.images[0] && (
-                      <Image src={p.data.images[0].src} alt="" widths={[320, 640]} sizes="(min-width: 768px) 15rem, 100vw" format="webp" loading="lazy" />
+                      <span class="thumb-pop">
+                        <Image src={p.data.images[0].src} alt="" widths={[320, 640, 1280]} sizes="(min-width: 768px) 15rem, 100vw" format="webp" loading="lazy" />
+                      </span>
                     )}
                   </span>
                   <span class="body">
@@ -223,7 +226,15 @@ const groups = stack(locale);
   .home-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.375rem 1rem; font-family: var(--font-mono); font-size: 0.875rem; }
   .home-works { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: clamp(3.5rem, 8vw, 5.5rem); }
   .home-work { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.25rem 2.5rem; }
-  .home-work .thumb { flex: 1 1 100%; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; background: var(--color-surface); }
+  .home-work .thumb { position: relative; flex: 1 1 100%; aspect-ratio: 16 / 10; border-radius: 14px; background: var(--color-surface); }
+  /* 호버 확대(11/05, thumb-peek.ts): 칸은 자리를 그대로 두고, 안의 .thumb-pop만 원래 비율로 커져 위에 뜬다 */
+  .home-work .thumb-pop {
+    position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 14px; overflow: hidden; background: var(--color-surface);
+    transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s;
+  }
+  .home-work .thumb.is-pop .thumb-pop { box-shadow: 0 24px 64px rgb(0 0 0 / 0.6); }
+  .home-works > li { position: relative; }
+  .home-works > li.is-pop { z-index: 5; }
   .home-work .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform 0.4s; }
   .home-work:hover .thumb img { transform: scale(1.03); }
   .home-work .body { flex: 999 1 26rem; min-width: 0; display: flex; flex-direction: column; gap: 0.625rem; }
@@ -247,8 +258,9 @@ const groups = stack(locale);
   .is-focus-mode .is-focus .home-work .more { opacity: 1; }
   .is-focus-mode .is-focus .home-work .name::after { opacity: 1; transform: none; }
   .is-focus-mode .is-focus .home-work .thumb img { transform: scale(1.03); }
+  .home-works .home-work .thumb.is-pop img { transform: none; }
   @media (prefers-reduced-motion: reduce) {
-    .is-focus-mode > li, .is-focus-mode .home-work .more { transition: none; }
+    .is-focus-mode > li, .is-focus-mode .home-work .more, .home-work .thumb-pop { transition: none; }
   }
   .home-toc { display: none; }
   @media (min-width: 1200px) {
@@ -283,7 +295,9 @@ const groups = stack(locale);
   import { initHero } from '../../lib/hero/hero';
   import { initFocusList } from '../../lib/focus-list';
   import { initToc } from '../../lib/toc';
+  import { initThumbPeek } from '../../lib/thumb-peek';
   initHero();
   initFocusList();
   initToc();
+  initThumbPeek();
 </script>
