@@ -13,6 +13,12 @@
 
 ## 2026-11-05
 
+### S-012 · 확정 · 제목 글꼴 Quantico (Black Han Sans를 바꿈), 히어로 눈 숫자는 계속 바뀐다
+- 결정: 제목·섹션 제목(`// About`)·프로젝트 이름·히어로 문구·연락 큰 글자를 Quantico 700(라틴, `@fontsource/quantico`)으로. 한글은 Quantico에 없어 IBM Plex Sans KR 700으로 이어진다. 숫자·라벨·챗 프롬프트는 IBM Plex Mono 그대로, 본문 IBM Plex Sans KR 그대로. Black Han Sans는 뺀다. 히어로 흉상 눈의 ASCII 숫자(0·1)는 칸마다 고정이 아니라 칸마다 다른 박자로 계속 바뀐다(히어로가 화면에 있을 때만, 초당 12번 갱신)
+- 본 것(견본 artifact SsDzCJmjE1e6vuHRmZDqYU): A Oxanium 800·600 + 프롬프트 Silkscreen / **B Quantico 700 + 프롬프트 Plex Mono** / C Oxanium + 섹션·프롬프트 Silkscreen. 원하는 느낌은 "기계적이고 딱딱한 각진 글꼴, 너무 90°는 말고"
+- 이유: 사용자 선택(11/05) — B. 한글 제목이 Plex Sans KR로 이어져도 견본에서 어색하지 않았다. 눈 숫자가 움직여야 기계 눈처럼 살아 보인다
+- 문서: [01-frontend.md](01-frontend.md) "타이포·가독성", [guides/3d-hero.md](guides/3d-hero.md)
+
 ### S-011 · 확정 · 홈 프로젝트 목록에 썸네일 (S-007의 "썸네일 없음"을 뒤집음)
 - 결정: 프로젝트마다 16:10 썸네일 — 상세 갤러리 첫 장(`images[0]`), 없으면 같은 크기의 빈 칸(바탕 surface, 둥근 모서리). 데스크톱은 왼쪽 15rem, 모바일은 위에 전체 폭
 - 이유: 사용자 요청(11/05) — 목록에도 썸네일, 당장 이미지가 없어도 자리부터. 이미지를 넣으면 코드 수정 없이 채워진다

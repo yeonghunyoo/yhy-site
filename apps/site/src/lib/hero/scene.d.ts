@@ -24,6 +24,8 @@ export interface Hero {
   setProgress(p: number): void;
   /** 마지막 문장 뒤 정리(0~1): 픽셀이 가운데로 모여 사라진다 */
   setOutro(o: number): void;
+  /** 눈 숫자 박자(정수) — 바꿀 때마다 눈 칸의 0·1이 칸마다 다른 주기로 다시 뽑힌다 */
+  setTick(n: number): void;
   setOptions(next: HeroOptions): void;
   snapshot(): { width: number; height: number; data: number[] };
   loadModel(url: string): Promise<void>;

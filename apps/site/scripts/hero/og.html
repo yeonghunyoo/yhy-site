@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>og image</title>
-<link rel="stylesheet" href="/node_modules/@fontsource/black-han-sans/index.css">
+<link rel="stylesheet" href="/node_modules/@fontsource/quantico/latin-700.css">
 <link rel="stylesheet" href="/node_modules/@fontsource/ibm-plex-mono/400.css">
 <style>
   /* 공유 미리보기 이미지 1200×630(scripts/hero/og.mjs가 찍는다). 왼쪽 문장, 오른쪽 픽셀 흉상(히어로와 같은 장면) */
@@ -11,7 +11,7 @@
   canvas { position: absolute; top: 0; left: 330px; width: 1200px; height: 630px; image-rendering: pixelated; }
   .shade { position: absolute; inset: 0; background: linear-gradient(to right, #17191c 38%, rgb(23 25 28 / 0) 62%); }
   .text { position: absolute; left: 84px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
-  h1 { margin: 0; font-family: 'Black Han Sans', sans-serif; font-weight: 400; font-size: 128px; line-height: 0.95; color: #e9ebe6; letter-spacing: -1px; }
+  h1 { margin: 0; font-family: 'Quantico', sans-serif; font-weight: 700; font-size: 128px; line-height: 0.95; color: #e9ebe6; letter-spacing: -1px; }
   h1 em { font-style: normal; color: #8c98ff; }
   p { margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 30px; color: #e9ebe6; }
   .url { position: absolute; left: 84px; bottom: 56px; font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #a3a8a0; }
@@ -34,7 +34,7 @@
   hero.resize(1200, 630);
   hero.setProgress(1);
   // 글꼴을 직접 불러 둔다(fonts.ready만으로는 아직 요청 전일 수 있다)
-  await Promise.all([document.fonts.load('128px "Black Han Sans"', 'BETTER CALL YH!'), document.fonts.load('30px "IBM Plex Mono"', 'Yeonghun')]);
+  await Promise.all([document.fonts.load('700 128px "Quantico"', 'BETTER CALL YH!'), document.fonts.load('30px "IBM Plex Mono"', 'Yeonghun')]);
   await document.fonts.ready;
   window.ogReady = true;
 </script>

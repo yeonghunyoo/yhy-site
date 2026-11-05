@@ -159,7 +159,7 @@ const groups = stack(locale);
     display: flex; flex-direction: column; gap: 0.6rem; opacity: 0; transform: translateY(8px); transition: opacity 0.35s, transform 0.35s; pointer-events: none;
   }
   .story-cap span { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-muted); }
-  .story-cap b { font-family: var(--font-display); font-weight: 400; font-size: clamp(1.75rem, 5vw, 3.5rem); line-height: 1.1; text-wrap: balance; }
+  .story-cap b { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.75rem, 5vw, 3.5rem); line-height: 1.1; text-wrap: balance; }
   /* 가독성(11/05): 문구가 보일 때만 뒤에 어두운 그늘 — 아래 문구는 아래쪽 그라데이션, 마지막 문구는 글자 뒤 원형 */
   .story-cap { z-index: 1; }
   .story-cap::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: -45vh; bottom: -20vh; background: linear-gradient(to top, rgb(14 15 17 / 0.92) 30%, rgb(14 15 17 / 0)); pointer-events: none; }
@@ -198,9 +198,9 @@ const groups = stack(locale);
   }
   .home-in { max-width: 1040px; display: flex; flex-direction: column; gap: clamp(5.5rem, 12vw, 9rem); }
   /* 섹션 제목(11/05): 영어, 크게. // 는 흐리게, 옆 숫자(경력·개수)는 작게 */
-  .home-kick { margin: 0 0 2rem; display: flex; align-items: baseline; gap: 0.6rem; font-family: var(--font-mono); font-size: clamp(1.125rem, 1.6vw, 1.375rem); font-weight: 500; color: var(--color-fg); letter-spacing: 0.01em; }
+  .home-kick { margin: 0 0 2rem; display: flex; align-items: baseline; gap: 0.6rem; font-family: var(--font-display); font-size: clamp(1.25rem, 1.8vw, 1.5rem); font-weight: 700; color: var(--color-fg); letter-spacing: 0.01em; }
   .home-kick > span { color: var(--color-quiet); }
-  .home-kick small { font-size: 0.8125rem; font-weight: 400; color: var(--color-muted); }
+  .home-kick small { font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 400; color: var(--color-muted); }
   .home-gh { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 0 !important; color: var(--color-fg); transition: color 0.15s, scale 0.15s; }
   .home-gh svg { width: 1.25rem; height: 1.25rem; }
   .home-gh:hover { color: var(--color-accent); }
@@ -228,7 +228,7 @@ const groups = stack(locale);
   .home-work:hover .thumb img { transform: scale(1.03); }
   .home-work .body { flex: 999 1 26rem; min-width: 0; display: flex; flex-direction: column; gap: 0.625rem; }
   .home-work .when, .home-work .tech { font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted); }
-  .home-work .name { font-family: var(--font-display); font-size: clamp(2.5rem, 5.4vw, 4rem); line-height: 1; overflow-wrap: anywhere; }
+  .home-work .name { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.5rem, 5.4vw, 4rem); line-height: 1; overflow-wrap: anywhere; }
   /* 화살표는 자리를 차지하지 않게(긴 이름 뒤에서 줄이 바뀌어 빈 줄이 생기지 않게) */
   .home-work .name { position: relative; }
   .home-work .name::after { content: '→'; position: absolute; margin-left: 0.4em; font-size: 0.5em; line-height: 2; color: var(--color-accent); opacity: 0; transform: translateX(-0.5rem); transition: opacity 0.2s, transform 0.2s; }
@@ -268,7 +268,7 @@ const groups = stack(locale);
   @media (prefers-reduced-motion: reduce) { .home-toc { transition: none; } }
   .home-ask { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; }
   .home-ask .home-kick, .home-ask .home-lead, .home-ask .home-meta { margin: 0; }
-  .home-big { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: 1.05; text-wrap: balance; }
+  .home-big { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: 1.05; text-wrap: balance; }
   .home-btn { display: inline-flex; align-items: center; min-height: 3.25rem; padding: 0 1.625rem; border: 1px solid var(--color-fg); border-radius: 2px; background: transparent; color: var(--color-fg); font-family: var(--font-mono); font-size: 0.875rem; cursor: pointer; }
   .home-btn:hover { background: var(--color-fg); color: var(--color-bg); }
   .home-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }

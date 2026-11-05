@@ -1,7 +1,7 @@
 /*
  * 디자인 토큰 — 색·글꼴·모서리는 이 파일에만 둔다.
  * 11/03 테마: 글자·숫자·가는 선 중심. 나이트 한 가지(차콜 바탕 + 연보라 파랑 강조), 표시(태그)는 분홍.
- * 글꼴 3종: 제목 Black Han Sans, 숫자·라벨 IBM Plex Mono, 본문 IBM Plex Sans KR(11/04, 15px). 모두 자체 호스팅.
+ * 글꼴 3종: 제목 Quantico(11/05, 한글은 Plex Sans KR로 이어짐), 숫자·라벨 IBM Plex Mono, 본문 IBM Plex Sans KR(11/04, 15px). 모두 자체 호스팅.
  */
 :root {
   /* 나이트 한 가지(11/03 확정): 기기의 밝은·어두운 설정과 상관없이 같은 색 */
@@ -20,7 +20,7 @@
   --color-success: #6fd08a;
 
   --font-sans: 'IBM Plex Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Black Han Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-display: 'Quantico', 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius: 0.25rem;

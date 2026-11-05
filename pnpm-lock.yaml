@@ -296,13 +296,13 @@ importers:
       '@astrojs/react':
         specifier: ^7.1.1
         version: 7.1.1(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tsx@4.23.15)(yaml@2.9.1)
-      '@fontsource/black-han-sans':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@fontsource/ibm-plex-mono':
         specifier: ^5.3.0
         version: 5.3.0
       '@fontsource/ibm-plex-sans-kr':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/quantico':
         specifier: ^5.3.0
         version: 5.3.0
       '@tailwindcss/vite':
@@ -1407,14 +1407,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fontsource/black-han-sans@5.3.0':
-    resolution: {integrity: sha512-HZtn51La10fZU1DdnbY06YcvLxF9NAkNk/GdA6rKDWPztH9zWLqVcfVvCKNmosBuFrhToGbw/pMNJ/TjdC296Q==}
-
   '@fontsource/ibm-plex-mono@5.3.0':
     resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
 
   '@fontsource/ibm-plex-sans-kr@5.3.0':
     resolution: {integrity: sha512-Malq1TQAnpPHASG76fAthnCY0E41py2r7pZ5JEjgmGfA5tVGz7gwBfvrkhPvT3ZmyMobQrJakHhKZVuXQp7FjQ==}
+
+  '@fontsource/quantico@5.3.0':
+    resolution: {integrity: sha512-W0+JbODU0FHQtnQKD42Iw9BZrY31UZciWB8lXjhqCHvXRfQbe64e7lRAS3538xOCbRS2xoga7JBoyX9cMVmc3A==}
 
   '@gltf-transform/cli@4.5.1':
     resolution: {integrity: sha512-TNPU20U7caqUpyXdbqobQueUjWmrdEhsZeno77MGJJCyiV1EyrC5yOE+aFrpxPli45VSk6aNT0FHAed8LE7ecg==}
@@ -5242,11 +5242,11 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@fontsource/black-han-sans@5.3.0': {}
-
   '@fontsource/ibm-plex-mono@5.3.0': {}
 
   '@fontsource/ibm-plex-sans-kr@5.3.0': {}
+
+  '@fontsource/quantico@5.3.0': {}
 
   '@gltf-transform/cli@4.5.1(@types/node@26.6.6)':
     dependencies:

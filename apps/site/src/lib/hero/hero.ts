@@ -13,6 +13,8 @@ const OUTRO_IN_MS = 1400;
 const OUTRO_OUT_MS = 600;
 /** 커튼 구간에서 뒤 장면이 올라가는 속도(본문 대비) */
 const PARALLAX = 0.35;
+/** 눈 숫자(0·1)가 바뀌는 박자(11/05) — 히어로가 화면에 있고 탭이 보일 때만 돈다 */
+const EYE_TICK_MS = 1000 / 12;
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -96,6 +98,32 @@ export function initHero(): void {
   addEventListener('resize', request);
   request();
 
+  // 눈 숫자: 스크롤과 따로, 정해진 박자로 계속 다시 뽑는다. 히어로가 화면 밖이거나 탭이 숨으면 멈춘다
+  const startEyes = (h: Hero) => {
+    let visible = false;
+    let last = 0;
+    let tick = 0;
+    let loop = 0;
+    const frame = (t: number) => {
+      loop = 0;
+      if (!visible || document.hidden) return;
+      if (t - last >= EYE_TICK_MS && outroT < 1) {
+        last = t;
+        tick = (tick + 1) % 4096;
+        h.setTick(tick);
+      }
+      loop = requestAnimationFrame(frame);
+    };
+    const kick = () => {
+      if (!loop && visible && !document.hidden) loop = requestAnimationFrame(frame);
+    };
+    new IntersectionObserver(([e]) => {
+      visible = Boolean(e?.isIntersecting);
+      kick();
+    }).observe(stage);
+    document.addEventListener('visibilitychange', kick);
+  };
+
   if (!hasWebGL()) return;
   import('./scene.js')
     .then(({ createHero }) => {
@@ -108,6 +136,7 @@ export function initHero(): void {
       new ResizeObserver(() => instance.resize(canvas.clientWidth, canvas.clientHeight)).observe(canvas);
       root.classList.add('is-3d');
       apply();
+      startEyes(instance);
     })
     .catch(() => {
       // 3D를 못 띄우면 포스터 그대로

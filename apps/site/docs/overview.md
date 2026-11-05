@@ -29,7 +29,7 @@ MVP는 "빌더로서의 yhy를 보여주는 한/영 정적 사이트 + 방문자
 | 프론트 | Astro | 정적 우선, 상호작용 부분만 React 아일랜드 |
 | 언어 | 한/영, /ko·/en 경로 분리 | SEO와 공유 링크에 유리 |
 | 도메인 | **`bettercurl.dev` (11/04 구매, Cloudflare Registrar)** — 첫해 $8.20 / 갱신 $12.20(USD). 연동 순서·주소 체계는 [guides/domain-setup.md](guides/domain-setup.md). 원작 문장 "Better Call ○○"의 개발자 버전: call → `curl`(주소를 호출하는 명령어). 소리(콜·컬)·글자(개발자 명령어)·뜻(부르다)이 겹친다 | 짧고 패러디가 분명, 세일즈 문구("Build broken? Better curl.")가 된다. 알고 가는 약점: 이름에 사람이 안 보임 → 실명 보조 도메인(`yeonghun.dev` 등)으로 메움, HTTP 도구 이름처럼 읽힐 수 있음, `bettercurl.com`은 이미 남의 것, curl은 오픈소스 프로젝트 이름이라 "더 나은 curl" 도구처럼 홍보하지 않는다. 원작의 이름(Saul)·로고 글꼴·인물·대사는 쓰지 않는다. 검토 후 버린 것: `yeong.dev`(이미 등록), `young.dev`(프리미엄·주니어로 읽힘), `godev`(Go 언어 `go.dev`와 겹침), `zerodev`(같은 이름 회사), `odev`(터키어 "숙제"), `enter.dev`(이름과 무관), `bettercallyeong.dev`(너무 김) |
-| 디자인 톤 | 글자·숫자·가는 선 중심, 캔버스 위 자유 배치 (11/03 확정) | 나이트 한 가지(차콜 바탕 + 연보라 파랑 강조, 기기 설정과 상관없음). 표시 분홍. 글꼴 Black Han Sans(제목) + IBM Plex Mono(숫자·라벨), 본문은 시스템 글꼴. 상세는 [01-frontend.md](01-frontend.md) "홈" |
+| 디자인 톤 | 글자·숫자·가는 선 중심, 캔버스 위 자유 배치 (11/03 확정) | 나이트 한 가지(차콜 바탕 + 연보라 파랑 강조, 기기 설정과 상관없음). 표시 분홍. 글꼴 Quantico(제목, 11/05 Black Han Sans에서 바꿈) + IBM Plex Mono(숫자·라벨), 본문 IBM Plex Sans KR. 상세는 [01-frontend.md](01-frontend.md) "홈" |
 | UI 레퍼런스 | Mobbin | 화면 패턴 참고용(코드 아님). 실제 구현은 Tailwind + CSS 라이브러리 |
 | UI 라이브러리 | daisyUI 5 (10/29 확정) | 순수 CSS Tailwind v4 플러그인 — JS 0KB, CSP 문제 없음. 테마는 CSS 변수라 세계관이 정해지면 커스텀 테마로 교체. 다이내믹 효과는 daisyUI가 아니라 View Transitions·scroll-driven animations(CSS), 필요한 곳만 지연 로드 JS로 |
 | 인증 | 이메일 매직링크 + Google OAuth | Better Auth, 메일은 Resend |

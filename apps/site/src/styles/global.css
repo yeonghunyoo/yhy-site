@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
-/* 글꼴 자체 호스팅(CSP font-src 'self'). Black Han Sans·Plex Sans KR은 글자 범위별로 쪼개져 있어 쓰는 조각만 받는다. Plex Mono는 라틴만 */
-@import '@fontsource/black-han-sans/400.css';
+/* 글꼴 자체 호스팅(CSP font-src 'self'). 제목 Quantico 700(11/05, 라틴만 — 한글은 Plex Sans KR 700으로). Plex Sans KR은 글자 범위별로 쪼개져 있어 쓰는 조각만 받는다. Plex Mono는 라틴만 */
+@import '@fontsource/quantico/latin-700.css';
 /* 본문(11/04): IBM Plex Sans KR 400·700 — 숫자·라벨의 Plex Mono와 같은 가족 */
 @import '@fontsource/ibm-plex-sans-kr/400.css';
 @import '@fontsource/ibm-plex-sans-kr/700.css';

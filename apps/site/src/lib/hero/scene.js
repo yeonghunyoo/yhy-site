@@ -110,6 +110,7 @@ uniform float uMode;     // 0 = pixel, 1 = ascii(색 대신 글자 정보를 담
 uniform float uGlyphs;   // ascii ramp 글자 수
 uniform float uEdge;
 uniform float uOutro;    // 0~1: 마지막 문장 뒤 — 장면이 가운데로 줄어들며 칸이 흩어져 사라진다
+uniform float uTick;     // 눈 숫자 박자(정수, 11/05) — 칸마다 다른 박자로 0·1이 계속 바뀐다
 uniform vec3 uDark, uLight, uAccent;
 varying vec2 vUv;
 
@@ -165,8 +166,12 @@ void main() {
   float d = mix(0.5, bayer4(cell), uDither);
   float q = clamp(floor(lum * (uLevels - 1.0) + d) / (uLevels - 1.0), 0.0, 1.0);
   vec3 col = accent ? mix(uDark, uAccent, q) : mix(uDark, uLight, q);
-  // 알파 1 = 보통 픽셀, 0.5 = 눈 글자 '0', 0.75 = 눈 글자 '1'(칸마다 고정 무작위)
-  if (eye && !gone) { gl_FragColor = vec4(uAccent, hash(cell + 17.0) < 0.5 ? 0.5 : 0.75); return; }
+  // 알파 1 = 보통 픽셀, 0.5 = 눈 글자 '0', 0.75 = 눈 글자 '1'. 칸마다 2~4박자 주기·어긋난 위상으로 다시 뽑는다
+  if (eye && !gone) {
+    float beat = floor(uTick / (2.0 + floor(hash(cell + 5.0) * 3.0)) + hash(cell + 9.0) * 4.0);
+    gl_FragColor = vec4(uAccent, hash(cell + 17.0 + beat * 1.37) < 0.5 ? 0.5 : 0.75);
+    return;
+  }
   gl_FragColor = vec4(gone ? uDark : col, 1.0);
 }`;
 
@@ -268,6 +273,7 @@ export function createHero(canvas, options = {}) {
       uGlyphs: { value: opts.ramp.length },
       uEdge: { value: opts.edge },
       uOutro: { value: 0 },
+      uTick: { value: 0 },
       uDark: { value: hex(opts.palette.dark) },
       uLight: { value: hex(opts.palette.light) },
       uAccent: { value: hex(opts.palette.accent) },
@@ -353,6 +359,7 @@ void main() {
 
   let progress = 0;
   let outro = 0;
+  let tick = 0; // 눈 숫자 박자(setTick)
   let drawn = ''; // 마지막으로 그린 상태(진행도·outro) — 같으면 다시 그리지 않는다
   let width = 1;
   let height = 1;
@@ -406,7 +413,7 @@ void main() {
   }
 
   function render() {
-    const key = `${progress}:${outro}`;
+    const key = `${progress}:${outro}:${tick}`;
     if (drawn === key) return;
     drawn = key;
     paint();
@@ -451,6 +458,12 @@ void main() {
     /** 마지막 문장 뒤 정리(0~1): 픽셀이 가운데로 모여 사라진다 */
     setOutro(o) {
       outro = Math.min(1, Math.max(0, o));
+      render();
+    },
+    /** 눈 숫자 박자(정수). 바꿀 때마다 눈 칸의 0·1이 칸마다 다른 주기로 다시 뽑힌다 */
+    setTick(n) {
+      tick = n;
+      post.uniforms.uTick.value = n;
       render();
     },
     setOptions(next) {
