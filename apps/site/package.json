@@ -21,7 +21,10 @@
     "rag:sync:remote": "node scripts/rag-sync.mjs",
     "rag:reindex:api": "node scripts/rag-reindex-api.mjs",
     "rag:import": "node scripts/ingest/index.mjs",
-    "rag:translate": "node scripts/rag-translate.mjs"
+    "rag:translate": "node scripts/rag-translate.mjs",
+    "hero:preview": "node scripts/hero/serve.mjs",
+    "hero:optimize": "node scripts/hero/optimize.mjs",
+    "hero:frames": "node scripts/hero/frames.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",
@@ -40,11 +43,15 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@gltf-transform/cli": "^4.5.1",
     "@napi-rs/canvas": "^1.1.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "daisyui": "^5.7.50",
     "drizzle-kit": "^0.31.11",
+    "playwright": "^1.64.1",
+    "sharp": "^0.35.5",
+    "three": "^0.187.0",
     "typescript": "^6.0.3",
     "unpdf": "1.9.0",
     "wrangler": "^4.153.0"
