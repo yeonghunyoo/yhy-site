@@ -19,23 +19,24 @@ export function look(p, cols) {
 }
 
 /**
- * 카메라 키프레임(11/05 사용자 동선). 대상점 주위 구면 좌표: az(도, 0 = 정면, − = 화면 왼쪽), el(도), r(거리), fov.
- * 1스텝: 왼쪽으로 돌며 다가감(처음 25%) → 방향을 바꿔 오른쪽으로 돌며 오른쪽 눈 클로즈업
- * 2스텝: 왼쪽 눈 클로즈업에서 시작(컷) → 줌아웃해 상반신
+ * 카메라 키프레임(11/05 사용자 동선). 대상점 주위 구면 좌표: az(도, 0 = 정면, − = 화면 왼쪽), el(도), r(거리), fov,
+ * 그리고 카메라 자체 회전 roll(z축, 화면이 기우는 각) · pitch(x축, 고개 끄덕임) — 도.
+ * 1스텝: 왼쪽으로 돌며 다가감(처음 25%) → 방향을 바꿔 오른쪽으로 돌며 인물의 오른쪽 눈(화면 왼쪽) 클로즈업
+ * 2스텝: 인물의 왼쪽 눈(화면 오른쪽) 클로즈업에서 시작(컷) → 줌아웃해 상반신. 끝은 수평(문구가 읽히게)
  */
 const SHOTS = [
   [ // 1스텝
-    { t: 0, at: 'head', az: -35, el: 10, r: 9, fov: 35 },
-    { t: 0.25, at: 'head', az: -75, el: 6, r: 5.2, fov: 34 },
-    { t: 1, at: 'eyeR', az: 22, el: 2, r: 0.6, fov: 30 },
+    { t: 0, at: 'head', az: -35, el: 10, r: 9, fov: 35, roll: 0, pitch: 0 },
+    { t: 0.25, at: 'head', az: -75, el: 6, r: 5.2, fov: 34, roll: -9, pitch: 4 },
+    { t: 1, at: 'eyeL', az: -6, el: 2, r: 0.6, fov: 30, roll: 7, pitch: -3 },
   ],
   [ // 2스텝
-    { t: 0, at: 'eyeL', az: -18, el: 2, r: 0.5, fov: 30 },
-    { t: 1, at: 'bust', az: 0, el: 4, r: 7.5, fov: 32 },
+    { t: 0, at: 'eyeR', az: 18, el: 2, r: 0.5, fov: 30, roll: -8, pitch: 3 },
+    { t: 1, at: 'bust', az: 0, el: 4, r: 7.5, fov: 32, roll: 0, pitch: 0 },
   ],
 ];
 
-/** 진행도 → 카메라 위치·대상·화각. points: 대상점(head·eyeL·eyeR·bust) */
+/** 진행도 → 카메라 위치·대상·화각·회전. points: 대상점(head·eyeL·eyeR·bust) */
 export function cameraAt(p, points) {
   const step = p <= STEP1 ? 0 : 1;
   const u = step === 0 ? p / STEP1 : (p - STEP1) / (1 - STEP1);
@@ -50,15 +51,19 @@ export function cameraAt(p, points) {
   const el = THREE.MathUtils.degToRad(lerp(a.el, b.el, t));
   const r = Math.exp(lerp(Math.log(a.r), Math.log(b.r), t)); // 거리는 로그로 — 다가가는 속도가 고르게 느껴진다
   const pos = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(r).add(target);
-  return { pos, target, fov: lerp(a.fov, b.fov, t) };
+  // 좌우로 흔드는 움직임: 키프레임 각에 잔물결을 더한다(구간 끝에서 0이라 컷·마지막 정지 화면은 그대로)
+  const sway = Math.sin(u * Math.PI * 3) * Math.sin(u * Math.PI);
+  const roll = THREE.MathUtils.degToRad(lerp(a.roll, b.roll, t) + sway * 4);
+  const pitch = THREE.MathUtils.degToRad(lerp(a.pitch, b.pitch, t) + sway * 1.5);
+  return { pos, target, fov: lerp(a.fov, b.fov, t), roll, pitch };
 }
 
 /** 흉상 기준 대상점(정수리 y=2.15, 얼굴 +Z). 스캔 모델은 opts.points로 눈 위치를 맞춘다 */
 const POINTS = {
   head: [0, 1.6, 0],
   bust: [0, 1.15, 0],
-  eyeL: [-0.26, 1.72, 0.74], // 화면 왼쪽 눈
-  eyeR: [0.26, 1.72, 0.74], // 화면 오른쪽 눈
+  eyeL: [-0.26, 1.72, 0.74], // 화면 왼쪽 눈 = 인물의 오른쪽 눈
+  eyeR: [0.26, 1.72, 0.74], // 화면 오른쪽 눈 = 인물의 왼쪽 눈
 };
 
 const DEFAULTS = {
@@ -285,6 +290,8 @@ export function createHero(canvas, options = {}) {
     camera.aspect = a;
     camera.updateProjectionMatrix();
     camera.lookAt(shot.target);
+    camera.rotateZ(shot.roll); // z축: 화면이 좌우로 기울어짐
+    camera.rotateX(shot.pitch); // x축: 위아래로 끄덕임
 
     renderer.setRenderTarget(rt);
     renderer.render(scene, camera);
