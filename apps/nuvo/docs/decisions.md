@@ -14,6 +14,13 @@
 
 ## 2026-11-06
 
+### D-023 · 제안 · 모바일은 Expo 쪽이 유리 — 11/04 "Capacitor로 시작" 제안을 재검토
+- 11/04 제안(service-plan "모바일"): 화면을 그대로 쓰는 Capacitor로 시작
+- 11/06 조사([mobile-options.md](mobile-options.md)) 뒤 💬 판단: **Expo가 유리** — Better Auth 공식 Expo 통합(Capacitor는 공식 없음·쿠키 문제 이슈 열림), 카카오 SDK(Capacitor 8용 플러그인 없음), `expo-image`의 `ph://` 썸네일 + 가상화 리스트, 4.2 "웹사이트 재포장" 위험이 낮음
+- 대가: 화면을 새로 만들어야 함(재사용은 타입·zod·API 클라이언트·쿼리 로직 30–50%), Android 백그라운드 업로드는 어느 쪽이든 직접 네이티브 모듈
+- 상태: 제안. **양쪽 실기기 1만 장 그리드 시제품**(권한 → 그리드 → 원본 하나 업로드) 뒤 확정
+- 함께 정할 것: 구독을 RevenueCat으로 받을지(월 매출 $2,500까지 무료) 직접 처리할지, 기기 간 같은 사진 판정 3단계(빠른 키 → dHash → 업로드 때 sha256)
+
 ### D-022 · 확정 · 운영자 계정 삭제는 Worker 안의 관리 경로 + 토큰
 - 방식: `POST /api/admin/delete-account`를 `ADMIN_TOKEN`(Bearer)으로 부르고, 로컬 스크립트(`scripts/admin-delete-account.mjs`)가 그 경로를 부름. 기본은 미리보기, `--yes`일 때만 지움
 - 본 것: 로컬에서 DB에 직접 붙는 스크립트. 버린 이유: R2 파일 정리와 실시간 연결 끊기는 Worker 바인딩(R2·Durable Object)이 있어야 해서, DB만 지우면 R2에 사진이 남음

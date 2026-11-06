@@ -55,7 +55,7 @@
 | **Capacitor** (지금 React SPA를 앱으로 감싸고, 사진첩·결제만 네이티브 플러그인) | 화면·타임라인·중복 정리·API 코드를 그대로 씀 | 수만 장 그리드 스크롤 성능을 확인해야 함. 썸네일은 웹 디코딩 대신 네이티브 API로 받아야 함. 심사 4.2 "웹사이트 재포장" 거절 위험 — 사진첩 접근·백그라운드 업로드가 차별 근거 |
 | **Expo / React Native** | 사진첩 라이브러리가 성숙하고 스크롤이 빠름 | 화면을 다시 만들어야 함. 공유 가능한 건 API 타입·로직(`@nuvo/shared`) 정도 |
 
-- 제안: 화면을 그대로 쓰는 Capacitor로 시작하고, 실기기에서 스크롤·썸네일 성능이 부족하면 그 화면만 네이티브로 바꿉니다. 정할 것에 남깁니다.
+- ~~제안: 화면을 그대로 쓰는 Capacitor로 시작~~ → **11/06 재검토: 조사상 Expo가 유리**(Better Auth 공식 통합, 카카오 SDK, 사진첩 그리드 성능, 4.2 심사 위험). 결정은 양쪽 실기기 시제품 뒤 — [mobile-options.md](mobile-options.md), D-023
 - 지금 기기 간 "같은 사진" 판정은 파일 전체 sha256입니다. 휴대폰에서는 다음이 걸립니다. 앱 설계 때 판정 기준을 따로 정합니다.
   - 사진첩 전체를 해시하면 배터리와 시간이 많이 듭니다.
   - iCloud "저장 공간 최적화"를 켜면 원본이 기기에 없습니다.
@@ -81,7 +81,7 @@
 | 단계 | 내용 |
 |---|---|
 | **1차 웹(서버)** | ① nuvo를 자기 Cloudflare·Resend 계정으로 옮기기 ② 용량 모델: 개인 10GB, 구독 상태로 업로드 허용(서비스 전체 8GB 상한은 비용 알림으로 대체) ③ 구독 상태 모델 — Apple·Google 영수증을 받을 자리로 설계, 1차에는 운영자가 수동으로 켜는 구독 플래그 ④ 약관·개인정보처리방침 ⑤ 신고·차단·공개 연락처·약관 동의 ⑥ Sign in with Apple(웹에도) ⑦ 계정 삭제 웹 페이지 ⑧ 웹에 "앱에서 구독" 안내 자리 |
-| **2차 모바일** | ① Capacitor 감싸기 + 사진첩 보기 + 초대받은 Space 보기(구독 없이) ② iOS IAP·Google Play 결제 + 서버 영수증 검증·통지 ③ 백업(골라서 → 자동) ④ 스토어 심사 문서(Privacy Manifest, Data safety, 권한 선언 폼, 연령 등급) |
+| **2차 모바일** | ⓪ 시제품으로 방식 결정(Expo/Capacitor, [mobile-options.md](mobile-options.md)) ① 앱 기본 + 사진첩 보기 + 초대받은 Space 보기(구독 없이) ② iOS IAP·Google Play 결제 + 서버 영수증 검증·통지 ③ 백업(골라서 → 자동) ④ 스토어 심사 문서(Privacy Manifest, Data safety, 권한 선언 폼, 연령 등급) |
 | **3차** | 동영상·자동 분류([roadmap-video-classification.md](roadmap-video-classification.md)), 무료 범위 조정 |
 
 항목별 체크리스트와 사람/코드 구분은 [work-plan.md](work-plan.md). 1차가 끝나면 **구독자가 없는 상태의 완성된 서비스**입니다(운영자가 수동으로 켠 계정만 업로드 가능). 2차가 끝나야 돈을 받습니다.
@@ -95,6 +95,7 @@
 - [x] 구독이 끝난 소유자의 Space: 보기는 유지, 올리기만 막음 — 11/05 확정(D-017). 사진을 언제까지 남길지는 아래 "구독 해지 후 사진 보관 정책"
 - [x] 결제 수단: **앱 스토어만(iOS IAP + Google Play 결제), 웹 PG 없음** — 11/04 결정
 - [x] 두 스토어 가격 동일 — 11/04 결정
-- [ ] 모바일 감싸는 방식: Capacitor(제안) / Expo
+- [ ] 모바일 방식: Expo(11/06 조사상 유리) / Capacitor — 시제품 뒤 결정, [mobile-options.md](mobile-options.md)
+- [ ] 구독 처리: RevenueCat(월 매출 $2,500까지 무료, 웹훅 하나) / 직접(Apple JWS·Google RTDN) — [mobile-options.md](mobile-options.md) 3
 - [ ] 기기 간 같은 사진 판정 기준 (휴대폰 해시 비용, iCloud 최적화, HEIC→JPEG 변환)
 - [ ] 구독 해지 후 사진 보관 정책

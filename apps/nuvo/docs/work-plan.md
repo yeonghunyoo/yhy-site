@@ -23,6 +23,8 @@
 
 - [x] **E2E 픽스처 OS 무관** (11/06) — macOS `sips` 대신 캔버스 축소본 + 레포의 작은 HEIC(`e2e/assets/iphone.heic`). 클라우드 세션(Linux)에서도 `pnpm nuvo e2e` 바로 실행
 
+- [x] **2차 준비: 모바일 방식 비교** (11/06) — [mobile-options.md](mobile-options.md): Capacitor vs Expo(사진첩·백그라운드 업로드·구독·로그인·4.2 심사·재사용), 기기 간 같은 사진 판정 3단계 제안. 조사상 Expo 유리, 결정은 시제품 뒤(D-023)
+
 ### B. 사람 작업이 먼저인 것
 - [ ] **도메인 결정·연결** ([developer-guide.md](developer-guide.md) 10단계) — 이게 풀리면 따라오는 코드·설정:
   - `SUPPORT_EMAIL` 값 채우기(지금 비어서 연락처 숨김·신고 메일 건너뜀, ⑤)
@@ -106,4 +108,4 @@
 - 시작 순서는 D-015 제안대로 ②+③ → ⑤·⑦·⑧ → noindex·보안 제안으로 진행했음
 
 ## 2차 모바일 (요약, 상세는 때가 되면)
-Capacitor 감싸기 → 사진첩 보기 + 초대받은 Space 보기 → iOS IAP·Google Play 결제 + 영수증 검증·서버 간 통지(③의 예약 라우트) → 백업(골라서 → 자동, WorkManager / URLSession 백그라운드) → 스토어 심사 문서(Privacy Manifest, Data safety, 사진 권한 선언 폼, 연령 등급, CSAE 범위 밖 확인)
+방식 결정(시제품, [mobile-options.md](mobile-options.md) — 조사상 Expo 유리) → 앱 기본 + 사진첩 보기 + 초대받은 Space 보기 → iOS IAP·Google Play 결제 + 영수증 검증·서버 간 통지(③의 예약 라우트) → 백업(골라서 → 자동, WorkManager / URLSession 백그라운드) → 스토어 심사 문서(Privacy Manifest, Data safety, 사진 권한 선언 폼, 연령 등급, CSAE 범위 밖 확인)
