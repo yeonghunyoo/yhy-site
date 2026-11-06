@@ -161,13 +161,13 @@
     "letterNote": "Questions, or something we could build together? No sign-in needed; replies go to the email you leave.",
     "more": "Read more →",
     "hero": {
-      "title": "Yeonghun Yoo — a fast, quick developer",
-      "k1": "scroll down",
-      "l1": "It starts as a blurry idea.",
-      "k2": "01 · the same problem again",
-      "l2": "Doing the same task over and over?",
-      "k3": "02 · a fast, quick developer",
-      "l3": "I build a tool and finish it."
+      "title": "Yeonghun Yoo — Software Engineer · iOS · Builder",
+      "k1": "Software Engineer · iOS · Builder",
+      "l1": "I don't confine myself to one platform or role.",
+      "k2": "01 · a recurring problem",
+      "l2": "When a problem repeats, I build the tool to solve it.",
+      "k3": "02 · tools → services",
+      "l3": "I build tools, then build services with them."
     },
     "statement": [
       "I've mostly built native iOS apps,",
