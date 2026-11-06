@@ -41,7 +41,7 @@
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
-- [ ] **배포 상태 확인** — 문서에 남은 마지막 배포는 11/05 `9caf7201`(SEO). 그 뒤 홈 본문 개편·챗 바·Quantico·썸네일 호버(11/05 12:41~14:24 커밋)가 운영에 있는지 기록이 없다. 없으면 배포 요청
+- [x] **배포** — 11/06 `8052616d`(클라우드 세션, `main` aebb9e7까지: 11/05 홈 개편·챗 바·Quantico, 11/06 스냅 잠금·드래그 막기·눈 숫자·히어로 문구 S-013). 비밀값은 그대로(`.prod.vars` 없음), RAG 동기화는 건너뜀
 - [ ] **메일 경로**([resend-setup.md](guides/resend-setup.md) "확인", [domain-setup.md](guides/domain-setup.md) "확인")
   - [ ] 로그인 없이 레터 → `letters@bettercurl.dev` → 개인 메일 도착 + Telegram 📮, 답장 누르면 방문자 주소
   - [ ] 어드민 답장 → 방문자 주소 도착(Resend Delivered)
