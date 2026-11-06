@@ -6,15 +6,59 @@
 
 > 터미널 명령 중 브라우저 로그인이 필요한 것(`wrangler login` 등)은 Claude Code 프롬프트에 `! 명령어` 형태로 입력하면 이 세션에서 바로 실행됩니다.
 
-## 현재 상태 (2026-11-04)
+## 현재 상태 (2026-11-06)
 
 | 영역 | 상태 |
 |---|---|
-| 로컬 개발 환경 | ✅ 동작 (이 PC 기준) |
-| 운영 배포 (Cloudflare) | ✅ 5~9·11단계 완료 (R2, Neon 싱가포르, Hyperdrive, 비밀값, cron). 도메인(10단계) 전이라 `https://nuvo.<계정 서브도메인>.workers.dev`로 운영 중 |
-| 로그인 | ⬜ 코드는 완료 (이메일 인증·비밀번호 재설정·Google·카카오). **도메인(10)+Resend(10-1) 또는 Google(12) 중 하나를 해야 운영에서 로그인할 수 있습니다.** 카카오(13)는 나중에 |
-| 법률 문서 | ⬜ 14단계 필요 (소셜 로그인 심사에도 필요) |
-| 실기기 검증 | ⬜ 17단계 필요 |
+| 코드 (1차 웹) | ✅ 큰 항목 끝남 — 개인 10GB·구독 상태(수동), 신고·차단·연락처, 계정 삭제 페이지, "앱에서 구독" 안내, noindex, 보안(위치·형식 검사·CSP·기기 로그아웃·초대 끊기). 남은 작은 코드는 [work-plan.md](work-plan.md) A |
+| 테스트 | ✅ 11/05 로컬 Postgres로 단위 15·스모크 93·E2E 6·CSP 검사 통과 |
+| 운영 배포 (Cloudflare) | ⚠️ 운영은 **11/04 코드**. 11/05 변경은 아직 배포 안 함 — 아래 "지금 할 일" 3번. portfolio-web과 **같은 계정**(임시), `https://nuvo.<계정 서브도메인>.workers.dev` |
+| 로그인 | ⬜ 코드는 완료. 운영에서 쓰려면 도메인(10)+Resend(10-1) 또는 Google(12) |
+| 법률 문서 | ⬜ 14단계 (스토어·소셜 로그인 심사와 유료 운영에 필요) |
+| 실기기 검증 | ⬜ 17단계 |
+
+## 지금 할 일 (2026-11-06, 순서대로)
+
+코드가 기다리고 있는 사람 작업입니다. 위에서부터 하면 막히는 곳이 없습니다. 상세는 각 단계 번호로.
+
+| # | 할 일 | 왜 지금 | 어디 |
+|---|---|---|---|
+| 1 | **도메인 정하고 사기** | 지원 메일(`SUPPORT_EMAIL`), 인증 메일(Resend), Google 로그인 주소, 스토어에 넣을 계정 삭제 주소(`/account/delete`), 엣지 캐시가 모두 도메인에 걸려 있음 | 10단계 |
+| 2 | **nuvo 전용 Cloudflare 계정** 만들고 R2·Hyperdrive·비밀값 다시 만들기 | 유료 운영의 전제. 지금은 portfolio-web과 무료 한도(R2 10GB)를 나눠 써서 8GB 상한을 걸어 둠 | 5~9단계 (새 계정에서 다시). 운영 R2에 지킬 사진이 있으면 옮기기 먼저(아래 "계정 이전 메모") |
+| 3 | **11/05 코드 운영 반영** | 운영 DB에 표 3개(구독·신고/차단·삭제 요청)가 없으면 새 코드가 동작하지 않음 | 아래 "11/05 코드 배포 순서" |
+| 4 | **nuvo 전용 Resend 계정** + 도메인 인증 | 이메일 가입·인증 메일, 신고·삭제 요청 메일 | 10-1단계 |
+| 5 | **Google 로그인** 설정 | 이메일 없이도 로그인되게. 리디렉션 URI가 도메인 기준 | 12단계 |
+| 6 | **약관·개인정보처리방침 문구** | 유료 운영·스토어·소셜 로그인 심사 모두 필요. 문구가 오면 `/terms`·`/privacy`·동의 기록은 코드로 바로 | 14단계, [work-plan.md](work-plan.md) B ④ |
+| 7 | **정할 것 4가지** — 구독 가격, 해지 후 사진 보관 기간, Space 원본 EXIF 위치(지금 안내만), 초대 기본값(7일·10명) | 가격·보관 기간은 약관 문구에 들어감 | [work-plan.md](work-plan.md) D, [pricing.md](pricing.md) |
+| 8 | **Apple Developer Program 가입** ($99/연) | Sign in with Apple(iOS 앱 필수)과 iOS 앱 출시에 필요. 한국 개발자는 서버 간 알림 엔드포인트 등록 필수 | [work-plan.md](work-plan.md) B ⑥ |
+| 9 | 비용 알림·요청 수 제한 | 새 계정에서 R2 사용량·요청 수 알림, WAF 제한 | 15·16단계 |
+| 10 | 실기기 검증 | iPhone·Android 업로드, 대용량 폴더, HEIC 속도 | 17단계 |
+
+나중에(2차 모바일 전): Google Play Console 등록($25), 사업자등록·통신판매업 신고 여부 확인([service-plan.md](service-plan.md) "출시 전 할 일").
+
+### 11/05 코드 배포 순서
+
+배포는 이 PC(로컬)에서 합니다. 클라우드 세션에는 Cloudflare 로그인이 없습니다.
+
+1. [ ] 운영 DB에 마이그레이션 적용 (**배포보다 먼저**): `DATABASE_URL="$(cat apps/nuvo/.neon-url.local)" pnpm nuvo-db migrate` — 0004 구독·용량, 0005 신고·차단, 0006 삭제 요청. 0004는 기존 개인 사진함 한도를 10GB로, Space 한도를 0(소유자 몫)으로 바꿉니다
+   - 접속 주소 파일 이름은 7단계에서 저장한 것을 씁니다
+2. [ ] 배포: 루트에서 `pnpm nuvo deploy` (`pnpm deploy`는 pnpm 내장 명령이라 쓰지 않습니다)
+3. [ ] **운영자 계정 구독 켜기** — 배포하면 모든 계정이 "구독 없음"이라 내 사진함 업로드·Space 만들기가 막힙니다. 아래 "수동 구독" SQL로 본인(과 먼저 써 볼 가족 대표) 계정을 켭니다. 초대받은 가족은 구독 없이 그 Space를 보고 올릴 수 있습니다
+4. [ ] 헤더 확인:
+   ```sh
+   curl -sI https://도메인/library | grep -iE "x-robots-tag|content-security-policy"   # noindex와 CSP가 보여야 함
+   curl -sI https://도메인/ | grep -i x-robots-tag                                     # 아무것도 안 나와야 함 (랜딩만 노출)
+   curl -sI https://도메인/api/health | grep -i x-robots-tag                           # noindex
+   ```
+5. [ ] 브라우저에서 HEIC 사진 하나 열어 보기 (CSP 아래에서 WASM 디코딩 확인, D-021)
+6. [ ] 도메인이 생기면 `wrangler.jsonc`의 `SUPPORT_EMAIL`을 채우고 다시 배포 — 그 전에는 화면에 연락처가 안 보이고 신고 메일도 가지 않습니다(신고 자체는 DB에 쌓임)
+
+### 계정 이전 메모 (2번)
+
+- **Neon(DB)은 Cloudflare 밖**이라 그대로 둡니다. 새 계정에서 Hyperdrive만 같은 접속 주소로 다시 만듭니다(8단계)
+- **R2 사진**은 계정 사이에 자동으로 옮겨지지 않습니다. 운영에 지킬 사진이 없으면(테스트뿐이면) 새 버킷에서 새로 시작하고, 있으면 두 계정의 R2 API 토큰으로 `rclone copy`를 먼저 합니다 — 이때 키 이름(`o/{sha256}`, `t/{sha256}/{512|2048}`)을 그대로 둬야 DB와 맞습니다
+- 옮긴 뒤 코드 후속(Claude가 할 일): `STORAGE_CAP_GB` 제거, `mvp.md`·site `cost-guard.md`의 "계정 공용 한도" 표 삭제, 루트 `docs/monorepo.md` 계정 표 갱신
+- `MEDIA_SIGNING_KEY`·`BETTER_AUTH_SECRET`은 **같은 값을 옮겨 넣습니다**. 바꾸면 모두 로그아웃되고 이미 발급한 사진 링크가 무효가 됩니다
 
 ---
 
@@ -152,7 +196,7 @@ pnpm exec wrangler secret put BETTER_AUTH_URL      # 예: https://nuvo.example.c
 
 ### 11. 배포
 ```sh
-pnpm deploy
+pnpm nuvo deploy   # 루트에서. pnpm deploy는 pnpm 내장 명령이라 쓰지 않는다
 ```
 - 확인: `https://도메인/api/health`가 `{"ok":true}`를 주면 완료.
 - 확인: 로그인 후 `/api/health/db`가 시간을 돌려주면 DB 연결도 완료.
