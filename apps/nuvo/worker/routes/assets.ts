@@ -9,7 +9,8 @@ import { requireUser, type AppEnv } from "../context";
 import { accessibleLibraryIds, isUuid, libraryAccess, requireLibrary } from "../lib/access";
 import { assertUploadAllowed, ownerUsage } from "../lib/capacity";
 import { subscriptionOf } from "../lib/subscription";
-import { assetColumns, kickFromHub, lockLibraries, recordSpaceActivity, removeAssets, toCloudAsset } from "../lib/assets";
+import { deleteAccount, planAccountDeletion } from "../lib/account";
+import { assetColumns, recordSpaceActivity, removeAssets, toCloudAsset } from "../lib/assets";
 import { collectGarbage } from "../lib/gc";
 import { signMediaUrl } from "../lib/sign";
 
@@ -199,52 +200,12 @@ export const assetRoutes = new Hono<AppEnv>()
   .delete("/me", async (c) => {
     const user = requireUser(c);
     const db = c.var.db;
-    const owned = await db
-      .select({
-        spaceId: spaceMembers.spaceId,
-        name: spaces.name,
-        members: sql<number>`(select count(*)::int from ${spaceMembers} m where m.space_id = ${spaceMembers.spaceId})`,
-      })
-      .from(spaceMembers)
-      .innerJoin(spaces, eq(spaces.id, spaceMembers.spaceId))
-      .where(and(eq(spaceMembers.userId, user.id), eq(spaceMembers.role, "owner")));
-    const shared = owned.filter((o) => o.members > 1);
-    if (shared.length) {
-      throw new HTTPException(409, {
-        message: `‘${shared.map((s) => s.name).join("’, ‘")}’의 소유권을 다른 멤버에게 넘긴 뒤 탈퇴할 수 있어요`,
-      });
-    }
-    const ownedIds = new Set(owned.map((o) => o.spaceId));
-    const joined = (
-      await db.select({ spaceId: spaceMembers.spaceId }).from(spaceMembers).where(eq(spaceMembers.userId, user.id))
-    ).filter((m) => !ownedIds.has(m.spaceId));
+    // 규칙은 운영자 삭제와 같다(worker/lib/account.ts). 본인 탈퇴는 공유 Space 소유권을 자동으로 넘기지 않는다(409)
+    const plan = await planAccountDeletion(db, user.id);
+    if (plan.sharedSpaces.length) await deleteAccount(c.env, db, plan, { defer: c.var.defer }); // 409를 던진다
     // 먼저 로그아웃해서 세션 쿠키(캐시 포함)를 지운다
     const out = await c.var.auth.api.signOut({ headers: c.req.raw.headers, asResponse: true });
-    // 한 트랜잭션에서: 라이브러리를 잠가 새 업로드를 막고 → 사진 정리 → Space와 사용자 삭제
-    const { orphanShas } = await db.transaction(async (tx) => {
-      const libIds = (
-        await tx
-          .select({ id: libraries.id })
-          .from(libraries)
-          .where(
-            owned.length
-              ? or(eq(libraries.userId, user.id), inArray(libraries.spaceId, owned.map((o) => o.spaceId)))
-              : eq(libraries.userId, user.id),
-          )
-      ).map((l) => l.id);
-      await lockLibraries(tx, libIds);
-      const ids = libIds.length
-        ? (await tx.select({ id: assets.id }).from(assets).where(inArray(assets.libraryId, libIds))).map((a) => a.id)
-        : [];
-      const removed = await removeAssets(tx, ids);
-      if (owned.length) await tx.delete(spaces).where(inArray(spaces.id, owned.map((o) => o.spaceId)));
-      await tx.delete(userTable).where(eq(userTable.id, user.id));
-      return removed;
-    });
-    // 실시간 연결 정리: 지운 Space는 전부, 남는 Space에서는 이 사용자만
-    for (const o of owned) c.executionCtx.waitUntil(kickFromHub(c.env, o.spaceId));
-    for (const m of joined) c.executionCtx.waitUntil(kickFromHub(c.env, m.spaceId, user.id));
-    await collectGarbage(db, c.env.MEDIA, orphanShas);
+    await deleteAccount(c.env, db, plan, { defer: c.var.defer });
     const res = c.json({ ok: true });
     for (const cookie of out.headers.getSetCookie()) res.headers.append("set-cookie", cookie);
     return res;

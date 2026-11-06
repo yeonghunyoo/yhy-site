@@ -9,6 +9,7 @@ import { requireUser, withContext, withSession, type AppEnv } from "./context";
 import { setManualSubscription } from "./lib/subscription";
 import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
+import { adminRoutes } from "./routes/admin";
 import { billingRoutes } from "./routes/billing";
 import { deletionRequestRoutes } from "./routes/deletion-requests";
 import { reportRoutes } from "./routes/reports";
@@ -40,6 +41,8 @@ const api = new Hono<AppEnv>()
   })
   .use(withContext)
   .on(["GET", "POST"], "/auth/*", (c) => c.var.auth.handler(c.req.raw))
+  /** 운영자 전용 (ADMIN_TOKEN, 없으면 404). 세션과 무관 */
+  .route("/admin", adminRoutes)
   /** 로그인 없이: 계정 삭제 요청 (Google Play 요건, docs/work-plan.md ⑦) */
   .route("/account-deletion-requests", deletionRequestRoutes)
   .use(withSession)

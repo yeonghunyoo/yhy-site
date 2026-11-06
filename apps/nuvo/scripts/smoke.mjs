@@ -410,6 +410,29 @@ await d("/api/me", { method: "DELETE" });
   await e("/api/me", { method: "DELETE" });
 }
 
+// 운영자 계정 삭제 (ADMIN_TOKEN): 미리보기 → 공유 Space 소유권 이전 → 삭제. 토큰이 틀리면 경로가 없는 것처럼 404
+{
+  const ADMIN = process.env.ADMIN_TOKEN ?? "dev-only-admin-token";
+  const adminCall = (json, token = ADMIN) =>
+    fetch(`${BASE}/api/admin/delete-account`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json", origin: BASE }, body: JSON.stringify(json) })
+      .then(async (r) => ({ status: r.status, data: await r.json().catch(() => ({})) }));
+  const g = client();
+  const emailG = await signUp(g, "할머니");
+  await g("/api/dev/subscribe", { method: "POST" });
+  const sg = (await g("/api/spaces", { method: "POST", json: { name: "할머니 앨범" } })).data;
+  const invG = (await g(`/api/spaces/${sg.id}/invites`, { method: "POST", json: { role: "editor" } })).data;
+  await a(`/api/invites/${invG.token}/accept`, { method: "POST" });
+  ok((await adminCall({ email: emailG, dryRun: true }, "wrong-token")).status === 404, "틀린 운영자 토큰 → 404");
+  const pv = await adminCall({ email: emailG, dryRun: true });
+  ok(pv.status === 200 && pv.data.plan.sharedSpaces[0]?.newOwner?.name === "엄마", `미리보기: 공유 Space 소유권은 엄마에게 (${pv.status})`);
+  ok((await adminCall({ email: emailG })).status === 409, "소유권 이전 없이는 삭제 거부 (409)");
+  const del = await adminCall({ email: emailG, transferShared: true });
+  ok(del.status === 200 && (await g("/api/me")).status === 401, "운영자 삭제 → 그 사람 세션도 끝남");
+  const sgAfter = (await a(`/api/spaces/${sg.id}`)).data;
+  ok(sgAfter.myRole === "owner" && sgAfter.members.length === 1, "공유 Space는 남고 엄마가 소유자");
+  await a(`/api/spaces/${sg.id}`, { method: "DELETE" });
+}
+
 // 삭제와 Blob 정리: 개인 라이브러리에서 지워도 Space 사본은 남는다
 const delAsset = await a("/api/assets/delete", { method: "POST", json: { assetIds: [asset.id] } });
 ok(delAsset.data.removed === 1, "개인 라이브러리에서 삭제");

@@ -305,6 +305,7 @@ Google 동의 화면과 카카오 비즈 앱 전환에 URL이 필요하고, 개�
 | `PERSONAL_QUOTA_GB` | `wrangler.jsonc` vars | — | 개인 구독 용량 10. Space는 별도 용량 없이 소유자 용량에서 차감([mvp.md](mvp.md) "용량·구독"). 바꿔도 이미 만든 사진함에는 반영되지 않음 |
 | `STORAGE_CAP_GB` | `wrangler.jsonc` vars | — | 서비스 전체 저장 상한, 지금 8 — 계정을 옮기면 비용 알림으로 대체 ([service-plan.md](service-plan.md)) (R2 무료 10GB는 portfolio-web과 계정 공용, [mvp.md](mvp.md) "계정 공용 한도"). 0이면 상한 없음 |
 | `APP_STORE_URL` / `PLAY_STORE_URL` | `wrangler.jsonc` vars | 앱 출시 때 | 웹의 "앱에서 구독" 안내 창에 나오는 스토어 링크. 비면 "앱 준비 중" |
+| `ADMIN_TOKEN` | `wrangler secret` / `.dev.vars`(개발용 값) | 계정 삭제 요청이 생길 때 | 운영자 관리 경로(`/api/admin/*`) 열쇠. 32자 이상 무작위, 같은 값을 `.admin-token.local`에. 비우면 경로가 꺼짐 |
 | `SUPPORT_EMAIL` | `wrangler.jsonc` vars | 도메인 결정 뒤, 스토어 출시 전 | 공개 지원 연락처. 랜딩·설정·신고 창에 표시되고 신고 메일이 이 주소로 감. 비면 숨김 |
 | `MAIL_DAILY_CAP` / `MAIL_MONTHLY_CAP` | `wrangler.jsonc` vars | — | 서비스 전체 메일 상한 80 / 2,800 (Resend 무료 100 / 3,000 아래, [mvp.md](mvp.md) "메일 상한") |
 | Hyperdrive `id` | `wrangler.jsonc` | 8단계 | |
@@ -328,11 +329,24 @@ WHERE source = 'manual' AND user_id = (SELECT id FROM "user" WHERE email = 'some
 
 `/account/delete`에서 로그인할 수 없는 사람이 이메일로 삭제를 요청하면 `deletion_requests` 표에 쌓이고 `SUPPORT_EMAIL`로 메일이 옵니다. Google Play 요건이라 스토어 등록정보에 이 페이지 주소를 넣습니다.
 
-1. 그 이메일로 본인 확인 메일을 보냅니다(답장을 받으면 본인). 요청을 아무나 넣을 수 있어서 **확인 없이 지우지 않습니다**
-2. 확인되면 그 계정으로 로그인한 것과 같은 결과가 나오게 지웁니다 — 가장 안전한 방법은 비밀번호 재설정 링크를 보내 본인이 `/account/delete`에서 지우게 하는 것. 소셜 로그인만 쓰는 사람은 DB에서 `DELETE FROM "user" WHERE email = ...` 전에 개인 사진함 사진을 정리해야 하므로, 코드로 지우는 관리자 스크립트를 쓰기 전까지는 수동 처리를 미룹니다
-3. 처리하면 `UPDATE deletion_requests SET status = 'done', handled_at = now() WHERE id = ...`
-
-> 운영자용 삭제 스크립트(사용자 id로 `/api/me` DELETE와 같은 정리)는 아직 없습니다 — 요청이 생기기 시작하면 만듭니다.
+1. [ ] 그 이메일로 본인 확인 메일을 보냅니다(답장을 받으면 본인). 요청은 아무나 넣을 수 있어서 **확인 없이 지우지 않습니다**
+2. [ ] 운영자 토큰을 한 번만 준비합니다 — 32자 이상 무작위 값을 `wrangler secret`(`ADMIN_TOKEN`)과 git 제외 파일에 같이 둡니다:
+   ```sh
+   cd apps/nuvo
+   (umask 077; openssl rand -base64 48 | tr -d '\n' > .admin-token.local)
+   pnpm exec wrangler secret put ADMIN_TOKEN < .admin-token.local
+   ```
+   토큰이 없으면 관리 경로(`/api/admin/*`)는 꺼져 있습니다(404). 운영에서는 짧거나 `dev-only`로 시작하는 값을 거부합니다
+3. [ ] 미리보기 → 삭제:
+   ```sh
+   ADMIN_TOKEN="$(cat apps/nuvo/.admin-token.local)" BASE_URL=https://도메인 node apps/nuvo/scripts/admin-delete-account.mjs someone@example.com
+   # 지울 사진 수, 함께 지워질 Space, 소유권이 넘어갈 Space를 보여줌. 확인했으면:
+   ... --yes             # 실제로 지움
+   ... --yes --transfer  # 다른 멤버가 있는 Space의 소유자면 소유권을 넘기고 지움
+   ```
+   - 지우면 그 이메일의 열린 `deletion_requests`가 자동으로 "done"이 됩니다
+   - 소유권은 가장 오래된 관리자 → 참여자 → 보기만 멤버 순서로 넘어갑니다. 본인 탈퇴와 같은 정리(사진·혼자인 Space·세션·실시간 연결·R2)를 합니다(`worker/lib/account.ts`)
+4. [ ] 요청한 사람에게 처리했다고 답장합니다
 
 ## 결정이 필요한 것
 

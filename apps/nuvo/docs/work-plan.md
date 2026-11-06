@@ -19,7 +19,7 @@
 - [x] **② 용량이 찼을 때 소유자에게 알림** (11/06) — Space 업로드가 소유자 용량 때문에 막히면(413) 피드에 "저장 공간이 가득 찼어요"(Space당 하루 한 번, 실시간 반영). Space·라이브러리 화면에 90% 이상 경고. 메일은 nuvo Resend 계정(①) 뒤에
 - [x] **미룬 DB 작업 뒤에 연결 닫기** (11/06) — 응답 뒤로 미룬 메일(예산 카운터를 DB에 씀)이 연결이 먼저 닫혀 실패할 수 있던 문제. 운영 인증 메일에도 해당했음. `c.var.defer`로 미룬 일이 끝난 뒤 닫음
 - [x] **③ 스토어 결제 통지 라우트 자리 예약** (11/06) — `/api/billing/apple`, `/api/billing/google`이 501만 돌려줌(아무것도 믿지 않고 바꾸지 않음). 2차 구현 메모(JWS 검증, Pub/Sub OIDC 검증 후 Play API 재조회, 멱등)는 `worker/routes/billing.ts` 주석
-- [ ] **⑦ 운영자용 계정 삭제 스크립트** — 사용자 id로 `/api/me` DELETE와 같은 정리. 로그인 못 하는 사람의 삭제 요청이 실제로 생기면(D-019, [developer-guide.md](developer-guide.md) "계정 삭제 요청")
+- [x] **⑦ 운영자용 계정 삭제** (11/06, D-022) — 탈퇴 로직을 `worker/lib/account.ts`로 떼어 본인 탈퇴와 공유. 운영자 경로 `POST /api/admin/delete-account`(`ADMIN_TOKEN`, 없으면 404) + `scripts/admin-delete-account.mjs`(기본 미리보기, `--yes`로 삭제, `--transfer`로 공유 Space 소유권 이전). 삭제하면 열린 삭제 요청이 자동 처리됨. 운영 토큰 만들기는 사람([developer-guide.md](developer-guide.md) "계정 삭제 요청")
 
 ### B. 사람 작업이 먼저인 것
 - [ ] **도메인 결정·연결** ([developer-guide.md](developer-guide.md) 10단계) — 이게 풀리면 따라오는 코드·설정:
