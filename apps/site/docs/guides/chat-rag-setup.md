@@ -113,8 +113,8 @@
   - 처음 한 번: R2 버킷 `./node_modules/.bin/wrangler r2 bucket create portfolio-rag` — **버킷이 없으면 `pnpm run deploy`가 실패한다**(`wrangler.jsonc`에 R2 바인딩이 있다)
   - 스캔 쪽(글자 없이 이미지만 있는 쪽)은 쪽 이미지로만 들어간다 — 챗은 그 내용을 모른다. 전체가 스캔본인 PDF는 변환되지 않는다. OCR한 PDF나 마크다운으로 받는다
 - [x] 지금 초안 `about`·`stack`의 `[확인 필요]`/`[TO CONFIRM]` 자리는 받은 문서로 대체하거나 지운다(11/03)
-- [ ] 스택 경험 수준 표기 방식(예: 실무 / 개인 프로젝트 / 학습 중)
-- [ ] FAQ `src/content/rag/faq.{ko,en}.md` — 자주 받을 질문과 답
+- [x] 스택 경험 수준 표기 방식 — 11/04 실무 / 개인 프로젝트 두 단계(위 2-2, decisions S-001)
+- [x] FAQ `src/content/rag/faq.{ko,en}.md` — 11/04 8개(위 2-1)
 - [x] 기준 질문 세트 `src/content/rag/eval.json` — 질문과 나와야 할 slug(11/03, 22개)
 - [ ] 추천 칩 문구(`src/i18n/*.json`의 `chat.chips`)와 인사말, 페르소나·거절 규칙(`src/lib/server/chat.ts`의 `systemPrompt`)
 - [x] 문서를 고칠 때마다 운영 반영 — 11/04부터 `pnpm run deploy`가 자동으로 하거나 `pnpm rag:sync:remote` 한 번(D1 넣기 + 벡터 갱신). 로컬은 `pnpm rag:build`

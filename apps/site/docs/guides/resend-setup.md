@@ -20,9 +20,9 @@
 
 ## 0. 먼저 끝나 있어야 하는 것
 
-- [ ] 도메인 구매, Cloudflare DNS에 연결(네임서버를 Cloudflare로)
-- [ ] Worker에 커스텀 도메인 연결, `wrangler.jsonc`의 `BETTER_AUTH_URL`을 새 주소로
-- [ ] Google OAuth 리디렉션 URI에 `https://{도메인}/auth/callback/google` 추가
+- [x] 도메인 구매, Cloudflare DNS에 연결(네임서버를 Cloudflare로) — 11/04 `bettercurl.dev`
+- [x] Worker에 커스텀 도메인 연결, `wrangler.jsonc`의 `BETTER_AUTH_URL`을 새 주소로 — 11/04, [domain-setup.md](domain-setup.md) 2·7
+- [x] Google OAuth 리디렉션 URI에 `https://{도메인}/auth/callback/google` 추가 — 11/04, domain-setup 5
 
 ## 1. 발신 주소 정하기
 

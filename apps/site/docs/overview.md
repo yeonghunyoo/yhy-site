@@ -83,7 +83,7 @@ flowchart LR
 | 7 3D/셰이더 | [07-3d-shader.md](07-3d-shader.md) |
 | 공통 데이터·환경변수·보안 | [common.md](common.md) |
 
-운영 공개 절차는 [guides/mvp-launch.md](guides/mvp-launch.md), 챗·RAG 연동은 [guides/chat-rag-setup.md](guides/chat-rag-setup.md).
+**남은 할 일 전체는 [work-plan.md](work-plan.md)**(11/06). 운영 공개 절차는 [guides/mvp-launch.md](guides/mvp-launch.md), 챗·RAG 연동은 [guides/chat-rag-setup.md](guides/chat-rag-setup.md).
 
 큰 기능(인증, 레터, 어드민, 챗+RAG, 3D)은 각각 독립 문서이고, 데이터 모델·환경변수·보안은 common.md에서 한 번만 관리한다.
 
