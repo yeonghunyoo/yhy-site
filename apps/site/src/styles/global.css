@@ -53,6 +53,21 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+  /* 길게 눌러(클릭) 끌어도 링크·이미지가 통째로 끌려 나오지 않게(11/06). Firefox는 src/lib/no-drag.ts */
+  a,
+  img {
+    -webkit-user-drag: none;
+  }
+  /* 홈 히어로 → 본문 스냅 중 입력 잠금(11/06, src/lib/hero/hero.ts). 탭·클릭은 모든 기기에서 막고,
+     문서 스크롤은 터치 기기에서만 끈다(진행 중인 손가락 스크롤·관성을 멈춤 — 데스크톱은 스크롤바가 사라져 화면이 밀려서 휠만 막는다) */
+  html.is-snap-lock body {
+    pointer-events: none;
+  }
+  @media (pointer: coarse) {
+    html.is-snap-lock {
+      overflow: hidden;
+    }
+  }
 }
 
 @layer components {

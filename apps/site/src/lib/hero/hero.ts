@@ -97,28 +97,82 @@ export function initHero(): void {
   addEventListener('scroll', request, { passive: true });
 
   // 본문 스냅(11/05): 정리가 끝나 마지막 문구만 남은 뒤 아래로 조금이라도 내리면, 본문 첫 섹션(#about)까지
-  // 부드럽게 자동으로 올린다 — 커튼 구간을 손으로 끝까지 밀지 않아도 내용에 닿게. 위로 올릴 때는 하지 않는다
+  // 부드럽게 자동으로 올린다 — 커튼 구간을 손으로 끝까지 밀지 않아도 내용에 닿게. 위로 올릴 때는 하지 않는다.
+  // 11/06: 임계점을 넘으면 스냅이 끝날 때까지 입력을 잠근다(터치·휠·스크롤 키·탭). 손가락 스크롤·관성이
+  // 자동 스크롤과 같이 먹어 버벅였다 — 브라우저의 부드러운 스크롤 대신 직접 rAF로 움직이고, 그동안 입력을 막는다.
+  // 이미 시작된 손가락 끌기는 JS로 취소되지 않는다(Chrome: 스크롤이 시작된 뒤 touchmove는 cancelable=false) —
+  // 그래서 손가락이 닿아 있으면 잠근 채로 기다렸다가 떼는 순간 스냅한다(관성은 scrollTo가 끊는다). 잠금은
+  // 애니메이션이 끝나고 손가락도 다 떨어져야 푼다 — 잠금 중에 새로 닿은 손가락이 풀린 뒤 스크롤로 이어지지 않게
   const about = document.getElementById('about');
+  const html = document.documentElement;
   let lastY = scrollY;
   let snapping = false;
+  let touching = false;
+  let onRelease: (() => void) | null = null;
+  const track = (e: TouchEvent) => {
+    touching = e.touches.length > 0;
+    if (!touching && onRelease) {
+      const fn = onRelease;
+      onRelease = null;
+      fn();
+    }
+  };
+  for (const type of ['touchstart', 'touchend', 'touchcancel'] as const) addEventListener(type, track, { passive: true, capture: true });
+  const SCROLL_KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ', 'Spacebar']);
+  const block = (e: Event) => {
+    if (e.cancelable) e.preventDefault();
+  };
+  const blockKey = (e: KeyboardEvent) => {
+    if (SCROLL_KEYS.has(e.key) && !(e.target as Element | null)?.closest?.('input, textarea, [contenteditable]')) block(e);
+  };
+  const lock = (on: boolean) => {
+    // 클래스: 터치 기기는 문서 스크롤 자체를 끈다(진행 중인 손가락 스크롤·관성까지 멈춤), 모든 기기에서 탭·클릭 막음 — global.css
+    html.classList.toggle('is-snap-lock', on);
+    const opts = { passive: false, capture: true } as const;
+    for (const type of ['wheel', 'touchstart', 'touchmove'] as const) {
+      if (on) addEventListener(type, block, opts);
+      else removeEventListener(type, block, opts);
+    }
+    if (on) addEventListener('keydown', blockKey, true);
+    else removeEventListener('keydown', blockKey, true);
+  };
+  const ease = (t: number) => 1 - (1 - t) ** 3; // 손가락 속도를 이어받듯 빠르게 출발해 천천히 닿는다
   const snap = () => {
     const y = scrollY;
     const down = y > lastY;
     lastY = y;
     if (!about || snapping || !down || outroT < 1) return;
     const start = root.offsetTop + innerHeight * HERO_VH * OUTRO_AT;
-    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const pad = parseFloat(getComputedStyle(html).scrollPaddingTop) || 0;
     const goal = about.getBoundingClientRect().top + y - pad;
     if (y < start || y >= goal - 8) return;
     snapping = true;
-    about.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    const done = () => {
+    lock(true);
+    const finish = () => {
+      if (touching) {
+        onRelease = finish;
+        return;
+      }
+      lock(false);
       snapping = false;
       lastY = scrollY;
-      removeEventListener('scrollend', done);
     };
-    addEventListener('scrollend', done);
-    setTimeout(done, 1600); // scrollend가 없는 브라우저
+    const run = () => {
+      const from = scrollY;
+      if (from >= goal - 8) return finish(); // 손가락으로 이미 본문까지 내렸다
+      const ms = Math.min(900, Math.max(450, ((goal - from) / innerHeight) * 450));
+      let t0 = 0;
+      const frame = (t: number) => {
+        if (!t0) t0 = t;
+        const k = Math.min(1, (t - t0) / ms);
+        scrollTo({ top: from + (goal - from) * ease(k), behavior: 'instant' });
+        if (k < 1) requestAnimationFrame(frame);
+        else finish();
+      };
+      requestAnimationFrame(frame);
+    };
+    if (touching) onRelease = run;
+    else run();
   };
   addEventListener('scroll', snap, { passive: true });
   addEventListener('resize', request);
