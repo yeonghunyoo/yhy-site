@@ -21,6 +21,8 @@
 - [x] **③ 스토어 결제 통지 라우트 자리 예약** (11/06) — `/api/billing/apple`, `/api/billing/google`이 501만 돌려줌(아무것도 믿지 않고 바꾸지 않음). 2차 구현 메모(JWS 검증, Pub/Sub OIDC 검증 후 Play API 재조회, 멱등)는 `worker/routes/billing.ts` 주석
 - [x] **⑦ 운영자용 계정 삭제** (11/06, D-022) — 탈퇴 로직을 `worker/lib/account.ts`로 떼어 본인 탈퇴와 공유. 운영자 경로 `POST /api/admin/delete-account`(`ADMIN_TOKEN`, 없으면 404) + `scripts/admin-delete-account.mjs`(기본 미리보기, `--yes`로 삭제, `--transfer`로 공유 Space 소유권 이전). 삭제하면 열린 삭제 요청이 자동 처리됨. 운영 토큰 만들기는 사람([developer-guide.md](developer-guide.md) "계정 삭제 요청")
 
+- [x] **E2E 픽스처 OS 무관** (11/06) — macOS `sips` 대신 캔버스 축소본 + 레포의 작은 HEIC(`e2e/assets/iphone.heic`). 클라우드 세션(Linux)에서도 `pnpm nuvo e2e` 바로 실행
+
 ### B. 사람 작업이 먼저인 것
 - [ ] **도메인 결정·연결** ([developer-guide.md](developer-guide.md) 10단계) — 이게 풀리면 따라오는 코드·설정:
   - `SUPPORT_EMAIL` 값 채우기(지금 비어서 연락처 숨김·신고 메일 건너뜀, ⑤)

@@ -1,6 +1,5 @@
 import { chromium } from "@playwright/test";
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const FIXTURES = join(import.meta.dirname, ".fixtures");
@@ -12,7 +11,8 @@ export default async function globalSetup() {
   rmSync(FIXTURES, { recursive: true, force: true });
   mkdirSync(join(PHOTOS, "sub"), { recursive: true });
 
-  const browser = await chromium.launch();
+  // 설치된 브라우저와 Playwright 버전이 다르면 CHROMIUM_PATH (playwright.config.ts와 같음)
+  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   const page = await browser.newPage();
   const images: string[] = await page.evaluate(() => {
     const out: string[] = [];
@@ -43,6 +43,17 @@ export default async function globalSetup() {
     });
     return out;
   });
+  // 유사 중복: photo-1을 줄여서 다시 압축 (카톡 전송본 흉내). 예전엔 macOS sips — 이제 캔버스라 OS와 상관없음
+  const small: string = await page.evaluate(async (src) => {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = 800;
+    c.height = 600;
+    c.getContext("2d")!.drawImage(img, 0, 0, 800, 600);
+    return c.toDataURL("image/jpeg", 0.6);
+  }, images[0]!);
   await browser.close();
 
   images.forEach((d, i) => {
@@ -52,10 +63,9 @@ export default async function globalSetup() {
     const t = new Date(2026, 9, i + 1, 12).getTime() / 1000;
     utimesSync(file, t, t);
   });
-  // 유사 중복: photo-1을 줄여서 다시 압축 (카톡 전송본 흉내)
-  execFileSync("sips", ["-Z", "800", "-s", "formatOptions", "60", join(PHOTOS, "photo-1.jpg"), "--out", join(PHOTOS, "photo-1-small.jpg")], { stdio: "ignore" });
-  // HEIC (아이폰 사진 형식)
-  execFileSync("sips", ["-s", "format", "heic", join(PHOTOS, "photo-2.jpg"), "--out", join(PHOTOS, "sub", "iphone.heic")], { stdio: "ignore" });
+  writeFileSync(join(PHOTOS, "photo-1-small.jpg"), Buffer.from(small.split(",")[1]!, "base64"));
+  // HEIC (아이폰 사진 형식): 브라우저로는 만들 수 없어서 레포에 둔 작은 파일을 쓴다 (1600×1200 — 보기 테스트가 폭 1000px 이상을 확인)
+  copyFileSync(join(import.meta.dirname, "assets", "iphone.heic"), join(PHOTOS, "sub", "iphone.heic"));
   writeFileSync(join(PHOTOS, "notes.txt"), "사진이 아닌 파일은 무시되어야 한다");
   writeFileSync(join(PHOTOS, "done"), "");
 }
