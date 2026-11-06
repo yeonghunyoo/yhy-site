@@ -75,6 +75,11 @@ export function LibraryPage() {
               </span>
             </div>
             <Progress value={personal.quotaBytes ? personal.usedBytes / personal.quotaBytes : 0} />
+            {personal.quotaBytes > 0 && personal.usedBytes / personal.quotaBytes >= 0.9 && (
+              <p className="mt-1.5 text-danger">
+                {personal.usedBytes >= personal.quotaBytes ? "저장 공간이 가득 찼어요" : "저장 공간이 거의 찼어요"} · 내가 만든 Space 사진도 포함돼요
+              </p>
+            )}
           </div>
         )}
       </section>

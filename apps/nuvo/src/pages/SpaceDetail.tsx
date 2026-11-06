@@ -146,6 +146,12 @@ export function SpaceDetailPage() {
           <Progress value={s.library.quotaBytes ? s.library.usedBytes / s.library.quotaBytes : 0} />
           <p className="mt-1.5">이 Space 사진 {formatBytes(s.library.ownBytes)}. Space에 올린 사진은 소유자의 용량을 써요.</p>
           {!s.ownerSubscribed && <p className="mt-1.5 text-danger">소유자의 구독이 끝나 지금은 올릴 수 없어요. 보기는 그대로예요.</p>}
+          {s.ownerSubscribed && s.library.quotaBytes > 0 && s.library.usedBytes / s.library.quotaBytes >= 0.9 && (
+            <p className="mt-1.5 text-danger" data-testid="storage-warning">
+              {s.library.usedBytes >= s.library.quotaBytes ? "저장 공간이 가득 찼어요. 새 사진을 올릴 수 없어요." : "저장 공간이 거의 찼어요."}
+              {s.myRole === "owner" ? " 중복 정리로 공간을 늘려 보세요." : " 소유자에게 알려 주세요."}
+            </p>
+          )}
         </div>
         <Feed activities={feed.data ?? []} />
         {assets.assets.length > 1 && (
@@ -171,7 +177,7 @@ export function SpaceDetailPage() {
   );
 }
 
-function Feed({ activities }: { activities: { id: string; type: string; actorName: string | null; data: { count?: number; thumbs?: string[] }; createdAt: number }[] }) {
+function Feed({ activities }: { activities: { id: string; type: string; actorName: string | null; data: { count?: number; thumbs?: string[]; usedBytes?: number; quotaBytes?: number }; createdAt: number }[] }) {
   if (!activities.length) return <p className="text-xs text-faint">아직 소식이 없어요</p>;
   const text = (a: (typeof activities)[number]) => {
     const n = a.actorName ?? "누군가";
@@ -179,6 +185,7 @@ function Feed({ activities }: { activities: { id: string; type: string; actorNam
       case "assets_added": return `${n}님이 사진 ${a.data.count ?? 0}장을 추가했어요`;
       case "assets_removed": return `${n}님이 사진 ${a.data.count ?? 0}장을 삭제했어요`;
       case "member_joined": return `${n}님이 참여했어요`;
+      case "storage_full": return `저장 공간이 가득 차서 ${n}님의 사진을 올리지 못했어요. 소유자가 사진을 정리하거나 용량을 늘려야 해요`;
       default: return `${n}님이 나갔어요`;
     }
   };

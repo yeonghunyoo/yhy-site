@@ -194,6 +194,9 @@ export function useSpaceLive(spaceId: string | undefined, libraryId: string | un
         if (ev.type === "removed") {
           removed();
           ws?.close();
+        } else if (ev.type === "storage_full") {
+          void qc.invalidateQueries({ queryKey: ["activities", spaceId] });
+          void qc.invalidateQueries({ queryKey: ["space", spaceId] });
         } else if (ev.type === "assets_changed") {
           void qc.invalidateQueries({ queryKey: ["assets", libraryId] });
           void qc.invalidateQueries({ queryKey: ["activities", spaceId] });

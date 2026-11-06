@@ -1,8 +1,9 @@
-import { blobs, libraries, r2Gc, spaceMembers, type Db } from "@nuvo/db";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { activities, blobs, libraries, r2Gc, spaceMembers, type Db } from "@nuvo/db";
+import { and, eq, gte, inArray, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type { Tx } from "./gc";
 import type { LibraryRow } from "./access";
+import { notifyHub } from "./assets";
 import { requireSubscriber } from "./subscription";
 
 const GB = 1024 ** 3;
@@ -65,6 +66,35 @@ export async function assertUploadAllowed(db: Db | Tx, lib: LibraryRow, need: nu
     throw quotaError({ ...usage, usedBytes: usage.usedBytes + pendingBytes }, need);
   }
   return usage;
+}
+
+/**
+ * Space 업로드가 소유자 용량 때문에 막혔을 때 Space 피드에 알린다 (docs/work-plan.md A ②, D-016 "차면 소유자에게 알림").
+ * 올린 사람은 413 안내를 바로 보지만 소유자는 모르기 때문. 피드는 멤버 모두가 보며, Space 하나에 하루 한 번만 남긴다.
+ * 메일은 nuvo Resend 계정이 생긴 뒤에 붙인다. 실패해도 업로드 응답에는 영향 없음
+ */
+export async function notifyStorageFull(env: Env, db: Db, lib: LibraryRow, actor: { id: string; name: string }) {
+  if (lib.type !== "space" || !lib.spaceId) return;
+  try {
+    const since = new Date(Date.now() - 86400_000);
+    const [recent] = await db
+      .select({ id: activities.id })
+      .from(activities)
+      .where(and(eq(activities.spaceId, lib.spaceId), eq(activities.type, "storage_full"), gte(activities.createdAt, since)))
+      .limit(1);
+    if (recent) return;
+    const owner = await billingOwner(db, lib);
+    const usage = owner ? await ownerUsage(db, owner) : null;
+    await db.insert(activities).values({
+      spaceId: lib.spaceId,
+      actorId: actor.id,
+      type: "storage_full",
+      data: usage ? { usedBytes: usage.usedBytes, quotaBytes: usage.quotaBytes } : {},
+    });
+    await notifyHub(env, lib.spaceId, { type: "storage_full" });
+  } catch (e) {
+    console.warn("[capacity] storage_full notify failed", e);
+  }
 }
 
 /* ───────────── 서비스 전체 상한 (계정을 옮기기 전까지, docs/mvp.md "계정 공용 한도") ───────────── */

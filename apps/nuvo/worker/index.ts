@@ -1,5 +1,5 @@
-import { createDb } from "@nuvo/db";
-import { sql } from "drizzle-orm";
+import { createDb, libraries } from "@nuvo/db";
+import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { enabledProviders } from "./auth";
@@ -47,6 +47,15 @@ const api = new Hono<AppEnv>()
     const on = c.req.query("off") == null;
     await setManualSubscription(c.var.db, user.id, on, "dev");
     return c.json({ ok: true, active: on });
+  })
+  /** 로컬 개발 전용: 내 개인 한도 바꾸기 (용량 초과 흐름 테스트용). 운영에서는 404 */
+  .post("/dev/quota", async (c) => {
+    if (c.env.ENVIRONMENT === "production") return c.json({ error: "not found" }, 404);
+    const user = requireUser(c);
+    const bytes = Number(c.req.query("bytes"));
+    if (!Number.isFinite(bytes) || bytes < 0) return c.json({ error: "bytes" }, 400);
+    await c.var.db.update(libraries).set({ quotaBytes: bytes }).where(eq(libraries.userId, user.id));
+    return c.json({ ok: true, quotaBytes: bytes });
   })
   .get("/health/db", async (c) => {
     const [row] = await c.var.db.execute<{ now: string }>(sql`select now() as now`);

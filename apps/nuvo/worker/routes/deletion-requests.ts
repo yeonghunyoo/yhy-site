@@ -41,7 +41,7 @@ export const deletionRequestRoutes = new Hono<AppEnv>().post("/", validate("json
         .filter((l) => l !== null)
         .join("\n");
       const html = `<pre style="font:14px/1.6 monospace">${text.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`)}</pre>`;
-      c.executionCtx.waitUntil(
+      c.var.defer(
         sendMail(c.env, { to, subject: "nuvo 계정 삭제 요청", text, html }, mailBudget(c.env, db)).catch((e) =>
           console.warn("[deletion-request] mail failed", e),
         ),

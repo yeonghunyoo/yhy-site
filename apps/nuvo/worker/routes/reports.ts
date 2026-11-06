@@ -91,7 +91,7 @@ export const reportRoutes = new Hono<AppEnv>()
         .filter(Boolean)
         .join("\n");
       const html = `<pre style="font:14px/1.6 monospace">${text.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`)}</pre>`;
-      c.executionCtx.waitUntil(
+      c.var.defer(
         sendMail(
           c.env,
           { to, subject: `${urgent ? "[긴급] " : ""}nuvo 신고 — ${REPORT_REASON_LABEL[input.reason]}`, text, html },

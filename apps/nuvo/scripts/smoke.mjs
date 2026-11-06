@@ -243,6 +243,16 @@ const usedAfter = (await a("/api/me")).data.personal.usedBytes;
 ok(usedAfter === usedBefore + imgB.bytes.length, `동생이 올린 사진은 소유자(엄마) 용량에서 차감 (${usedBefore} → ${usedAfter})`);
 const spUsage = (await b(`/api/spaces/${space.id}`)).data;
 ok(spUsage.library.usedBytes === usedAfter && spUsage.ownerSubscribed === true, "Space 화면의 용량은 소유자 것");
+// 소유자 용량이 차면 가족의 업로드가 막히고, Space 피드에 하루 한 번 알림이 남는다
+{
+  await a(`/api/dev/quota?bytes=${usedAfter + 100}`, { method: "POST" });
+  const full1 = await upload(b, space.libraryId, fakeImage());
+  const full2 = await upload(b, space.libraryId, fakeImage());
+  const fullFeed = (await a(`/api/spaces/${space.id}/activities`)).data.activities.filter((x) => x.type === "storage_full");
+  ok(full1.action === undefined && full2.action === undefined, "소유자 용량이 차면 가족 업로드 막힘 (413)");
+  ok(fullFeed.length === 1 && fullFeed[0].actorName === "동생" && fullFeed[0].data.quotaBytes === usedAfter + 100, `피드에 용량 가득 알림 1번만 (${fullFeed.length})`);
+  await a(`/api/dev/quota?bytes=${10 * 1024 ** 3}`, { method: "POST" });
+}
 const spTl = (await a(`/api/libraries/${space.libraryId}/assets`)).data;
 ok(spTl.assets?.length === 2, "엄마도 Space 타임라인에서 2장 확인");
 const feed = (await a(`/api/spaces/${space.id}/activities`)).data;

@@ -139,10 +139,10 @@ export interface Member {
 
 export interface Activity {
   id: string;
-  type: "assets_added" | "member_joined" | "member_left" | "assets_removed";
+  type: "assets_added" | "member_joined" | "member_left" | "assets_removed" | "storage_full";
   actorId: string | null;
   actorName: string | null;
-  data: { count?: number; thumbs?: string[] };
+  data: { count?: number; thumbs?: string[]; usedBytes?: number; quotaBytes?: number };
   createdAt: number;
 }
 
@@ -150,6 +150,8 @@ export interface Activity {
 export type HubEvent =
   | { type: "assets_changed"; actorId: string; actorName: string; count: number; action: "added" | "removed" }
   | { type: "members_changed" }
+  /** 소유자 용량이 차서 업로드가 막힘 → 피드·Space 정보를 다시 읽는다 */
+  | { type: "storage_full" }
   /** 내가 Space에서 빠졌거나 Space가 삭제됨. 이어서 연결이 끊긴다 (종료 코드 4403). */
   | { type: "removed" };
 

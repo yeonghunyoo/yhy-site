@@ -13,13 +13,31 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requireUser, type AppEnv } from "../context";
 import { accessibleLibraryIds, requireLibrary } from "../lib/access";
-import { assertServiceCapacity, assertUploadAllowed, billingOwner, ownerUsage } from "../lib/capacity";
+import { assertServiceCapacity, assertUploadAllowed, billingOwner, notifyStorageFull, ownerUsage, type Usage } from "../lib/capacity";
+import type { LibraryRow } from "../lib/access";
 import { assetColumns, recordSpaceActivity, toCloudAsset } from "../lib/assets";
 import { lockShas, PENDING_UPLOAD_TTL_MS } from "../lib/gc";
 import { r2Key, signReceipt, verifyReceipt } from "../lib/sign";
 import { sniffAndRewrap } from "../lib/sniff";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
+
+/** 용량 검사. Space에서 소유자 용량 때문에 막히면(413) 피드에 알린다 */
+async function checkUpload(
+  c: { env: Env; var: AppEnv["Variables"] },
+  lib: LibraryRow,
+  user: { id: string; name: string },
+  need: number,
+  pending = 0,
+): Promise<Usage> {
+  try {
+    return await assertUploadAllowed(c.var.db, lib, need, pending);
+  } catch (e) {
+    // 요청용 DB 연결은 응답 뒤 닫히므로 백그라운드(waitUntil)로 미루지 않고 기다린다. 드문 경로라 지연은 작다
+    if (e instanceof HTTPException && e.status === 413) await notifyStorageFull(c.env, c.var.db, lib, user);
+    throw e;
+  }
+}
 
 export const uploads = new Hono<AppEnv>()
   /**
@@ -58,7 +76,7 @@ export const uploads = new Hono<AppEnv>()
       return link.has(f.sha256) ? { sha256: f.sha256, action: "link" } : { sha256: f.sha256, action: "upload" };
     });
     // 구독 + 소유자 용량 (Space는 소유자의 개인 용량에서 차감, docs/decisions.md D-016)
-    const usage = await assertUploadAllowed(db, lib, need);
+    const usage = await checkUpload(c, lib, user, need);
     // 새로 R2에 쓰는 원본만 서비스 상한에 넣는다 (link는 기존 Blob을 공유하므로 저장량이 늘지 않음)
     const newBytes = files
       .filter((f, i) => results[i]!.action === "upload" && files.findIndex((g) => g.sha256 === f.sha256) === i)
@@ -95,7 +113,7 @@ export const uploads = new Hono<AppEnv>()
       .select({ pending: sql<number>`coalesce(sum(${r2Gc.bytes}), 0)::bigint` })
       .from(r2Gc)
       .where(and(eq(r2Gc.owner, user.id), gt(r2Gc.dueAt, now), ne(r2Gc.sha256, sha)));
-    await assertUploadAllowed(db, lib, len, Number(pending));
+    await checkUpload(c, lib, user, len, Number(pending));
     if (!existing) await assertServiceCapacity(db, c.env, len);
     // 앞부분 바이트로 실제 이미지인지 확인 (헤더만 믿지 않는다, docs/media-security.md 1.2)
     const sniffed = await sniffAndRewrap(body, len, contentType);

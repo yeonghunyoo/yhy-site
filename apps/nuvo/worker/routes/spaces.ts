@@ -308,6 +308,8 @@ export const spaceRoutes = new Hono<AppEnv>()
           createdAt: r.createdAt.getTime(),
           data: {
             count: typeof r.data.count === "number" ? r.data.count : undefined,
+            usedBytes: typeof r.data.usedBytes === "number" ? r.data.usedBytes : undefined,
+            quotaBytes: typeof r.data.quotaBytes === "number" ? r.data.quotaBytes : undefined,
             thumbs: await Promise.all(shas.map((s) => signMediaUrl(c.env.MEDIA_SIGNING_KEY, s, "512"))),
           },
         };

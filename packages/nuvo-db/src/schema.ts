@@ -188,7 +188,8 @@ export const invites = pgTable("invites", {
   createdAt: createdAt(),
 });
 
-export const activityType = pgEnum("activity_type", ["assets_added", "member_joined", "member_left", "assets_removed"]);
+/** storage_full: 소유자 용량이 차서 멤버의 업로드가 막힘 (docs/work-plan.md A ②, 하루 한 번) */
+export const activityType = pgEnum("activity_type", ["assets_added", "member_joined", "member_left", "assets_removed", "storage_full"]);
 
 /** Space 피드: "엄마가 사진 12장을 추가했어요" */
 export const activities = pgTable(

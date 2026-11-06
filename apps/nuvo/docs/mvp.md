@@ -107,7 +107,7 @@ reports      Space 안 사진·멤버 신고 (reason, note, status open|resolved
 space_blocks Space 차단 (spaceId, userId). 차단된 사람은 초대 링크로 들어올 수 없음
 deletion_requests 로그인할 수 없는 사람의 계정 삭제 요청 (email, note, status). /account/delete에서 들어오고 운영자가 처리
 spaces / space_members(owner|admin|editor|viewer) / invites(7일, 10명)
-activities   Space 피드. 같은 사람이 10분 안에 연달아 올리면 한 줄로 합침
+activities   Space 피드 (사진 추가·삭제, 참여·나감, 용량 가득 — 하루 한 번). 같은 사람이 10분 안에 연달아 올리면 한 줄로 합침
 ```
 
 이 PC 사진은 서버 DB에 없습니다. 브라우저 IndexedDB에만 있고, 타임라인에서 sha256으로 nuvo 사진과 합칩니다.
