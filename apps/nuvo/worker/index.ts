@@ -9,6 +9,7 @@ import { requireUser, withContext, withSession, type AppEnv } from "./context";
 import { setManualSubscription } from "./lib/subscription";
 import { assetRoutes } from "./routes/assets";
 import { media } from "./routes/media";
+import { billingRoutes } from "./routes/billing";
 import { deletionRequestRoutes } from "./routes/deletion-requests";
 import { reportRoutes } from "./routes/reports";
 import { sessionRoutes } from "./routes/sessions";
@@ -22,6 +23,8 @@ const api = new Hono<AppEnv>()
   .get("/health", (c) => c.json({ ok: true, service: "nuvo" }))
   .get("/auth-config", (c) => c.json(enabledProviders(c.env)))
   /** 공개 설정: 지원 연락처 (스토어 UGC 요건 — 화면 어디서나 보이게) */
+  /** 스토어 결제 서버 간 통지 (2차 구현, 지금은 501). 세션·DB 없이 */
+  .route("/billing", billingRoutes)
   .get("/config", (c) =>
     c.json({
       supportEmail: c.env.SUPPORT_EMAIL || null,

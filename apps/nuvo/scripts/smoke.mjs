@@ -282,6 +282,8 @@ ok(delReq1.status === 202 && delReq2.status === 400, `계정 삭제 요청 (${de
 const cfg = await fetch(`${BASE}/api/config`).then((r) => r.json());
 ok("supportEmail" in cfg && "appStoreUrl" in cfg && "playStoreUrl" in cfg, "공개 설정에 지원 연락처·스토어 링크 자리");
 ok((await fetch(`${BASE}/api/health`)).headers.get("x-robots-tag")?.includes("noindex"), "API 응답은 noindex");
+const billing = await Promise.all(["apple", "google"].map((s) => fetch(`${BASE}/api/billing/${s}`, { method: "POST", body: "{}" }).then((r) => r.status)));
+ok(billing.join() === "501,501", `스토어 결제 통지 자리는 아직 501 (${billing.join()})`);
 ok((await fetch(BASE + asset.urls.original)).headers.get("x-robots-tag")?.includes("noindex"), "미디어 응답은 noindex");
 
 // 로그인한 기기: 다른 기기를 골라 로그아웃하면 그 기기는 바로 로그아웃된다
