@@ -21,6 +21,17 @@
     "MAIL_FROM": "letters@mail.bettercurl.dev",
     "LETTER_TO": "letters@bettercurl.dev"
   },
-  // 커스텀 도메인(11/04). 배포하면 DNS 레코드와 인증서가 자동으로 생긴다. workers.dev 주소도 남는다
-  "routes": [{ "pattern": "bettercurl.dev", "custom_domain": true }]
+  // 커스텀 도메인(11/04). 배포하면 DNS 레코드와 인증서가 자동으로 생긴다
+  "routes": [{ "pattern": "bettercurl.dev", "custom_domain": true }],
+  // 예전 workers.dev 주소는 켜 두고 src/worker.ts가 bettercurl.dev로 301 보낸다(11/07, docs/guides/domain-setup.md "workers.dev 주소").
+  // routes가 있으면 workers_dev 기본값이 false라 직접 켠다. 버전별 미리보기 주소는 쓰지 않으므로 끈 채로 둔다
+  "workers_dev": true,
+  "preview_urls": false,
+  "main": "./src/worker.ts",
+  // 정적 파일은 원래 Worker를 거치지 않는다 — 페이지 경로만 Worker로 먼저 보내 workers.dev에서 온 요청을 돌린다.
+  // 해시 붙은 빌드 파일·이미지는 바로 나간다(비용: 페이지 요청만 Worker 호출로 센다)
+  "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": ["/*", "!/_astro/*", "!/hero/*", "!/favicon.svg", "!/og.png"]
+  }
 }

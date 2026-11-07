@@ -6,7 +6,7 @@
 
 | 쓰임 | 주소 | 어떻게 |
 | --- | --- | --- |
-| 사이트 | `https://bettercurl.dev` | Worker 커스텀 도메인(`wrangler.jsonc` `routes`). workers.dev 주소도 당분간 남는다 |
+| 사이트 | `https://bettercurl.dev` | Worker 커스텀 도메인(`wrangler.jsonc` `routes`). 예전 workers.dev 주소는 여기로 301(아래 "workers.dev 주소") |
 | 사이트·챗에 보이는 연락처 | `hello@bettercurl.dev` | Cloudflare Email Routing → 개인 메일로 전달. 개인 Gmail은 사이트·RAG 문서에 쓰지 않는다 |
 | 레터 수신(`LETTER_TO`) | `letters@bettercurl.dev` | Email Routing → 개인 메일로 전달 |
 | 메일 발신(`MAIL_FROM`) | `letters@mail.bettercurl.dev` | Resend 보내기 전용 하위 도메인 `mail.`(11/04 다시 정함). DKIM `resend._domainkey.mail`, 반송 `send.mail`. 루트 `bettercurl.dev`도 Resend에 먼저 인증돼 있다 — `mail.`이 인증되면 Resend에서 루트를 지울지 정한다 |
@@ -25,7 +25,7 @@
 | 4 | Resend: Domains → Add `mail.bettercurl.dev`(도쿄). 11/04 루트 `bettercurl.dev`가 먼저 등록·Verified됨 → **Sign in to Cloudflare**로 DNS 자동 등록 → Verified → Open·Click Tracking 끄기 → Sending 키 | 사용자(Resend 대시보드) | 일부(11/04): Verified 확인(시험 발송·도착 확인). Tracking 끄기는 미확인 — 아래 "Resend 점검" |
 | 5 | Google OAuth: 승인된 리디렉션 URI에 `https://bettercurl.dev/auth/callback/google`, 승인된 JavaScript 원본에 `https://bettercurl.dev` 추가 | 사용자(Google Cloud 콘솔) | 완료(11/04, 배포 후 `bettercurl.dev`에서 Google 로그인 확인) |
 | 6 | `RESEND_API_KEY`는 운영 Secret(대시보드). `MAIL_FROM`·`LETTER_TO`는 공개 주소라 비밀이 아니다 → `wrangler.jsonc` `vars`에 둔다(배포해도 유지, 클라우드·로컬 같은 값). 대시보드에서 Text 변수로 넣으면 다음 배포 때 `vars`로 덮어써진다 | 사용자(키), Claude(vars) | 완료(11/04, Resend Verified) |
-| 7 | 배포 `pnpm site deploy` → `https://bettercurl.dev` 열림, 인증서 자동 | 사용자(클라우드 세션은 배포가 권한 검사에 막힌다) | 완료(11/04, Claude가 클라우드 세션에서 배포, 버전 `09489d76`). 커스텀 도메인 붙음·A/AAAA 응답. `workers_dev`가 `wrangler.jsonc`에 없어 workers.dev 주소는 꺼졌다(위 "당분간 남는다"와 다름 — 남길지 정한다). RAG 동기화는 토큰이 없어 건너뜀 → 8 |
+| 7 | 배포 `pnpm site deploy` → `https://bettercurl.dev` 열림, 인증서 자동 | 사용자(클라우드 세션은 배포가 권한 검사에 막힌다) | 완료(11/04, Claude가 클라우드 세션에서 배포, 버전 `09489d76`). 커스텀 도메인 붙음·A/AAAA 응답. `workers_dev`가 `wrangler.jsonc`에 없어 workers.dev 주소는 꺼졌다→ 11/07 다시 켜고 도메인으로 301(아래 "workers.dev 주소", S-014). RAG 동기화는 토큰이 없어 건너뜀 → 8 |
 | 8 | RAG 운영 반영(`pnpm rag:build:remote` → `pnpm rag:reindex:api`) — 연락처 바뀐 이력서. 안 하면 챗이 옛 연락처(개인 Gmail)를 답한다 | 사용자(클라우드 세션에서 11/04 권한 검사에 막힘) 또는 허용 후 Claude | |
 | 9 | 확인: 아래 "확인" | 함께 | |
 
@@ -53,6 +53,16 @@
 - `_dmarc.bettercurl.dev`가 없어 Resend가 "No DMARC record found"를 띄운다. 전달 경로에서 Gmail이 인증을 엄하게 보므로 `TXT _dmarc` `v=DMARC1; p=none;`을 둔다(감시만, `mail.`에도 적용). 11/04 사용자 요청으로 Claude가 API로 추가함(처음 시도는 권한 검사에 막혔고, 사용자가 명시적으로 맡긴 뒤 됨). 재점검(11/04): 1.1.1.1·8.8.8.8 모두 조회됨. `_dmarc.mail`은 따로 두지 않는다 — 하위 도메인은 루트 정책을 따른다. 정렬: DKIM `d=mail.bettercurl.dev`, SPF 반송 주소 `send.mail.bettercurl.dev` 둘 다 루트 `bettercurl.dev` 아래라 완화 정렬로 통과
 
 Claude가 하려면 토큰에 **Zone → DNS Edit, Zone → Email Routing Rules Edit, Account → Email Routing Addresses Edit**(영역은 `bettercurl.dev`만)을 더한다. 대상 주소 인증 클릭은 그래도 사용자가 한다.
+
+## workers.dev 주소 — 11/07
+
+예전 링크 `https://portfolio-web.yeonghun-yoo.workers.dev/…`는 경로·쿼리를 그대로 붙여 `https://bettercurl.dev/…`로 보낸다(결정 S-014).
+
+- `wrangler.jsonc`: `workers_dev: true`(routes가 있으면 기본값이 false), `preview_urls: false`(버전별 미리보기 주소는 안 씀), `main: ./src/worker.ts`
+- `src/worker.ts`: 호스트가 `*.workers.dev`면 GET·HEAD는 301, 그 밖은 308(메서드 유지)로 보낸다. 아니면 Astro 처리(`@astrojs/cloudflare/handler`)로 넘긴다
+- 정적 파일은 원래 Worker를 거치지 않아 리디렉션할 수 없다. `assets.run_worker_first`로 페이지 경로를 Worker에 먼저 보내고, 해시 붙은 빌드 파일·이미지(`/_astro/*`, `/hero/*`, `/favicon.svg`, `/og.png`)는 빼서 바로 나가게 둔다. 그래서 `bettercurl.dev` 페이지 요청도 Worker 호출로 센다(무료 하루 10만 회 안). 새 정적 폴더를 `public/`에 두면 이 목록에 넣을지 본다
+- 로컬 확인: `pnpm build` 뒤 `npx wrangler dev -c dist/server/wrangler.json --local-upstream portfolio-web.yeonghun-yoo.workers.dev` → `/ko/`가 301 `https://bettercurl.dev/ko/`. `--local-upstream bettercurl.dev`면 그대로 200(11/07 확인)
+- 운영 확인(배포 뒤): `curl -sI https://portfolio-web.yeonghun-yoo.workers.dev/ko/` → `301`, `location: https://bettercurl.dev/ko/`
 
 ## 확인
 

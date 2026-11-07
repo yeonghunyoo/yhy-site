@@ -58,7 +58,7 @@
 
 | 구분 | 주소 |
 | --- | --- |
-| workers.dev | `https://portfolio-web.yeonghun-yoo.workers.dev` |
+| workers.dev | `https://portfolio-web.yeonghun-yoo.workers.dev` — 11/07부터 커스텀 도메인으로 301([guides/domain-setup.md](guides/domain-setup.md) "workers.dev 주소") |
 | 커스텀 도메인 | `https://bettercurl.dev` (11/04 구매, 연동은 [guides/domain-setup.md](guides/domain-setup.md)) |
 
 ## 0단계 작업 순서

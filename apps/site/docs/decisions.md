@@ -11,6 +11,16 @@
 
 ---
 
+## 2026-11-07
+
+### S-014 · 확정 · 예전 workers.dev 주소는 `bettercurl.dev`로 301
+- 결정: `portfolio-web.yeonghun-yoo.workers.dev`를 다시 켜고(`workers_dev: true`), 들어온 요청은 경로·쿼리를 그대로 붙여 `https://bettercurl.dev`로 보낸다(GET·HEAD 301, 그 밖 308). 버전별 미리보기 주소(`preview_urls`)는 끈 채로
+- 본 것: 꺼 둔 채로(11/04 배포 뒤 상태 — 예전 링크가 죽음) / 켜고 그대로 서빙(같은 내용이 두 주소 — 검색 중복, 로그인 쿠키·OAuth 주소가 갈림) / 대시보드 Redirect Rules(도메인 영역에만 걸리고 workers.dev에는 안 걸림)
+- 이유: 이력서·메일 등에 남은 예전 링크를 살리고 주소는 하나로 모은다. workers.dev는 내 영역이 아니라 Worker 코드로만 돌릴 수 있다
+- 비용: 정적 파일은 원래 Worker를 거치지 않아 리디렉션할 수 없다 → 페이지 경로를 `assets.run_worker_first`로 Worker에 먼저 보낸다. `bettercurl.dev` 페이지 요청도 Worker 호출로 센다(무료 하루 10만 회 안). 해시 붙은 빌드 파일(`/_astro/*`)·이미지는 빼서 그대로 바로 나간다
+- 사용자 요청(11/07). 배포해야 반영된다
+- 문서: [guides/domain-setup.md](guides/domain-setup.md) "workers.dev 주소"
+
 ## 2026-11-06
 
 ### S-013 · 확정 · 히어로 문구를 이력서 원문으로
