@@ -37,7 +37,7 @@
   - [ ] 분석 읽기 토큰 → `CF_ANALYTICS_TOKEN`·`CF_ACCOUNT_ID` 비밀(없으면 `/admin/usage`에 Cloudflare 칸이 빈다)
   - [ ] 결제 알림, Workers 사용량 알림
   - [ ] WAF 속도 제한 규칙(`/api/` IP당 10초 20회), Bot Fight Mode — 도메인이 붙었으니 이제 가능
-- [ ] **검색 노출(운영자)** — AI 크롤러 차단(Block AI bots) 꺼져 있는지 확인, Google Search Console·Bing Webmaster Tools 등록 + sitemap 제출. [01-frontend.md](01-frontend.md) "운영자가 할 일"
+- [ ] **검색 노출(운영자)** — AI 크롤러 차단(Block AI bots) 꺼져 있는지 확인, Google Search Console·Bing Webmaster Tools 등록 + sitemap 제출. [01-frontend.md](01-frontend.md) "운영자가 할 일". 11/09 밖에서 점검: 운영 `robots.txt`에 Cloudflare가 덧붙인 내용 없음(관리형 robots.txt 꺼짐), GPTBot·ClaudeBot·PerplexityBot·Googlebot·bingbot 이름으로 요청하면 200(이름만 바꾼 요청이라 Block AI bots 꺼짐의 확정은 아님 — 대시보드에서 확인), DNS TXT에 `google-site-verification` 없음 → Search Console은 아직 미등록으로 보인다. 등록은 "도메인" 속성 + Cloudflare DNS TXT가 간단
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
