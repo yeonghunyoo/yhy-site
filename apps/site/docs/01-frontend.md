@@ -131,7 +131,11 @@ src/
 - `src/pages/sitemap.xml.ts`: 홈·개인정보처리방침·프로젝트 상세를 언어마다 `<url>` 하나, `xhtml:link`로 ko·en을 잇는다. 프로젝트는 컬렉션에서 자동
 - 11/05 배포(버전 `9caf7201`)
 - **11/05 OG 이미지·탭 제목**: `public/og.png`(1200×630) — 왼쪽 "BETTER CALL YH!" + 이름·직무 + 도메인, 오른쪽 히어로와 같은 픽셀 흉상. `scripts/hero/og.html`을 `pnpm site hero:og`가 헤드리스로 찍는다(모델·문구 바꾸면 다시). `og:image`(+크기·alt), `twitter:card summary_large_image`·`twitter:title/description/image`. 탭 제목은 홈 `Yeonghun.y | iOS 개발자 · 빌더`(en `iOS Engineer & Builder`), 그 밖 `페이지 — Yeonghun.y`(i18n `site.name`·`site.role`). 크롬 탭 호버 카드는 OG가 아니라 제목·파비콘·주소를 보여 준다 — 파비콘을 픽셀 `yh`(y 흰색, h 강조색)로 바꿈
-- 남은 것: JSON-LD·`llms.txt`(홈 개편과 같이 — 화면과 같은 데이터에서 만든다)
+- **11/09 JSON-LD·`llms.txt`**: 화면과 같은 데이터(i18n·`career.ts`·`stack.ts`·projects 컬렉션)에서 만든다
+  - `src/lib/jsonld.ts` → `BaseLayout` prop `jsonLd`(`<script type="application/ld+json" is:inline>`, `<`는 `\u003c`로). 홈 `@graph`에 `Person`(`@id` `/#person`, 이름·별칭·`jobTitle`·`email`·`sameAs` GitHub·`worksFor` 지금 회사·`knowsAbout` 스택) + `WebSite`(`@id` `/#website`). 프로젝트 상세 `CreativeWork`(제목·요약·`keywords` 스택·`dateCreated` `period` 시작 달·`author` → `/#person`·`isPartOf` → `/#website`)
+  - 사람 이름은 i18n `site.person`(유영훈 / Yeonghun Yoo)
+  - `src/pages/llms.txt.ts`(prerender): 제목·한 줄 요약 뒤 영어 → 한국어 순으로 소개·경력·스택·프로젝트(링크·요약·기간·대표 수치·스택)·연락, 끝에 개인정보처리방침·sitemap. 공개 페이지 `<head>`에 `<link rel="alternate" type="text/plain" href="/llms.txt">`
+  - 배포 뒤 확인: Google 리치 결과 테스트(search.google.com/test/rich-results)·Schema Markup Validator(validator.schema.org)에 홈·프로젝트 상세 주소
 
 **구현 계획**
 
@@ -152,7 +156,7 @@ JSON-LD·`llms.txt`는 도메인 전에 만들어 두고 URL만 `Astro.site`로 
 - Cloudflare 대시보드의 AI 크롤러 차단(Block AI bots, managed robots.txt 등)이 켜져 있으면 GPTBot·ClaudeBot·PerplexityBot이 막힌다. 노출하려면 끈다
 - 도메인 확정 뒤 Google Search Console·Bing Webmaster Tools에 등록하고 sitemap을 낸다
 
-**미결**: 도메인(`overview.md` "미결정 사항"), OG 이미지 방식 — 정적 한 장(`public/og.png`) vs 빌드 때 프로젝트별 생성(`@napi-rs/canvas`, 런타임 비용 없음)
+**미결**(11/09 기준 둘 다 끝남 — 도메인 11/04 `bettercurl.dev`, OG는 정적 한 장): 도메인(`overview.md` "미결정 사항"), OG 이미지 방식 — 정적 한 장(`public/og.png`) vs 빌드 때 프로젝트별 생성(`@napi-rs/canvas`, 런타임 비용 없음)
 
 ## 홈 개편안 (11/05, 제안 — decisions S-007)
 

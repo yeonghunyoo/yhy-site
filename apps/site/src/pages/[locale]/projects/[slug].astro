@@ -4,6 +4,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProjectGallery from '../../../components/ui/ProjectGallery.astro';
 import { locales, t, type Locale } from '../../../i18n';
 import { getProjects } from '../../../lib/projects';
+import { projectJsonLd } from '../../../lib/jsonld';
 
 export async function getStaticPaths() {
   const paths = [];
@@ -21,7 +22,7 @@ const dict = t(locale);
 const { Content } = await render(project);
 ---
 
-<BaseLayout locale={locale} title={project.data.title} description={project.data.summary} type="article">
+<BaseLayout locale={locale} title={project.data.title} description={project.data.summary} type="article" jsonLd={projectJsonLd(Astro.site!, locale, project)}>
   <article class="container-page py-10 md:py-16">
     <a href={`/${locale}/#project`} class="-ml-2 inline-flex min-h-11 items-center px-2 text-sm text-muted"
       >{dict.project.back}</a

@@ -11,14 +11,14 @@
 | 단계 | 상태 |
 |---|---|
 | 0–4 MVP (인프라·프론트·인증·레터·어드민) | 코드 완료. `https://bettercurl.dev` 운영 중(11/04 커스텀 도메인. 예전 workers.dev 주소는 도메인으로 301 — 11/07 코드, S-014). 메일 경로·어드민 운영 확인이 남음 |
-| 홈 개편 | 11/05 3D 픽셀 히어로(임시 흉상) + 본문 S-010 + 썸네일 S-011 + 제목 글꼴 Quantico S-012 + 챗 바. SEO `<head>`·robots·sitemap·OG 완료 |
+| 홈 개편 | 11/05 3D 픽셀 히어로(임시 흉상) + 본문 S-010 + 썸네일 S-011 + 제목 글꼴 Quantico S-012 + 챗 바. SEO `<head>`·robots·sitemap·OG 완료, JSON-LD·`llms.txt` 11/09 코드(배포 전) |
 | 5–6 챗+RAG | 운영에 켜짐(11/03 테스트 기간). 운영 청크 247 = 벡터 247, 기준 질문 58개 경로·재현율 100%(11/04). **완료 기준 확인 전** |
 | 7 3D | 히어로로 앞당겨 반영. 실제 얼굴 스캔 모델은 후순위 |
 
 ## 남은 일
 
 ### A. 지금 바로 할 수 있는 코드
-- [ ] **JSON-LD·`llms.txt`** — 홈 `Person`+`WebSite`, 프로젝트 상세 `CreativeWork`, `src/pages/llms.txt.ts`(projects 컬렉션 + `src/data/career.ts`). [01-frontend.md](01-frontend.md) "SEO·GEO"
+- [x] **JSON-LD·`llms.txt`**(11/09, 배포 전) — 홈 `Person`+`WebSite`, 프로젝트 상세 `CreativeWork`, `src/pages/llms.txt.ts`(projects 컬렉션 + `src/data/career.ts`). [01-frontend.md](01-frontend.md) "SEO·GEO". 배포 뒤 리치 결과 테스트로 확인
 - [ ] **챗 기준 질문 보강** — `eval.json`에 영어 포트폴리오 3, 칩 질문 3, 포트폴리오인데 문서에 없는 질문 4. [chat-rag-setup.md](guides/chat-rag-setup.md) "보강"
 - [ ] **근거 판단 기준 다시 재기** — 포트폴리오 경로 질문만으로 범위 안 최저 / 근거 없음 최고. 안 겹치면 0.42 유지, 겹치면 키워드 보조 규칙을 05-06에 먼저 적고 구현
 - [ ] **공격 질문 점검 다시(로컬)** — `redteam.json` 13개를 슈퍼바이저가 들어간 지금 구조로. 11/01 12/12는 슈퍼바이저 전 결과

@@ -102,7 +102,7 @@ flowchart LR
 | --- | --- | --- |
 | 콘텐츠 | 인트로 한 줄 문구(한/영), 프로젝트 "이 포트폴리오" 문제·접근·결과 본문 — 초안 작성됨, 다듬기 필요 | 1 |
 | 콘텐츠 | 변경 이력(빌드 로그)을 git 커밋에서 자동 생성할지 수동 작성할지 — 지금은 프로젝트 마크다운 frontmatter `changelog`에 수동 | 1 |
-| SEO | 방향·원칙은 정함(11/04, `01-frontend.md` "SEO·GEO"). 남은 것: OG 이미지(정적 한 장 vs 빌드 때 생성), 도메인에 걸린 canonical·sitemap·robots | 1 |
+| SEO | 코드 완료(11/05 canonical·hreflang·OG·robots·sitemap, 11/09 JSON-LD·`llms.txt` — `01-frontend.md` "SEO·GEO"). 남은 것은 운영자 작업: Search Console·Bing 등록과 sitemap 제출 | 1 |
 | 분석 | Cloudflare Web Analytics(쿠키 없음) 사용 여부 | 1 |
 | RAG | 청크 크기 튜닝, 스택 경험 수준 표기 방식 | 6 |
 | 3D | 효과 종류·색감 — 세계관 콘셉트에 종속 | 7 |

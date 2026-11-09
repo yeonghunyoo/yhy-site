@@ -5,6 +5,7 @@ import { getProjects } from '../../lib/projects';
 import { career, formatMonths } from '../../data/career';
 import { stack } from '../../data/stack';
 import { Image } from 'astro:assets';
+import { homeJsonLd } from '../../lib/jsonld';
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -20,7 +21,7 @@ const recent = [...jobs].reverse();
 const groups = stack(locale);
 ---
 
-<BaseLayout locale={locale}>
+<BaseLayout locale={locale} jsonLd={homeJsonLd(Astro.site!, locale)}>
   <!--
     홈(11/05, decisions S-009): 3D 픽셀 히어로 → 본문이 위로 덮는 패럴랙스 커튼 → 정리된 본문.
     히어로 연출은 src/lib/hero/hero.ts(스크롤) + scene.js(three.js, 동적 import). 글은 모두 HTML에 있다(검색·AI·스크립트 없음)

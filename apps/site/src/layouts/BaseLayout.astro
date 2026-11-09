@@ -7,6 +7,7 @@ import Overlay from '../components/islands/Overlay';
 import ChatDock from '../components/islands/ChatDock';
 import { locales, t, type Locale } from '../i18n';
 import { absolute, alternates, ogLocale } from '../lib/seo';
+import { serializeJsonLd } from '../lib/jsonld';
 
 interface Props {
   locale: Locale;
@@ -18,9 +19,11 @@ interface Props {
   available?: readonly Locale[];
   /** 404 등 색인하지 않는 페이지 */
   noindex?: boolean;
+  /** 구조화 데이터(src/lib/jsonld.ts). 홈 Person+WebSite, 프로젝트 상세 CreativeWork */
+  jsonLd?: unknown;
 }
 
-const { locale, title, description, type = 'website', available = locales, noindex = false } = Astro.props;
+const { locale, title, description, type = 'website', available = locales, noindex = false, jsonLd } = Astro.props;
 const dict = t(locale);
 // 탭 제목(11/05): 홈 `Yeonghun.y | iOS 개발자 · 빌더`, 그 밖 `페이지 — Yeonghun.y`(탭이 많아도 앞부분으로 구분). 크롬 탭 호버 카드도 이 제목을 보여 준다
 const pageTitle = title ? `${title} — ${dict.site.name}` : `${dict.site.name} | ${dict.site.role}`;
@@ -67,6 +70,9 @@ const isHome = /^\/(ko|en)\/?$/.test(path);
           <meta name="twitter:title" content={pageTitle} />
           <meta name="twitter:description" content={pageDescription} />
           <meta name="twitter:image" content={new URL('/og.png', site).href} />
+          {/* 실행되지 않는 데이터 블록이라 CSP와 상관없다 */}
+          {jsonLd && <script type="application/ld+json" is:inline set:html={serializeJsonLd(jsonLd)} />}
+          <link rel="alternate" type="text/plain" href={new URL('/llms.txt', site).href} title="llms.txt" />
         </>
       )
     }
