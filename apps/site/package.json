@@ -25,7 +25,10 @@
     "hero:preview": "node scripts/hero/serve.mjs",
     "hero:optimize": "node scripts/hero/optimize.mjs",
     "hero:frames": "node scripts/hero/frames.mjs",
-    "hero:og": "node scripts/hero/og.mjs"
+    "hero:og": "node scripts/hero/og.mjs",
+    "icon:apple": "node scripts/apple-touch-icon.mjs",
+    "seo:check": "node scripts/seo-check.mjs",
+    "test": "node scripts/redirects-check.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",

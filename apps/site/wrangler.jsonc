@@ -32,6 +32,6 @@
   // 해시 붙은 빌드 파일·이미지는 바로 나간다(비용: 페이지 요청만 Worker 호출로 센다)
   "assets": {
     "binding": "ASSETS",
-    "run_worker_first": ["/*", "!/_astro/*", "!/hero/*", "!/favicon.svg", "!/og.png"]
+    "run_worker_first": ["/*", "!/_astro/*", "!/hero/*", "!/favicon.svg", "!/apple-touch-icon.png"]
   }
 }

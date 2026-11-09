@@ -18,6 +18,8 @@ fi
 export PUBLIC_CHAT_ENABLED="${PUBLIC_CHAT_ENABLED:-1}"
 
 astro build
+# SEO 회귀 점검(11/09, S-015) — 오류가 있으면 배포하지 않는다. 경고는 보여 주기만 한다
+node scripts/seo-check.mjs
 wrangler deploy "$@"
 
 # RAG 문서 운영 반영(docs/05-06-chat-rag.md 넣기 7) — 토큰이 있을 때만. 바뀐 게 없으면 D1은 건드리지 않는다.

@@ -130,12 +130,26 @@ src/
 - `src/pages/robots.txt.ts`: `/admin`·`/api/`·`/auth/`·`/media/` Disallow + sitemap 주소
 - `src/pages/sitemap.xml.ts`: 홈·개인정보처리방침·프로젝트 상세를 언어마다 `<url>` 하나, `xhtml:link`로 ko·en을 잇는다. 프로젝트는 컬렉션에서 자동
 - 11/05 배포(버전 `9caf7201`)
-- **11/05 OG 이미지·탭 제목**: `public/og.png`(1200×630) — 왼쪽 "BETTER CALL YH!" + 이름·직무 + 도메인, 오른쪽 히어로와 같은 픽셀 흉상. `scripts/hero/og.html`을 `pnpm site hero:og`가 헤드리스로 찍는다(모델·문구 바꾸면 다시). `og:image`(+크기·alt), `twitter:card summary_large_image`·`twitter:title/description/image`. 탭 제목은 홈 `Yeonghun.y | iOS 개발자 · 빌더`(en `iOS Engineer & Builder`), 그 밖 `페이지 — Yeonghun.y`(i18n `site.name`·`site.role`). 크롬 탭 호버 카드는 OG가 아니라 제목·파비콘·주소를 보여 준다 — 파비콘을 픽셀 `yh`(y 흰색, h 강조색)로 바꿈
+- **11/05 OG 이미지·탭 제목**: `public/og.png`(1200×630, 11/09 `src/assets/og.png`로 옮김 — 아래) — 왼쪽 "BETTER CALL YH!" + 이름·직무 + 도메인, 오른쪽 히어로와 같은 픽셀 흉상. `scripts/hero/og.html`을 `pnpm site hero:og`가 헤드리스로 찍는다(모델·문구 바꾸면 다시). `og:image`(+크기·alt), `twitter:card summary_large_image`·`twitter:title/description/image`. 탭 제목은 홈 `Yeonghun.y | iOS 개발자 · 빌더`(en `iOS Engineer & Builder`), 그 밖 `페이지 — Yeonghun.y`(i18n `site.name`·`site.role`). 크롬 탭 호버 카드는 OG가 아니라 제목·파비콘·주소를 보여 준다 — 파비콘을 픽셀 `yh`(y 흰색, h 강조색)로 바꿈
 - **11/09 JSON-LD·`llms.txt`**: 화면과 같은 데이터(i18n·`career.ts`·`stack.ts`·projects 컬렉션)에서 만든다
   - `src/lib/jsonld.ts` → `BaseLayout` prop `jsonLd`(`<script type="application/ld+json" is:inline>`, `<`는 `\u003c`로). 홈 `@graph`에 `Person`(`@id` `/#person`, 이름·별칭·`jobTitle`·`email`·`sameAs` GitHub·`worksFor` 지금 회사·`knowsAbout` 스택) + `WebSite`(`@id` `/#website`). 프로젝트 상세 `CreativeWork`(제목·요약·`keywords` 스택·`dateCreated` `period` 시작 달·`author` → `/#person`·`isPartOf` → `/#website`)
   - 사람 이름은 i18n `site.person`(유영훈 / Yeonghun Yoo)
   - `src/pages/llms.txt.ts`(prerender): 제목·한 줄 요약 뒤 영어 → 한국어 순으로 소개·경력·스택·프로젝트(링크·요약·기간·대표 수치·스택)·연락, 끝에 개인정보처리방침·sitemap. 공개 페이지 `<head>`에 `<link rel="alternate" type="text/plain" href="/llms.txt">`
   - 배포 뒤 확인: Google 리치 결과 테스트(search.google.com/test/rich-results)·Schema Markup Validator(validator.schema.org)에 홈·프로젝트 상세 주소
+- **11/09 SEO 체크리스트 점검과 후속**(S-015): 빌드 HTML 12쪽·운영 curl·JS 끈 Chromium·Lighthouse 모바일로 점검. 고친 것
+  - 개인정보처리방침 고유 description(홈과 같았다)
+  - `apple-touch-icon`(180×180, `public/apple-touch-icon.png`) — 파비콘 SVG에서 `pnpm site icon:apple`가 찍는다(둥근 모서리 빼고 80%로 줄여 가운데)
+  - OG 이미지를 `src/assets/og.png`로 옮겨 빌드 자산으로(`/_astro/og.<해시>.png`). 다시 찍으면 주소가 바뀌어 카카오·페이스북의 예전 이미지 캐시를 피한다. 크기도 파일에서 읽는다
+  - 프로젝트 상세 첫 이미지 `fetchpriority="high"`(LCP 요소)
+  - 끝 슬래시 없는 언어 페이지(`/ko`, `/en/privacy`)는 Worker가 301로 `/ko/`에(정적 자산 처리가 307 임시 이동을 써서). 규칙 `src/lib/redirects.ts`, 확인 `pnpm site test`
+  - 홈 TBT: 3D 히어로 시작을 늦추고 쪼갰다 — [guides/3d-hero.md](guides/3d-hero.md) "시작 순서(11/09)"
+  - 자동 점검 `scripts/seo-check.mjs`(아래)
+- 점검에서 통과한 것: lang·charset·viewport, title·description(언어 쌍 제외 고유), canonical 자기 절대 주소(쿼리 무시), OG·Twitter 중복 없음·`og:url` = canonical, hreflang 양방향 + x-default, sitemap = 색인 페이지, 404 실제 상태 코드 + 홈 링크, JS 없이 본문·링크 보임, h1 하나·제목 단계, 이미지 alt·크기·webp·srcset·lazy, 혼합 콘텐츠 없음, 글꼴 `font-display: swap`
+- 남은 것(운영자): Cloudflare **Always Use HTTPS**(지금 http로 오면 200 — `.dev`는 브라우저가 늘 https라 급하지 않다), Web Analytics를 쓸지(지금 대시보드에서 켜져 비콘이 자동으로 붙는데 CSP가 막아 콘솔 오류 + 수집 안 됨 — 쓰면 CSP `script-src`·`connect-src`에 Cloudflare 주소, 안 쓰면 대시보드에서 끈다), 홈 description 문구(36자, 권장 40~120자), Search Console·네이버 서치어드바이저·Bing 등록 + sitemap 제출, 카카오·페이스북 공유 디버거
+
+**자동 점검(11/09, S-015)**: `pnpm site seo:check` — 빌드 결과(`dist/client`)를 읽는다. `scripts/deploy.sh`가 빌드 뒤 돌리고 **오류면 배포를 멈춘다**. 라이브러리 없이 정규식
+- 오류: charset 위치·viewport·lang·title·description·파비콘 없음, canonical 없음/자기 주소 아님, OG·Twitter 태그 없음·중복, `og:url` ≠ canonical, `og:image` 상대 주소·빌드에 파일 없음, hreflang 자기 언어·x-default 없음·한쪽 방향, h1 ≠ 1, `<main>` 없음, JSON-LD 파싱 실패, img alt 없음, title·description 중복(같은 글 ko·en의 제목은 허용), sitemap ≠ 색인 페이지, robots.txt Sitemap 줄 없음·전체 차단
+- 경고: title·description 길이(ko title 40자·en 65자, description ko 40~120자·en 70~170자), 제목 단계 건너뜀, img 크기 없음, `target=_blank`에 noopener 없음, apple-touch-icon·`llms.txt` 없음
 
 **구현 계획**
 

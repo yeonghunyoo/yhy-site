@@ -303,7 +303,9 @@ export function createHero(canvas, options = {}) {
     return chars.length;
   }
   const glyphTotal = drawAtlas();
-  document.fonts?.load(`600 ${GLYPH * 0.82}px "IBM Plex Mono"`).then(() => { drawAtlas(); drawn = ''; render(); }, () => {});
+  // 글꼴이 오면 아틀라스만 다시 만든다. 크기가 정해지기 전(resize 전)에는 그리지 않는다 — 여기서 첫 render()가 돌면
+  // 셰이더를 한꺼번에 동기 컴파일해 메인 스레드를 막는다(11/09, prepare()보다 먼저 돌던 것)
+  document.fonts?.load(`600 ${GLYPH * 0.82}px "IBM Plex Mono"`).then(() => { drawAtlas(); drawn = ''; if (sized) render(); }, () => {});
 
   const blit = new THREE.ShaderMaterial({
     vertexShader: VERT,
@@ -366,6 +368,7 @@ void main() {
   let painted = ''; // 3D·후처리를 마지막으로 그린 상태 — 눈 박자만 바뀌면 화면 패스만 다시 돈다
   let width = 1;
   let height = 1;
+  let sized = false; // resize()가 한 번이라도 불렸는지
 
   function aspect() {
     return opts.aspect ?? width / height;
@@ -377,6 +380,7 @@ void main() {
   }
 
   function resize(w = canvas.clientWidth, h = canvas.clientHeight) {
+    sized = true;
     width = Math.max(1, w);
     height = Math.max(1, h);
     renderer.setSize(width, height, false);
@@ -450,8 +454,24 @@ void main() {
 
   const ready = opts.modelUrl ? loadModel(opts.modelUrl) : Promise.resolve();
 
+  /**
+   * 셰이더를 첫 그리기 전에 미리 컴파일한다(11/09, 홈 TBT). 첫 render()에서 한꺼번에 컴파일하면 메인 스레드를 길게 막는다.
+   * KHR_parallel_shader_compile이 있으면 GPU 쪽에서 돌고 여기서는 기다리기만 한다. 패스마다 출력 대상(색 공간)이 달라 대상을 맞춰 부른다
+   */
+  async function prepare() {
+    const passes = [[scene, camera, rt], [postScene, postCam, pixelRT], [blitScene, postCam, null]];
+    for (const [s, c, target] of passes) {
+      renderer.setRenderTarget(target);
+      const done = renderer.compileAsync(s, c);
+      renderer.setRenderTarget(null);
+      await done;
+      await new Promise((r) => setTimeout(r, 0)); // 패스 사이에 메인 스레드를 돌려준다
+    }
+  }
+
   return {
     ready,
+    prepare,
     resize,
     render,
     snapshot,

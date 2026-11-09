@@ -19,6 +19,8 @@ export interface HeroOptions {
 
 export interface Hero {
   ready: Promise<void>;
+  /** 셰이더 미리 컴파일(11/09, TBT) — 첫 그리기 전에 기다린다 */
+  prepare(): Promise<void>;
   resize(width?: number, height?: number): void;
   render(): void;
   setProgress(p: number): void;

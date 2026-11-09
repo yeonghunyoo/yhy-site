@@ -60,7 +60,8 @@ Claude가 하려면 토큰에 **Zone → DNS Edit, Zone → Email Routing Rules 
 
 - `wrangler.jsonc`: `workers_dev: true`(routes가 있으면 기본값이 false), `preview_urls: false`(버전별 미리보기 주소는 안 씀), `main: ./src/worker.ts`
 - `src/worker.ts`: 호스트가 `*.workers.dev`면 GET·HEAD는 301, 그 밖은 308(메서드 유지)로 보낸다. 아니면 Astro 처리(`@astrojs/cloudflare/handler`)로 넘긴다
-- 정적 파일은 원래 Worker를 거치지 않아 리디렉션할 수 없다. `assets.run_worker_first`로 페이지 경로를 Worker에 먼저 보내고, 해시 붙은 빌드 파일·이미지(`/_astro/*`, `/hero/*`, `/favicon.svg`, `/og.png`)는 빼서 바로 나가게 둔다. 그래서 `bettercurl.dev` 페이지 요청도 Worker 호출로 센다(무료 하루 10만 회 안). 새 정적 폴더를 `public/`에 두면 이 목록에 넣을지 본다
+- 11/09(S-015): 규칙을 `src/lib/redirects.ts`로 빼고, 끝 슬래시 없는 언어 페이지(`/ko`, `/en/privacy`)도 301로 붙인 주소에 보낸다(정적 자산 처리는 307). workers.dev 요청은 슬래시까지 붙여 한 번에. 확인 `pnpm site test`(`scripts/redirects-check.mjs`), 로컬 `npx wrangler dev -c dist/server/wrangler.json` → `/ko` 301 `/ko/`(11/09 확인)
+- 정적 파일은 원래 Worker를 거치지 않아 리디렉션할 수 없다. `assets.run_worker_first`로 페이지 경로를 Worker에 먼저 보내고, 해시 붙은 빌드 파일·이미지(`/_astro/*`, `/hero/*`, `/favicon.svg`, `/apple-touch-icon.png` — 11/09 OG 이미지는 `/_astro/`로 옮김)는 빼서 바로 나가게 둔다. 그래서 `bettercurl.dev` 페이지 요청도 Worker 호출로 센다(무료 하루 10만 회 안). 새 정적 폴더를 `public/`에 두면 이 목록에 넣을지 본다
 - 로컬 확인: `pnpm build` 뒤 `npx wrangler dev -c dist/server/wrangler.json --local-upstream portfolio-web.yeonghun-yoo.workers.dev` → `/ko/`가 301 `https://bettercurl.dev/ko/`. `--local-upstream bettercurl.dev`면 그대로 200(11/07 확인)
 - 운영 확인(배포 뒤): `curl -sI https://portfolio-web.yeonghun-yoo.workers.dev/ko/` → `301`, `location: https://bettercurl.dev/ko/`
 

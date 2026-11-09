@@ -85,6 +85,7 @@ pnpm site hero:frames --model=/hero-src/out/head.min.glb --frames=48
 1. 3D 장면을 화면 크기가 아니라 격자 크기(예: 1280×720 화면이면 80×45)의 작은 타깃에 그린다
 2. 후처리 셰이더가 칸마다(격자 = 화면 폭 ÷ `cell`): 진행도에 따른 격자로 칸을 맞추고(거칠게 시작) → 블러(칸 단위 상자, 반경 최대 3칸) → 밝기 → `levels`단계로 양자화 + 4×4 Bayer 디더 → `dark`~`light` 두 색 사이로. 마젠타 표식 재질(넥타이)만 `accent`
 3. 결과(격자 크기)를 화면에 칸 그대로 키워 옮긴다(Nearest + CSS `image-rendering: pixelated`)
+- 시작 순서(11/09, 홈 Lighthouse TBT 930ms): ① 페이지 `load` 뒤 브라우저가 한가할 때(`requestIdleCallback`, 늦어도 2초) `scene.js`를 import ② 다음 작업에서 `createHero` ③ `prepare()`가 셰이더를 패스마다 `compileAsync`로 미리 컴파일(`KHR_parallel_shader_compile`이면 GPU 쪽에서) ④ 그다음 크기·첫 그리기. 그동안은 포스터. 글꼴 로드 콜백이 `resize` 전에 `render()`를 불러 셰이더를 동기 컴파일하던 것도 막았다(`sized`). 로컬 4배 느린 CPU 측정 TBT 150~370ms → 50~120ms, 남은 긴 작업은 `createHero`(WebGL 컨텍스트 생성, 약 100ms)
 - 성능(11/05): 2단계를 화면 픽셀마다가 아니라 격자 크기에서 한 번만 돈다 — 소프트웨어 GPU 측정 85 → 33ms. 진행도가 같으면 다시 그리지 않는다(커튼 구간에선 그리기 0). 고정 장면에 `will-change: transform`
 
 ## 사이트 연결 (11/05 반영 — 실시간 3D가 기본, 스프라이트는 쓰지 않음)

@@ -11,6 +11,24 @@
 
 ---
 
+## 2026-11-09
+
+### S-015 · 확정 · SEO 체크리스트 후속 — 끝 슬래시 301, OG 이미지 해시 주소, 배포 전 SEO 자동 점검, 3D 히어로 늦은 시작
+- 결정
+  - 끝 슬래시 없는 언어 페이지(`/ko`, `/en/privacy`)는 Worker(`src/lib/redirects.ts`)가 301로 붙인 주소에 보낸다. workers.dev 301(S-014)도 같은 함수에서 슬래시까지 붙여 한 번에
+  - OG 이미지는 `public/og.png` 고정 주소 대신 빌드 자산(`src/assets/og.png` → `/_astro/og.<해시>.png`)
+  - `scripts/seo-check.mjs`를 배포 스크립트에 넣어 빌드 HTML에 SEO 오류가 있으면 배포를 멈춘다(경고는 통과)
+  - 홈 3D 히어로는 페이지 로드 뒤 한가할 때 시작하고, 셰이더는 첫 그리기 전에 비동기로 미리 컴파일한다
+  - 그 밖: 개인정보처리방침 고유 description, apple-touch-icon, 프로젝트 상세 첫 이미지 `fetchpriority="high"`
+- 본 것
+  - 슬래시: 그대로 307(정적 자산 기본 — 검색엔진엔 임시 이동) / `_redirects` 파일(페이지 경로는 `run_worker_first`로 Worker가 먼저 받아 적용 여부가 불확실) / Worker에서 301(채택, 로컬 `wrangler dev`로 확인)
+  - OG: 파일명 손으로 올리기(`og-v2.png`, 잊기 쉽다) / 쿼리 `?v=`(캐시가 쿼리를 무시하는 곳이 있다) / 빌드 해시(채택, 내용이 바뀔 때만 주소가 바뀐다)
+  - 점검: 빌드에 넣기(루트 `pnpm build`가 막혀 다른 앱 작업까지 멈춘다) / CI(배포가 로컬 wrangler라 CI가 없다) / 배포 스크립트(채택)
+  - 3D: 첫 스크롤 때 시작(점수는 가장 좋지만 맨 위에서 눈 숫자가 안 움직인다) / 웹 워커 OffscreenCanvas(큰 공사) / 늦은 시작 + 쪼개기(채택)
+- 이유: 사용자가 준 SEO 실무 체크리스트(11/09)로 점검한 결과. 운영 홈 Lighthouse 모바일 78(TBT 930ms), 307, 고정 OG 주소, 수동 점검뿐이던 것을 고친다
+- 자료: 로컬 4배 느린 CPU에서 홈 TBT 150~370ms → 50~120ms, 남은 긴 작업은 WebGL 컨텍스트 생성(약 100ms). 운영 수치는 배포 뒤 다시 잰다
+- 문서: [01-frontend.md](01-frontend.md) "SEO·GEO" 11/09·"자동 점검", [guides/3d-hero.md](guides/3d-hero.md) "시작 순서(11/09)", [guides/domain-setup.md](guides/domain-setup.md) "workers.dev 주소"
+
 ## 2026-11-07
 
 ### S-014 · 확정 · 예전 workers.dev 주소는 `bettercurl.dev`로 301

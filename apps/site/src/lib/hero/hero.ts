@@ -18,6 +18,21 @@ const EYE_TICK_MS = 1000 / 12;
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 
+/** 다음 작업으로 넘긴다 — 긴 작업을 쪼개 입력이 끼어들 틈을 준다 */
+const nextTask = () => new Promise<void>((r) => setTimeout(r, 0));
+
+/** 페이지 로드가 끝나고 브라우저가 한가할 때(늦어도 2초 안) */
+function whenIdle(): Promise<void> {
+  return new Promise((resolve) => {
+    const go = () => {
+      if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 2000 });
+      else setTimeout(resolve, 300);
+    };
+    if (document.readyState === 'complete') go();
+    else addEventListener('load', go, { once: true });
+  });
+}
+
 function hasWebGL(): boolean {
   try {
     return Boolean(document.createElement('canvas').getContext('webgl2'));
@@ -205,14 +220,20 @@ export function initHero(): void {
   };
 
   if (!hasWebGL()) return;
-  import('./scene.js')
-    .then(({ createHero }) => {
+  // 11/09(홈 TBT 930ms): three.js 실행 → 장면 생성 → 셰이더 컴파일 → 첫 그리기가 한 덩어리로 메인 스레드를 막았다.
+  // 페이지 로드가 끝나고 브라우저가 한가할 때 시작하고, 단계마다 메인 스레드를 돌려준다. 그동안은 포스터가 보인다
+  whenIdle()
+    .then(() => import('./scene.js'))
+    .then(async ({ createHero }) => {
+      await nextTask();
       const css = getComputedStyle(document.documentElement);
       const token = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
-      hero = createHero(canvas, {
+      const instance = createHero(canvas, {
         palette: { dark: token('--color-bg', '#17191c'), light: token('--color-fg', '#e9ebe6'), accent: token('--color-accent', '#8c98ff') },
       });
-      const instance = hero;
+      await nextTask();
+      await instance.prepare();
+      hero = instance;
       new ResizeObserver(() => instance.resize(canvas.clientWidth, canvas.clientHeight)).observe(canvas);
       root.classList.add('is-3d');
       apply();

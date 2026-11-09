@@ -8,6 +8,9 @@ import ChatDock from '../components/islands/ChatDock';
 import { locales, t, type Locale } from '../i18n';
 import { absolute, alternates, ogLocale } from '../lib/seo';
 import { serializeJsonLd } from '../lib/jsonld';
+// 공유 미리보기 이미지(11/05, 11/09 빌드 자산으로): 파일 이름에 내용 해시가 붙어(/_astro/og.<hash>.png) 다시 찍으면 주소가 바뀐다 —
+// 카카오·페이스북이 예전 이미지를 캐시해 두는 문제를 피한다. scripts/hero/og.mjs가 만든다(pnpm site hero:og)
+import ogImage from '../assets/og.png';
 
 interface Props {
   locale: Locale;
@@ -33,6 +36,7 @@ const site = Astro.site!;
 const path = Astro.url.pathname;
 const canonical = absolute(site, path);
 const alts = alternates(path, available);
+const ogUrl = new URL(ogImage.src, site).href;
 // 홈은 챗 버튼이 처음엔 숨어 있다가 프로젝트가 나올 때쯤 나온다(src/lib/chat-fab.ts) — 깜빡임 없게 서버에서 숨긴 채로
 const isHome = /^\/(ko|en)\/?$/.test(path);
 ---
@@ -46,6 +50,7 @@ const isHome = /^\/(ko|en)\/?$/.test(path);
     <meta name="description" content={pageDescription} />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {
       noindex ? (
         <meta name="robots" content="noindex" />
@@ -61,15 +66,14 @@ const isHome = /^\/(ko|en)\/?$/.test(path);
           <meta property="og:url" content={canonical} />
           <meta property="og:locale" content={ogLocale[locale]} />
           {alts.filter((a) => a.locale !== locale).map((a) => <meta property="og:locale:alternate" content={ogLocale[a.locale]} />)}
-          {/* 공유 미리보기 이미지(11/05): 1200×630, scripts/hero/og.mjs가 만든다(pnpm site hero:og) */}
-          <meta property="og:image" content={new URL('/og.png', site).href} />
-          <meta property="og:image:width" content="1200" />
-          <meta property="og:image:height" content="630" />
+          <meta property="og:image" content={ogUrl} />
+          <meta property="og:image:width" content={String(ogImage.width)} />
+          <meta property="og:image:height" content={String(ogImage.height)} />
           <meta property="og:image:alt" content={dict.site.ogAlt} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={pageTitle} />
           <meta name="twitter:description" content={pageDescription} />
-          <meta name="twitter:image" content={new URL('/og.png', site).href} />
+          <meta name="twitter:image" content={ogUrl} />
           {/* 실행되지 않는 데이터 블록이라 CSP와 상관없다 */}
           {jsonLd && <script type="application/ld+json" is:inline set:html={serializeJsonLd(jsonLd)} />}
           <link rel="alternate" type="text/plain" href={new URL('/llms.txt', site).href} title="llms.txt" />

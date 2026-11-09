@@ -11,7 +11,15 @@ const ko = locale === 'ko';
 // 초안: 문구는 공개 전에 다시 확인한다. 연락처는 사이트의 레터 기능.
 ---
 
-<BaseLayout locale={locale} title={ko ? '개인정보처리방침' : 'Privacy'}>
+<BaseLayout
+  locale={locale}
+  title={ko ? '개인정보처리방침' : 'Privacy'}
+  description={
+    ko
+      ? '레터·AI 상담에서 받는 정보(레터 내용·답장 메일·질문·IP 해시), 쓰는 목적, 보관 기간, 삭제 요청 방법과 처리 위탁(Cloudflare·Resend).'
+      : 'What this site collects through letters and the AI chat (message, reply-to email, questions, IP hash), why, how long it is kept, and how to have it deleted.'
+  }
+>
   <article class="container-page py-10 md:py-16">
     <div class="prose-body">
       {
