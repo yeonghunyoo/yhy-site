@@ -45,5 +45,9 @@ ok(/<div class="code-file">\s*<div class="code-tab" data-label="proxy\.ts">/.tes
 ok(/<span class="hljs-keyword">import<\/span>/.test(steps), '문법 색(클래스)');
 ok(/<\/div><\/div><h2 id="단계-밖의-보통-코드">/.test(steps.replace(/\n/g, '')), '2열 밖 코드는 단계 밖');
 
+// 마크다운형 그림·북마크(11/10)
+const extra = (await renderPost('![캡션 있는 그림](https://example.com/a.png)\n\n<bookmark source="https://vercel.com/blog">Vercel Blog</bookmark>\n\n<video source="https://prod-files-secure.s3.us-west-2.amazonaws.com/x.mp4"></video>', { resolveImage: async () => ({ url: '/blog/img/' + 'a'.repeat(32) + '.webp', width: 1, height: 1 }) })).html;
+ok(/<figure><img [^>]*alt="캡션 있는 그림"[^>]*><figcaption>캡션 있는 그림<\/figcaption><\/figure>/.test(extra), '![캡션](주소) → 그림 + 캡션');
+ok(/<a href="https:\/\/vercel\.com\/blog" rel="noopener" target="_blank">Vercel Blog ↗<\/a>/.test(extra) && !/amazonaws/.test(extra), '북마크 → 링크, Notion 파일 동영상은 뺌');
 if (fail) console.log('\n' + html);
 process.exit(fail ? 1 : 0);

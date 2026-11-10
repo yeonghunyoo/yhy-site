@@ -53,6 +53,16 @@ export function normalizeNotionMarkdown(md) {
     const caption = cap.replace(/<[^>]+>/g, '').trim();
     return `\n\n<figure><img src="${esc(src)}" alt="${esc(caption)}" />${caption ? `<figcaption>${esc(caption)}</figcaption>` : ''}</figure>\n\n`;
   });
+  // 그림(마크다운형): 한 줄짜리 ![캡션](주소)도 <image>와 같게 figure + 캡션
+  s = s.replace(/^!\[([^\]]*)\]\(([^)\s]+)\)[ \t]*$/gm, (_, cap, src) => `\n\n<figure><img src="${esc(src)}" alt="${esc(cap.trim())}" />${cap.trim() ? `<figcaption>${esc(cap.trim())}</figcaption>` : ''}</figure>\n\n`);
+  // 북마크·임베드·바깥 동영상 → 링크 한 줄(바깥 주소일 때만). Notion에 올린 파일은 주소가 1시간 뒤 만료라 아래에서 뺀다
+  const notionFile = (u) => /amazonaws\.com|notion-static\.com|file\.notion\.so|notion-file-block:/.test(u);
+  s = s.replace(/<(bookmark|embed|video)\b[^>]*?source="(https:\/\/[^"]+)"[^>]*?(?:\/>|>([\s\S]*?)<\/\1>)/g, (m, tag, url, cap = '') => {
+    if (notionFile(url)) return m;
+    const label = cap.replace(/<[^>]+>/g, '').trim() || url.replace(/^https:\/\//, '');
+    return `\n\n<p><a href="${esc(url)}">${esc(label)} ↗</a></p>\n\n`;
+  });
+
   // 코드 탭(S-020): Notion 탭 블록 → 탭마다 이름표 + 내용. 탭이 여럿이면 전환(code-tabs), 하나면 파일명 이름표(code-file)
   s = s.replace(/<tabs\b[^>]*>([\s\S]*?)<\/tabs>/g, (_, inner) => {
     const tabs = [...inner.matchAll(/<tab\b[^>]*>[ \t]*\n?([^\n]*)\n([\s\S]*?)<\/tab>/g)].map((m) => ({ label: m[1].replace(/<[^>]+>/g, '').trim(), body: m[2].trim() }));

@@ -36,7 +36,7 @@
 
 <mention-page url="https://www.notion.so/abc">비공개 페이지</mention-page>를 참고. [바깥 링크](https://developers.notion.com) <script>alert(1)</script>
 
-<video source="https://example.com/v.mp4"></video>
+<video source="https://prod-files-secure.s3.us-west-2.amazonaws.com/space/v.mp4"></video>
 
 ```plain text
 @component scramble {"text": "BETTER CALL YH!"}

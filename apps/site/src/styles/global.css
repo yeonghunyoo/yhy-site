@@ -359,14 +359,14 @@ html[data-fab='hidden'] .chat-fab {
     color: var(--color-muted);
     font-weight: 600;
   }
-  /* 글 화면(S-020, Vercel식): 경로 → 제목 → 본문 한 단(680px). 날짜 줄은 좁은 화면에서 제목 아래, 넓은 화면(1180px~)에서 본문 오른쪽 옆 */
+  /* 글 화면(S-020, Vercel식): 경로 → 제목 → 본문 한 단(680px). 날짜 줄은 좁은 화면에서 제목 아래, 넓은 화면(1180px~)에서 본문 오른쪽 옆.
+     11/10: 단을 화면 가운데가 아니라 페이지 왼쪽 기준선(머리말 로고·홈 본문과 같은 줄)에 붙인다 — 가운데에 몰려 떠 보였다(사용자 의견) */
   .post {
     padding-top: 2.5rem;
     padding-bottom: 5rem;
   }
   .post-col {
     max-width: 680px;
-    margin-inline: auto;
   }
   .post-crumb {
     display: flex;
@@ -579,8 +579,8 @@ html[data-fab='hidden'] .chat-fab {
   /* 단계(S-020, Clerk식): Notion 2열 블록 하나 = 한 단계. 왼쪽 설명(번호·세로선), 오른쪽 코드. 본문보다 넓게(최대 1040px), 좁으면 쌓인다 */
   .blog-body .blog-steps {
     counter-reset: step;
-    width: min(1040px, calc(100vw - 2rem));
-    margin: 2rem 0 2.5rem calc(50% - min(520px, 50vw - 1rem));
+    width: min(1040px, calc(100vw - 2rem)); /* 본문 단과 같은 왼쪽 선에서 오른쪽으로 넓어진다 */
+    margin: 2rem 0 2.5rem;
   }
   .blog-body .blog-step {
     counter-increment: step;
