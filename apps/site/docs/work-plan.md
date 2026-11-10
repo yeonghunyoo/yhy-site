@@ -55,6 +55,7 @@
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
+- [x] **배포** — 11/10 `7474b086`(`main` 1f2ebc2: 블로그 글 단 왼쪽 기준선, 그림·북마크 변환). SEO 점검 오류 0
 - [x] **배포** — 11/10 `dabbc785`(`main` d5fc8e6까지: 8 블로그 코드 S-017~S-020·목록 숨김). SEO 점검 오류 0. 블로그 목록은 비어 있음("아직 글이 없어요") — 시험 글 두 편(`/ko/blog/steps-example/`, `/ko/blog/fixture-test/`)만 목록 숨김·noindex로 운영 R2에. 실제 글이 생기면 시험 글은 Notion 동기화가 index를 새로 쓰며 빠진다
 - [x] **배포** — 11/10 `e9f3ee09`(클라우드 세션, `main` f1d8fb0까지: S-014 workers.dev 301, JSON-LD·`llms.txt`, S-015 SEO 후속·3D 늦은 시작). 배포 스크립트의 SEO 점검 통과(오류 0, 경고 1 — 홈 description 길이). 비밀값 그대로, RAG 동기화 건너뜀
 - [x] **배포** — 11/06 `8052616d`(클라우드 세션, `main` aebb9e7까지: 11/05 홈 개편·챗 바·Quantico, 11/06 스냅 잠금·드래그 막기·눈 숫자·히어로 문구 S-013). 비밀값은 그대로(`.prod.vars` 없음), RAG 동기화는 건너뜀
