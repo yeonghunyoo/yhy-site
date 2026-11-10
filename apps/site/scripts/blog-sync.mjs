@@ -107,6 +107,7 @@ async function listPublished() {
           date: pr['발행일']?.date?.start?.slice(0, 10),
           tags: (pr['태그']?.multi_select ?? []).map((t) => t.name),
           updated: p.last_edited_time,
+          unlisted: pr['목록 숨김']?.checkbox === true || undefined, // 선택 속성: 체크하면 주소로만 열린다
         },
       });
     }
@@ -178,8 +179,8 @@ const FIXTURES = {
 };
 const entries = FIXTURE
   ? [
-      { id: 'fixture', meta: { title: '변환 확인용 글', slug: 'fixture-test', locale: 'ko', summary: 'Notion식 마크다운 변환·사진·표·콜아웃을 확인하는 글이다. 운영에는 올리지 않는다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString() } },
-      { id: 'steps', meta: { title: 'Clerk식 단계별 코드 설명 — Notion 2열 블록으로 쓰기', slug: 'steps-example', locale: 'ko', summary: '설명과 코드를 단계마다 나란히 두는 글의 확인용 견본이다. 운영에는 올리지 않는다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString() } },
+      { id: 'fixture', meta: { title: '변환 확인용 글', slug: 'fixture-test', locale: 'ko', summary: 'Notion식 마크다운 변환·사진·표·콜아웃을 확인하는 글이다. 목록에는 나오지 않는 시험 글이다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString(), unlisted: true } },
+      { id: 'steps', meta: { title: 'Clerk식 단계별 코드 설명 — Notion 2열 블록으로 쓰기', slug: 'steps-example', locale: 'ko', summary: '설명과 코드를 단계마다 나란히 두는 글의 확인용 견본이다. 목록에는 나오지 않는 시험 글이다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString(), unlisted: true } },
     ]
   : await listPublished();
 console.log(`공개 글 ${entries.length}편 (${DRY ? '확인만' : LOCAL ? '로컬 R2' : `운영 R2 ${BUCKET}`})`);

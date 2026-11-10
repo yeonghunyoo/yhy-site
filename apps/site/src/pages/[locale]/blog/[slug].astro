@@ -26,6 +26,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60');
   description={meta.summary}
   type="article"
   available={available}
+  noindex={meta.unlisted}
   image={meta.cover ? { ...meta.cover, alt: meta.title } : undefined}
   jsonLd={blogPostJsonLd(Astro.site!, meta)}
 >

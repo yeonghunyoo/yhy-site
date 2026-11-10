@@ -13,6 +13,8 @@ export interface BlogMeta {
   tags: string[];
   minutes: number;
   cover?: { url: string; width: number; height: number };
+  /** 목록 숨김(11/10): 주소로만 열린다 — 블로그 목록·sitemap·llms에서 빠지고 noindex. 미리보기·시험 글용 */
+  unlisted?: boolean;
 }
 export interface BlogIndex {
   version: string;
@@ -50,8 +52,13 @@ export async function getIndex(): Promise<BlogIndex> {
   return index;
 }
 
+/** 목록에 보일 글(목록 숨김 제외) */
+export async function listedPosts(): Promise<BlogMeta[]> {
+  return (await getIndex()).posts.filter((p) => !p.unlisted);
+}
+
 export async function listPosts(locale: Locale): Promise<BlogMeta[]> {
-  return (await getIndex()).posts.filter((p) => p.locale === locale);
+  return (await listedPosts()).filter((p) => p.locale === locale);
 }
 
 /** 이 slug가 있는 언어들(hreflang·언어 전환) */

@@ -24,6 +24,7 @@ Notion "블로그 글" DB ──(pnpm site blog:sync)──▶ R2 blog/ ──(�
 
 - 페이지 "bettercurl 블로그"(비공개) 안의 DB **블로그 글** — `collection://2fead265-afa2-40ab-ac6a-54e1ffabcb75`
 - 속성: `제목`(title) · `slug`(영문 소문자·숫자·하이픈) · `언어`(ko/en) · `공개`(체크박스) · `요약`(ko 40~120자, en 70~170자) · `발행일` · `태그` · `수정일`(자동)
+- 선택 속성 `목록 숨김`(체크박스, 11/10): 체크하면 주소로만 열린다 — 블로그 목록·`/sitemap-blog.xml`·JSON-LD 목록에서 빠지고 `noindex`. 공개 전 미리보기·시험 글용. 시험 글(`blog:sync --fixture`)은 늘 목록 숨김
 - 같은 글의 한국어·영어판은 **slug를 같게** — 프로젝트(`{slug}.{locale}.md`)와 같은 규칙. 한 언어뿐이면 hreflang에서 뺀다
 - 토큰: Notion "내부 통합"(Read content만)을 만들어 이 DB에만 연결. 동기화하는 곳에만 둔다 — 로컬 `apps/site/.env`의 `NOTION_TOKEN`, 클라우드 세션은 환경의 네트워크 비밀(`api.notion.com`에 헤더 주입 — 코드·레포에 값이 없다). Worker에는 넣지 않는다
 - DB id는 `wrangler.jsonc`가 아니라 동기화 스크립트 설정(`NOTION_BLOG_DB`, 기본값은 위 id)
