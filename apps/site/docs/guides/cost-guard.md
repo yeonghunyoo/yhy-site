@@ -83,7 +83,7 @@ Workers Rate Limiting 바인딩(`ratelimits`)은 무료 플랜 제공 여부를 
 
 ## 5. 운영자가 직접 할 설정 (대시보드)
 
-1. **분석 토큰** — dash.cloudflare.com → 오른쪽 위 프로필 → My Profile → API Tokens → Create Token → Custom token → 권한 `Account` · `Account Analytics` · `Read` 하나만, Account Resources는 이 계정만 → 만들기. 그다음 로컬에서 `pnpm exec wrangler secret put CF_ANALYTICS_TOKEN`(토큰 붙여넣기), `pnpm exec wrangler secret put CF_ACCOUNT_ID`(계정 ID — 대시보드 Workers 개요 오른쪽에 있다)
+1. **분석 토큰**(자동 발급하지 않는다 — API로 만들려면 "토큰을 만드는 토큰"이 먼저 필요해 더 위험하다, 11/10) — dash.cloudflare.com → 오른쪽 위 프로필 → My Profile → API Tokens → Create Token → Custom token → 권한 `Account` · `Account Analytics` · `Read` 하나만, Account Resources는 이 계정만 → 만들기. 그다음 로컬에서 `pnpm exec wrangler secret put CF_ANALYTICS_TOKEN`(토큰 붙여넣기), `pnpm exec wrangler secret put CF_ACCOUNT_ID`(계정 ID — 대시보드 Workers 개요 오른쪽에 있다)
 2. **결제 알림** — Manage Account → Billing → Billing notifications(또는 Notifications → Add → "Usage Based Billing") → 금액 임계값(예: $1) 알림을 이메일로
 3. **Workers 사용량 알림** — Notifications → Add → Workers → "Workers usage" 류 알림이 있으면 켠다
 4. **WAF 속도 제한 규칙(무료 1개)** — 도메인을 연결한 뒤 가능: Security → WAF → Rate limiting rules → `URI Path starts with /api/` 에 IP당 10초 20회, 초과 시 Block 10초. workers.dev 주소에는 적용되지 않는다

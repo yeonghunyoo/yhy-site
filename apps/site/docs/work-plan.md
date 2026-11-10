@@ -6,16 +6,20 @@
 - "사람"은 Claude가 할 수 없고 사용자가 해야 하는 일(계정·대시보드·실기기·콘텐츠 결정), "코드"는 바로 구현할 수 있는 일
 - 배포(`pnpm site deploy`)와 운영에 쓰는 명령(`rag:*:remote`, `rag:reindex:api`)은 사용자가 요청할 때만 한다
 
-## 상태 (11/06)
+## 상태 (11/10)
 
 | 단계 | 상태 |
 |---|---|
-| 0–4 MVP (인프라·프론트·인증·레터·어드민) | 코드 완료. `https://bettercurl.dev` 운영 중(11/04 커스텀 도메인. 예전 workers.dev 주소는 도메인으로 301 — 11/07 코드, S-014). 메일 경로·어드민 운영 확인이 남음 |
-| 홈 개편 | 11/05 3D 픽셀 히어로(임시 흉상) + 본문 S-010 + 썸네일 S-011 + 제목 글꼴 Quantico S-012 + 챗 바. SEO `<head>`·robots·sitemap·OG 완료, JSON-LD·`llms.txt` 11/09 코드(배포 전) |
+| 0–4 MVP (인프라·프론트·인증·레터·어드민) | 코드 완료. `https://bettercurl.dev` 운영 중(11/04 커스텀 도메인, 예전 workers.dev 주소는 301 — 11/10 배포). 어드민 화면 5개(지표·레터·사용자·챗 로그·사용량) 완료. **메일 경로·어드민 운영 확인이 남음** |
+| 홈 개편 | 11/05 3D 픽셀 히어로(임시 흉상) + 본문 S-010 + 썸네일 S-011 + 제목 글꼴 Quantico S-012 + 챗 바 |
+| SEO·GEO | **코드 완료·운영 반영(11/10 `e9f3ee09`)**: `<head>`·robots·sitemap·OG(해시 주소)·JSON-LD·`llms.txt`·끝 슬래시 301·apple-touch-icon, 배포 전 자동 점검(S-015). Lighthouse 모바일 홈 89~92·프로젝트 100, SEO 100. **남은 것은 사람 작업**: 검색엔진 등록, Always Use HTTPS, Web Analytics 결정, 홈 description |
+| 블로그(Notion CMS) | 제안만(S-016). overview에서 비범위 — 하려면 범위 결정부터 |
 | 5–6 챗+RAG | 운영에 켜짐(11/03 테스트 기간). 운영 청크 247 = 벡터 247, 기준 질문 58개 경로·재현율 100%(11/04). **완료 기준 확인 전** |
 | 7 3D | 히어로로 앞당겨 반영. 실제 얼굴 스캔 모델은 후순위 |
 
 ## 남은 일
+
+**11/10 우선순위**(사람 작업, 위에서부터): ① Google Search Console·네이버·Bing 등록 + sitemap 제출(B) ② Cloudflare Always Use HTTPS·Block AI bots 확인(B) ③ Web Analytics 쓸지·홈 description 문구(D) ④ 메일 경로·어드민 운영 확인(C) ⑤ 실기기 2대(C) ⑥ 리치 결과 테스트·카카오 공유 디버거(C) ⑦ 분석 토큰(B) ⑧ 블로그 범위 결정(D, S-016)
 
 ### A. 지금 바로 할 수 있는 코드
 - [x] **JSON-LD·`llms.txt`**(11/09, 배포 전) — 홈 `Person`+`WebSite`, 프로젝트 상세 `CreativeWork`, `src/pages/llms.txt.ts`(projects 컬렉션 + `src/data/career.ts`). [01-frontend.md](01-frontend.md) "SEO·GEO". 배포 뒤 리치 결과 테스트로 확인
@@ -25,6 +29,8 @@
 - [ ] **챗 완료 기준 문구 고치기** — "범위 밖은 모델 호출 없이 거절" → "무관 작업은 슈퍼바이저 1회 뒤, 근거 없음은 검색 뒤 답변 호출 없이 거절". [05-06-chat-rag.md](05-06-chat-rag.md) "완료 기준"과 chat-rag-setup "3. 확인"
 - [ ] **추천 칩·인사말 다듬기** — 지금 칩은 일반 질문 3개("어떤 프로젝트를…"). 문서로 확실히 답이 나오는 질문으로 바꿀 안을 만들어 확인받는다. 바꾸면 칩마다 로컬에서 답·출처 칩 확인, 페르소나를 건드리면 `?redteam=1`. chat-rag-setup 2-3
 - [ ] **답변 모델 다시 비교**(칩·기준 질문 뒤) — 실제 문서로 Gemma 4 vs Qwen3 14문항, 05-06 "모델 비교"에 표 추가. chat-rag-setup 3
+- [ ] **404 화면의 언어 전환 링크** — 없는 주소에서 "English"가 `/en/<없는 주소>/`로 가 또 404. 404에서는 언어 홈(`/en/`)으로. `src/components/ui/Header.astro`(11/09 체크리스트 점검에서 발견)
+- [ ] **`CF_ACCOUNT_ID`를 `wrangler.jsonc` `vars`로**(정하면) — 계정 ID는 비밀이 아니라 코드에 두면 운영자가 넣을 비밀이 토큰 하나로 준다. 운영에 같은 이름 비밀이 이미 있으면 지우고 옮긴다(이름이 겹치면 배포가 막힌다)
 - [ ] **과정 보기 구현**(D의 공개 범위를 정한 뒤) — SSE `step` 이벤트 + 답 위 진행 줄·접힌 요약. chat-rag-setup 5
 
 ### B. 사람 작업이 먼저인 것
@@ -34,7 +40,7 @@
 - [ ] **히어로 실제 얼굴 3D 스캔** — 받으면 코드: `createHero`에 `modelUrl`, CSP `script-src`에 `'wasm-unsafe-eval'`(Meshopt), 포스터·OG 다시. [3d-hero.md](guides/3d-hero.md)
 - [ ] **Resend 대시보드** — `mail.bettercurl.dev` Open·Click Tracking 끄기, 루트 `bettercurl.dev`를 Resend에서 지울지(지우면 DNS 레코드도 정리). [domain-setup.md](guides/domain-setup.md) "Resend 점검"
 - [ ] **Cloudflare 대시보드 설정**([cost-guard.md](guides/cost-guard.md) 5) — 한 기록이 없다. 이미 했으면 체크만
-  - [ ] 분석 읽기 토큰 → `CF_ANALYTICS_TOKEN`·`CF_ACCOUNT_ID` 비밀(없으면 `/admin/usage`에 Cloudflare 칸이 빈다)
+  - [ ] 분석 읽기 토큰 → `CF_ANALYTICS_TOKEN`·`CF_ACCOUNT_ID` 비밀(없으면 `/admin/usage`에 Cloudflare 칸이 빈다). 자동 발급은 하지 않는다 — API로 만들려면 "토큰을 만드는 토큰"(API Tokens: Edit)이 먼저 있어야 해 읽기 토큰보다 위험하다. 대시보드에서 `Account Analytics : Read` 하나만(11/10, cost-guard 5-1)
   - [ ] 결제 알림, Workers 사용량 알림
   - [ ] WAF 속도 제한 규칙(`/api/` IP당 10초 20회), Bot Fight Mode — 도메인이 붙었으니 이제 가능
 - [ ] **Cloudflare Always Use HTTPS** — SSL/TLS → Edge Certificates. 지금 http로 오면 200(11/09 점검)
@@ -53,7 +59,7 @@
 - [ ] **챗 완료 기준**(운영, chat-rag-setup 4) — 하루 20턴 제한, 월 토큰 상한 + Telegram 🧯, 출처 칩 → 섹션 이동, "오늘 날씨" 거절(답변 토큰 0), `/admin/chat?redteam=1` 전부 통과, 질문 로그(답변 본문 없음)
 - [ ] **챗 내용 확인** — "연락처 알려줘" → `hello@bettercurl.dev`(개인 Gmail이 나오면 RAG 운영 반영이 안 된 것), "What did you do at holich?" 재현
 - [ ] **운영 `/media`** — Forest 이미지 200, 지운 PDF 404. [06-ingest.md](06-ingest.md) 구현 메모
-- [ ] **실기기 2대(iOS Safari, Android Chrome)** — 레이아웃, 3D 히어로 성능, 챗 키보드에 입력창이 보이는지, 챗 시트·흐름도 터치 4건("실기기 재확인 필요", [browser-support.md](guides/browser-support.md))
+- [ ] **실기기 2대(iOS Safari, Android Chrome)** — 레이아웃, 3D 히어로 성능(11/10부터 로드 뒤 한가할 때 시작 — 포스터가 너무 오래 보이지 않는지, 스크롤이 매끄러운지), 아이폰 홈 화면 아이콘, 챗 키보드에 입력창이 보이는지, 챗 시트·흐름도 터치 4건("실기기 재확인 필요", [browser-support.md](guides/browser-support.md))
 - [ ] **Lighthouse 모바일 90+** — 3D 히어로를 넣은 뒤 다시 잰다. [01-frontend.md](01-frontend.md) "완료 기준". 11/09 운영(11/06 배포본) 홈 78(TBT 930ms)·프로젝트 상세 100 → 3D 시작 순서를 고쳤다(S-015). **11/10 배포 뒤 홈 89~92(3회, TBT 310~400ms, LCP 1.5s, CLS 0)·프로젝트 상세 100**. 남은 TBT는 WebGL 컨텍스트 생성. 실기기 확인이 남음
 - [x] **11/09 SEO 후속 배포 뒤 확인**(11/10) — `/ko`·`/en/privacy`·`/ko/projects/nuvo` → 301 슬래시(쿼리 유지), workers.dev → 301 도메인(POST 308), `og:image` `/_astro/og.CXa257X_.png` 200, `/apple-touch-icon.png`·`/llms.txt` 200, 없는 주소 404, JSON-LD 들어감
 - [ ] **리치 결과 테스트·카카오 공유 디버거**(사람) — search.google.com/test/rich-results에 홈·프로젝트 주소, 카카오에서 새 OG 이미지
@@ -66,12 +72,17 @@
 - [x] workers.dev 주소를 다시 켤지 → 켜고 도메인으로 301(11/07, S-014). 배포해야 반영
 - [ ] Cloudflare Web Analytics 쓸지, 변경 이력을 git에서 자동 생성할지 (overview "2차 디테일"). 11/09: 대시보드에서 이미 켜져 비콘이 자동으로 붙는데 CSP가 막는다(콘솔 오류, 수집 0) — 쓰면 CSP 허용, 안 쓰면 끈다
 - [ ] 홈 description 문구 — 지금 36자, 권장 40~120자(`seo:check` 경고). [01-frontend.md](01-frontend.md) "11/09 SEO 체크리스트 점검"
+- [ ] 홈 프로젝트 목록의 흐린 항목 대비 — 화면 가운데가 아닌 프로젝트를 흐리게 해서 Lighthouse 접근성 96(대비 부족). 디자인 의도라 둘지, 흐림을 줄일지(S-010)
+- [ ] **블로그(Notion CMS)를 범위에 넣을지**(S-016 제안) — overview "비범위: 블로그". 넣으면 방식(빌드 때 가져오기 권장)·이미지 보관·공개할 페이지 기준을 정하고 설계 문서부터. Notion 확인 결과는 S-016
+- [ ] Notion "프로젝트 갤러리"의 회사 프로젝트(Let's Bee·MyCONECT·모두맘, 개인 Aquanote)를 사이트 프로젝트 페이지로 낼지 — 지금은 경력·RAG(이력서)에만 있다. 내면 무엇·왜·결과와 이미지가 필요
 
 ### E. 때가 되면 (2차·선택)
 - [ ] WAF 국가별·봇 점수 챌린지, `/api/chat` WAF 속도 제한 ([common.md](common.md), 선택)
 - [ ] RAG 2차: 스캔 쪽 OCR·이미지 설명, docx·html 파서, `rag:media:gc`, 다국어 리랭커 재측정, 프로젝트 안내 에이전트, MMR. 재현율이 0.8 아래로 떨어지면 예상 질문 생성
 - [ ] Telegram 봇 표시 이름·사진(`/setname`·`/setuserpic`)
 - [ ] 보조 도메인 `yeonghun.dev` (S-005, 사지 않기로 했지만 나중에 가능)
+- [ ] 검색엔진 등록 2~4주 뒤 — Search Console 색인 현황("크롤링됨 - 색인 안 됨" 원인), 검색어·노출·CTR로 title·description 손보기
+- [ ] JSON-LD `BreadcrumbList`(홈 > 프로젝트) — 선택, 프로젝트 목록 페이지가 생기면
 
 ### F. 문서 정리 (기록이 코드·결정보다 뒤처진 곳)
 설계와 어긋난 문서를 고치자는 제안이다. 고쳐도 되면 한 번에 정리한다.
