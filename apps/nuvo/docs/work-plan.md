@@ -25,7 +25,8 @@
 
 - [x] **2차 준비: 모바일 방식 비교** (11/06) — [mobile-options.md](mobile-options.md): Capacitor vs Expo(사진첩·백그라운드 업로드·구독·로그인·4.2 심사·재사용), 기기 간 같은 사진 판정 3단계 제안. 조사상 Expo 유리, 결정은 시제품 뒤(D-023)
 
-- [ ] **SEO·GEO** (11/10 점검) — [seo.md](seo.md) 체크리스트. 도메인 없이 지금 할 것: 파비콘·매니페스트, OG 이미지, 정적 랜딩(스크립트 없이 본문 보이게), 라우트 코드 나누기, JSON-LD·`llms.txt`, 점검 스크립트
+- [x] **SEO·GEO 1단계** (11/10, D-024) — [seo.md](seo.md): 파비콘·아이콘·매니페스트, OG 이미지, 정적 랜딩(스크립트 없이 본문), 화면별 나눠 불러오기(첫 JS 200→114KB), JSON-LD·`llms.txt`, robots·sitemap(도메인 변수), 점검 `scripts/seo-check.mjs`
+- [ ] **SEO·GEO 남은 것** — 랜딩 문구·FAQ를 지금 방향으로(가격·약관과), 도메인 뒤 `NUVO_SITE_URL`로 배포·검색 콘솔 등록, 앱 뒤 배너·유니버설 링크 ([seo.md](seo.md) 순서 2~4)
 
 ### B. 사람 작업이 먼저인 것
 - [ ] **도메인 결정·연결** ([developer-guide.md](developer-guide.md) 10단계) — 이게 풀리면 따라오는 코드·설정:

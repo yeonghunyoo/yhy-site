@@ -1,5 +1,0 @@
-# nuvo: 비공개 사진 서비스. 랜딩(/)만 검색에 노출한다 (docs/mvp.md "검색 노출")
-# 실제 차단은 X-Robots-Tag: noindex 헤더가 한다 — robots.txt는 요청일 뿐
-User-agent: *
-Allow: /$
-Disallow: /

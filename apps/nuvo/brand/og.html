@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- OG 이미지 원본 (1200×630). scripts/brand-assets.mjs가 찍어 src/assets/og.png로 저장한다. 문구는 src/pages/landing-copy.ts와 맞춘다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: "Pretendard"; src: url("../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2"); font-weight: 100 900; }
+  html, body { margin: 0; }
+  body { width: 1200px; height: 630px; background: #f8f5f1; color: #3a3530; font-family: "Pretendard", sans-serif; display: flex; overflow: hidden; }
+  .left { flex: 1; padding: 72px 0 64px 80px; display: flex; flex-direction: column; }
+  .mark { display: flex; align-items: center; gap: 16px; font-size: 34px; font-weight: 300; letter-spacing: .25em; }
+  .mark svg { width: 52px; height: 52px; }
+  h1 { margin: auto 0 0; font-size: 76px; font-weight: 300; line-height: 1.15; letter-spacing: -.02em; }
+  h1 em { font-style: normal; color: #a0573a; }
+  p { margin: 28px 0 0; font-size: 28px; line-height: 1.5; color: #6b645d; max-width: 600px; }
+  .right { width: 470px; position: relative; }
+  .grid { position: absolute; top: -40px; left: 10px; display: grid; grid-template-columns: repeat(3, 132px); gap: 16px; transform: rotate(-8deg); }
+  .tile { height: 168px; border-radius: 22px; }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="mark">
+      <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#a0573a"/><path d="M21 46V30a11 11 0 0 1 22 0v16" fill="none" stroke="#fbf8f4" stroke-width="7" stroke-linecap="round"/></svg>
+      nuvo
+    </div>
+    <h1>흩어진 사진을,<br /><em>한곳에.</em></h1>
+    <p>가족과 함께 쌓아가는 비공개 사진 앨범</p>
+  </div>
+  <div class="right">
+    <div class="grid">
+      <div class="tile" style="background:linear-gradient(135deg,#d9a37e,#5d7a8c)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#cad2c5,#7aa37a)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#f4f1de,#e07a5f)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#9a8c98,#f2e9e4)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#a0573a,#e9c9b0)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#5d7a8c,#cad2c5)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#e07a5f,#3d405b)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#f2e6d8,#9a8c98)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#7aa37a,#f4f1de)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#d9a37e,#f2e9e4)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#3d405b,#9a8c98)"></div>
+      <div class="tile" style="background:linear-gradient(135deg,#cad2c5,#d9a37e)"></div>
+    </div>
+  </div>
+</body>
+</html>

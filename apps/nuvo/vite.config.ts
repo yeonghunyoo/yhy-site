@@ -2,9 +2,11 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { nuvoSeo, nuvoSeoAbsolute } from "./seo/plugin";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cloudflare()],
+  // nuvoSeo: 랜딩 문구로 메타·정적 랜딩·robots·sitemap·llms.txt를 만든다 (docs/seo.md). 도메인은 빌드 환경변수 NUVO_SITE_URL
+  plugins: [react(), tailwindcss(), cloudflare(), nuvoSeo(), nuvoSeoAbsolute()],
   // ES 모듈 워커 → HEIC 디코더(WASM, 수 MB)는 HEIC 파일을 만났을 때만 받는다
   worker: { format: "es" },
   // 워커가 쓰는 의존성을 미리 묶어 둔다 (첫 사용 때 재최적화로 페이지가 새로고침되는 것 방지)

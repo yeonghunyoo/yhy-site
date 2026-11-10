@@ -12,6 +12,17 @@
 
 ---
 
+## 2026-11-10
+
+### D-024 · 확정 · SPA 랜딩을 빌드 때 정적 HTML로 미리 넣기 + 도메인은 빌드 변수
+- 문제: nuvo는 SPA라 스크립트 없이 랜딩이 빈 페이지 — 네이버 일부·AI 크롤러(GPTBot·ClaudeBot·PerplexityBot)는 본문을 못 봄
+- 고른 것: 빌드 플러그인(`seo/plugin.ts`)이 랜딩 문구(`src/pages/landing-copy.ts`)로 `index.html`의 `#root` 안에 같은 구조·클래스의 정적 랜딩을 넣음. React(`createRoot`)가 뜨면 갈아 끼움. 같은 `index.html`을 쓰는 다른 화면은 `theme-init.js`가 첫 페인트 전에 `data-route=app`을 붙여 숨김
+  - 본 것: (b) 랜딩만 별도 정적 파일 + Worker 라우팅, (c) 그대로(Google만), SSR·hydrate. 버린 이유: (b)는 라우팅·배포 변경이 큼, (c)는 GEO를 포기, SSR은 지금 크기에 과함
+  - 대가: 문구가 React 랜딩과 정적 랜딩 두 군데 마크업에 쓰임 → 문구는 한 파일, 마크업은 같은 클래스로 맞추고 `seo-check`가 h1·`<main>`·본문을 확인. 스크립트를 끈 사람은 다른 주소에서도 랜딩을 봄(그 화면들은 noindex라 검색 영향 없음)
+- 도메인은 코드에 쓰지 않고 빌드 환경변수 `NUVO_SITE_URL` 하나 — 있으면 canonical·`og:url`·절대 이미지 주소·sitemap·robots Sitemap 줄이 켜짐. 배포 명령에 붙여야 함([developer-guide.md](developer-guide.md))
+- 함께: 랜딩 외 화면 `lazy`(첫 JS 200→114KB), OG 이미지는 빌드 자산(다시 찍으면 주소가 바뀌어 메신저 캐시를 피함), 아이콘·OG는 `scripts/brand-assets.mjs`로 다시 찍음
+- 문서: [seo.md](seo.md)
+
 ## 2026-11-06
 
 ### D-023 · 제안 · 모바일은 Expo 쪽이 유리 — 11/04 "Capacitor로 시작" 제안을 재검토

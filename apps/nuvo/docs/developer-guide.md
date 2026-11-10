@@ -42,7 +42,7 @@
 
 1. [ ] 운영 DB에 마이그레이션 적용 (**배포보다 먼저**): `DATABASE_URL="$(cat apps/nuvo/.neon-url.local)" pnpm nuvo-db migrate` — 0004 구독·용량, 0005 신고·차단, 0006 삭제 요청, 0007 피드 "용량 가득" 알림. 0004는 기존 개인 사진함 한도를 10GB로, Space 한도를 0(소유자 몫)으로 바꿉니다
    - 접속 주소 파일 이름은 7단계에서 저장한 것을 씁니다
-2. [ ] 배포: 루트에서 `pnpm nuvo deploy` (`pnpm deploy`는 pnpm 내장 명령이라 쓰지 않습니다)
+2. [ ] 배포: 루트에서 `pnpm nuvo deploy` (`pnpm deploy`는 pnpm 내장 명령이라 쓰지 않습니다). **도메인이 있으면** `NUVO_SITE_URL=https://도메인 pnpm nuvo deploy` — canonical·OG 절대 주소·sitemap이 켜집니다([seo.md](seo.md), D-024). 배포 전에 `node apps/nuvo/scripts/seo-check.mjs`(같은 변수로)
 3. [ ] **운영자 계정 구독 켜기** — 배포하면 모든 계정이 "구독 없음"이라 내 사진함 업로드·Space 만들기가 막힙니다. 아래 "수동 구독" SQL로 본인(과 먼저 써 볼 가족 대표) 계정을 켭니다. 초대받은 가족은 구독 없이 그 Space를 보고 올릴 수 있습니다
 4. [ ] 헤더 확인:
    ```sh
