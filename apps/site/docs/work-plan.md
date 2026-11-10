@@ -13,13 +13,13 @@
 | 0–4 MVP (인프라·프론트·인증·레터·어드민) | 코드 완료. `https://bettercurl.dev` 운영 중(11/04 커스텀 도메인, 예전 workers.dev 주소는 301 — 11/10 배포). 어드민 화면 5개(지표·레터·사용자·챗 로그·사용량) 완료. **메일 경로·어드민 운영 확인이 남음** |
 | 홈 개편 | 11/05 3D 픽셀 히어로(임시 흉상) + 본문 S-010 + 썸네일 S-011 + 제목 글꼴 Quantico S-012 + 챗 바 |
 | SEO·GEO | **코드 완료·운영 반영(11/10 `e9f3ee09`)**: `<head>`·robots·sitemap·OG(해시 주소)·JSON-LD·`llms.txt`·끝 슬래시 301·apple-touch-icon, 배포 전 자동 점검(S-015). Lighthouse 모바일 홈 89~92·프로젝트 100, SEO 100. **남은 것은 사람 작업**: 검색엔진 등록, Always Use HTTPS, Web Analytics 결정, 홈 description |
-| 블로그(Notion CMS) | 제안만(S-016). overview에서 비범위 — 하려면 범위 결정부터 |
+| 8 블로그 | 11/10 범위에 넣음(S-017). 설계 [08-blog.md](08-blog.md), Notion "블로그 글" DB 만듦. **구현 전** — Notion 통합 토큰이 필요 |
 | 5–6 챗+RAG | 운영에 켜짐(11/03 테스트 기간). 운영 청크 247 = 벡터 247, 기준 질문 58개 경로·재현율 100%(11/04). **완료 기준 확인 전** |
 | 7 3D | 히어로로 앞당겨 반영. 실제 얼굴 스캔 모델은 후순위 |
 
 ## 남은 일
 
-**11/10 우선순위**(사람 작업, 위에서부터): ① Google Search Console·네이버·Bing 등록 + sitemap 제출(B) ② Cloudflare Always Use HTTPS·Block AI bots 확인(B) ③ Web Analytics 쓸지·홈 description 문구(D) ④ 메일 경로·어드민 운영 확인(C) ⑤ 실기기 2대(C) ⑥ 리치 결과 테스트·카카오 공유 디버거(C) ⑦ 분석 토큰(B) ⑧ 블로그 범위 결정(D, S-016)
+**11/10 우선순위**(사람 작업, 위에서부터): ① Google Search Console·네이버·Bing 등록 + sitemap 제출(B) ② Cloudflare Always Use HTTPS·Block AI bots 확인(B) ③ Web Analytics 쓸지·홈 description 문구(D) ④ 메일 경로·어드민 운영 확인(C) ⑤ 실기기 2대(C) ⑥ 리치 결과 테스트·카카오 공유 디버거(C) ⑦ 분석 토큰(B) ⑧ 블로그: Notion 통합 토큰 발급·DB 공유(B) → 구현(A)
 
 ### A. 지금 바로 할 수 있는 코드
 - [x] **JSON-LD·`llms.txt`**(11/09, 배포 전) — 홈 `Person`+`WebSite`, 프로젝트 상세 `CreativeWork`, `src/pages/llms.txt.ts`(projects 컬렉션 + `src/data/career.ts`). [01-frontend.md](01-frontend.md) "SEO·GEO". 배포 뒤 리치 결과 테스트로 확인
@@ -31,6 +31,7 @@
 - [ ] **답변 모델 다시 비교**(칩·기준 질문 뒤) — 실제 문서로 Gemma 4 vs Qwen3 14문항, 05-06 "모델 비교"에 표 추가. chat-rag-setup 3
 - [ ] **404 화면의 언어 전환 링크** — 없는 주소에서 "English"가 `/en/<없는 주소>/`로 가 또 404. 404에서는 언어 홈(`/en/`)으로. `src/components/ui/Header.astro`(11/09 체크리스트 점검에서 발견)
 - [ ] **`CF_ACCOUNT_ID`를 `wrangler.jsonc` `vars`로**(정하면) — 계정 ID는 비밀이 아니라 코드에 두면 운영자가 넣을 비밀이 토큰 하나로 준다. 운영에 같은 이름 비밀이 이미 있으면 지우고 옮긴다(이름이 겹치면 배포가 막힌다)
+- [ ] **블로그 구현**([08-blog.md](08-blog.md), S-017) — `scripts/blog-sync.mjs`(Notion 마크다운 → 정리된 HTML, 사진 → webp → R2 `blog/`), `src/lib/server/blog.ts`, `/{locale}/blog/`·`/{locale}/blog/{slug}/`·`/blog/img/*`·`/sitemap-blog.xml`, robots·머리말 링크·`BlogPosting`, `seo-check --url`. 08-blog "완료 기준"
 - [ ] **과정 보기 구현**(D의 공개 범위를 정한 뒤) — SSE `step` 이벤트 + 답 위 진행 줄·접힌 요약. chat-rag-setup 5
 
 ### B. 사람 작업이 먼저인 것
@@ -45,6 +46,8 @@
   - [ ] WAF 속도 제한 규칙(`/api/` IP당 10초 20회), Bot Fight Mode — 도메인이 붙었으니 이제 가능
 - [ ] **Cloudflare Always Use HTTPS** — SSL/TLS → Edge Certificates. 지금 http로 오면 200(11/09 점검)
 - [ ] **검색 노출(운영자)** — 네이버 서치어드바이저도(11/09 체크리스트). AI 크롤러 차단(Block AI bots) 꺼져 있는지 확인, Google Search Console·Bing Webmaster Tools 등록 + sitemap 제출. [01-frontend.md](01-frontend.md) "운영자가 할 일". 11/09 밖에서 점검: 운영 `robots.txt`에 Cloudflare가 덧붙인 내용 없음(관리형 robots.txt 꺼짐), GPTBot·ClaudeBot·PerplexityBot·Googlebot·bingbot 이름으로 요청하면 200(이름만 바꾼 요청이라 Block AI bots 꺼짐의 확정은 아님 — 대시보드에서 확인), DNS TXT에 `google-site-verification` 없음 → Search Console은 아직 미등록으로 보인다. 등록은 "도메인" 속성 + Cloudflare DNS TXT가 간단
+- [ ] **Notion 통합 토큰**(블로그) — notion.so/profile/integrations에서 내부 통합(권한: 콘텐츠 읽기만) → "bettercurl 블로그" 페이지의 ⋯ → 연결에 그 통합 추가(이 페이지·DB만). 토큰은 로컬 `apps/site/.env`의 `NOTION_TOKEN` 또는 클라우드 환경의 네트워크 비밀(`api.notion.com`). [08-blog.md](08-blog.md) "Notion"
+- [ ] **첫 글** — Notion "🧪 핸드오프 실험"을 "블로그 글" DB로 옮기거나 복제(slug `handoff-experiment`, 요약, 발행일, 공개 체크)
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
@@ -73,7 +76,7 @@
 - [ ] Cloudflare Web Analytics 쓸지, 변경 이력을 git에서 자동 생성할지 (overview "2차 디테일"). 11/09: 대시보드에서 이미 켜져 비콘이 자동으로 붙는데 CSP가 막는다(콘솔 오류, 수집 0) — 쓰면 CSP 허용, 안 쓰면 끈다
 - [ ] 홈 description 문구 — 지금 36자, 권장 40~120자(`seo:check` 경고). [01-frontend.md](01-frontend.md) "11/09 SEO 체크리스트 점검"
 - [ ] 홈 프로젝트 목록의 흐린 항목 대비 — 화면 가운데가 아닌 프로젝트를 흐리게 해서 Lighthouse 접근성 96(대비 부족). 디자인 의도라 둘지, 흐림을 줄일지(S-010)
-- [ ] **블로그(Notion CMS)를 범위에 넣을지**(S-016 제안) — overview "비범위: 블로그". 넣으면 방식(빌드 때 가져오기 권장)·이미지 보관·공개할 페이지 기준을 정하고 설계 문서부터. Notion 확인 결과는 S-016
+- [x] **블로그(Notion CMS)를 범위에 넣을지** → 넣음, Notion에서 쓰고 동기화가 R2 `blog/`로, 사이트는 요청 때 읽기(11/10, S-017)
 - [ ] Notion "프로젝트 갤러리"의 회사 프로젝트(Let's Bee·MyCONECT·모두맘, 개인 Aquanote)를 사이트 프로젝트 페이지로 낼지 — 지금은 경력·RAG(이력서)에만 있다. 내면 무엇·왜·결과와 이미지가 필요
 
 ### E. 때가 되면 (2차·선택)
