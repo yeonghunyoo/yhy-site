@@ -42,6 +42,7 @@
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
+- [x] **배포** — 11/10 `e9f3ee09`(클라우드 세션, `main` f1d8fb0까지: S-014 workers.dev 301, JSON-LD·`llms.txt`, S-015 SEO 후속·3D 늦은 시작). 배포 스크립트의 SEO 점검 통과(오류 0, 경고 1 — 홈 description 길이). 비밀값 그대로, RAG 동기화 건너뜀
 - [x] **배포** — 11/06 `8052616d`(클라우드 세션, `main` aebb9e7까지: 11/05 홈 개편·챗 바·Quantico, 11/06 스냅 잠금·드래그 막기·눈 숫자·히어로 문구 S-013). 비밀값은 그대로(`.prod.vars` 없음), RAG 동기화는 건너뜀
 - [ ] **메일 경로**([resend-setup.md](guides/resend-setup.md) "확인", [domain-setup.md](guides/domain-setup.md) "확인")
   - [ ] 로그인 없이 레터 → `letters@bettercurl.dev` → 개인 메일 도착 + Telegram 📮, 답장 누르면 방문자 주소
@@ -53,8 +54,9 @@
 - [ ] **챗 내용 확인** — "연락처 알려줘" → `hello@bettercurl.dev`(개인 Gmail이 나오면 RAG 운영 반영이 안 된 것), "What did you do at holich?" 재현
 - [ ] **운영 `/media`** — Forest 이미지 200, 지운 PDF 404. [06-ingest.md](06-ingest.md) 구현 메모
 - [ ] **실기기 2대(iOS Safari, Android Chrome)** — 레이아웃, 3D 히어로 성능, 챗 키보드에 입력창이 보이는지, 챗 시트·흐름도 터치 4건("실기기 재확인 필요", [browser-support.md](guides/browser-support.md))
-- [ ] **Lighthouse 모바일 90+** — 3D 히어로를 넣은 뒤 다시 잰다. [01-frontend.md](01-frontend.md) "완료 기준". 11/09 운영(11/06 배포본) 홈 78(TBT 930ms)·프로젝트 상세 100 → 3D 시작 순서를 고쳤다(S-015, 배포 전). 배포 뒤 다시 잰다
-- [ ] **11/09 SEO 후속 배포 뒤 확인** — `curl -sI https://bettercurl.dev/ko` → 301 `/ko/`, `og:image`가 `/_astro/og.*.png`로 200, `/apple-touch-icon.png` 200, `/llms.txt` 200, 리치 결과 테스트. 카카오 공유 디버거에서 새 OG 이미지
+- [ ] **Lighthouse 모바일 90+** — 3D 히어로를 넣은 뒤 다시 잰다. [01-frontend.md](01-frontend.md) "완료 기준". 11/09 운영(11/06 배포본) 홈 78(TBT 930ms)·프로젝트 상세 100 → 3D 시작 순서를 고쳤다(S-015). **11/10 배포 뒤 홈 89~92(3회, TBT 310~400ms, LCP 1.5s, CLS 0)·프로젝트 상세 100**. 남은 TBT는 WebGL 컨텍스트 생성. 실기기 확인이 남음
+- [x] **11/09 SEO 후속 배포 뒤 확인**(11/10) — `/ko`·`/en/privacy`·`/ko/projects/nuvo` → 301 슬래시(쿼리 유지), workers.dev → 301 도메인(POST 308), `og:image` `/_astro/og.CXa257X_.png` 200, `/apple-touch-icon.png`·`/llms.txt` 200, 없는 주소 404, JSON-LD 들어감
+- [ ] **리치 결과 테스트·카카오 공유 디버거**(사람) — search.google.com/test/rich-results에 홈·프로젝트 주소, 카카오에서 새 OG 이미지
 
 ### D. 정해야 할 것
 - [ ] 챗 고정 답변(연락·무관 작업·근거 없음)을 하루 20턴에서 뺄지

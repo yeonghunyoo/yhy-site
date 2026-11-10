@@ -26,7 +26,7 @@
   - 점검: 빌드에 넣기(루트 `pnpm build`가 막혀 다른 앱 작업까지 멈춘다) / CI(배포가 로컬 wrangler라 CI가 없다) / 배포 스크립트(채택)
   - 3D: 첫 스크롤 때 시작(점수는 가장 좋지만 맨 위에서 눈 숫자가 안 움직인다) / 웹 워커 OffscreenCanvas(큰 공사) / 늦은 시작 + 쪼개기(채택)
 - 이유: 사용자가 준 SEO 실무 체크리스트(11/09)로 점검한 결과. 운영 홈 Lighthouse 모바일 78(TBT 930ms), 307, 고정 OG 주소, 수동 점검뿐이던 것을 고친다
-- 자료: 로컬 4배 느린 CPU에서 홈 TBT 150~370ms → 50~120ms, 남은 긴 작업은 WebGL 컨텍스트 생성(약 100ms). 운영 수치는 배포 뒤 다시 잰다
+- 자료: 로컬 4배 느린 CPU에서 홈 TBT 150~370ms → 50~120ms, 남은 긴 작업은 WebGL 컨텍스트 생성(약 100ms). 11/10 배포(`e9f3ee09`) 뒤 운영 Lighthouse 모바일 홈 78 → 89~92(TBT 930 → 310~400ms)
 - 문서: [01-frontend.md](01-frontend.md) "SEO·GEO" 11/09·"자동 점검", [guides/3d-hero.md](guides/3d-hero.md) "시작 순서(11/09)", [guides/domain-setup.md](guides/domain-setup.md) "workers.dev 주소"
 
 ## 2026-11-07
