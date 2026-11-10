@@ -12,7 +12,8 @@
     "language": "English",
     "menu": "메뉴",
     "skip": "본문으로 건너뛰기",
-    "career": "경력"
+    "career": "경력",
+    "blog": "블로그"
   },
   "intro": {
     "name": "yhy",
@@ -179,5 +180,16 @@
     "askTitle": "함께 만들 일이 있다면.",
     "askNote": "로그인 없이 보낼 수 있고, 답장은 적어 주신 메일로 갑니다.",
     "or": "또는"
+  },
+  "blog": {
+    "title": "블로그",
+    "description": "만들면서 겪은 문제와 실험 기록 — iOS, 에이전트, Cloudflare로 서비스를 만들며 배운 것을 씁니다.",
+    "empty": "아직 글이 없어요.",
+    "back": "← 블로그",
+    "minutes": "{n}분",
+    "toc": "목차",
+    "published": "발행",
+    "updated": "고침",
+    "all": "모든 글"
   }
 }

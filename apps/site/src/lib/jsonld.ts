@@ -88,3 +88,54 @@ export function projectJsonLd(site: URL, locale: Locale, project: ProjectLike): 
 export function serializeJsonLd(data: unknown): string {
   return JSON.stringify(data).replace(/</g, '\\u003c');
 }
+
+interface BlogLike {
+  slug: string;
+  locale: Locale;
+  title: string;
+  summary: string;
+  date: string;
+  updated: string;
+  tags: string[];
+  cover?: { url: string };
+}
+
+/** 블로그 목록: Blog + 글 목록 */
+export function blogJsonLd(site: URL, locale: Locale, posts: BlogLike[]): Node {
+  const dict = t(locale);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${absolute(site, `/${locale}/blog/`)}#blog`,
+    name: `${dict.blog.title} — ${dict.site.name}`,
+    description: dict.blog.description,
+    url: absolute(site, `/${locale}/blog/`),
+    inLanguage: locale,
+    author: { '@id': personId(site) },
+    isPartOf: { '@id': websiteId(site) },
+    blogPost: posts.map((p) => ({ '@type': 'BlogPosting', headline: p.title, url: absolute(site, `/${locale}/blog/${p.slug}/`), datePublished: p.date })),
+  };
+}
+
+/** 블로그 글: BlogPosting(docs/08-blog.md) */
+export function blogPostJsonLd(site: URL, post: BlogLike): Node {
+  const dict = t(post.locale);
+  const url = absolute(site, `/${post.locale}/blog/${post.slug}/`);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    '@id': `${url}#post`,
+    headline: post.title,
+    description: post.summary,
+    url,
+    mainEntityOfPage: url,
+    inLanguage: post.locale,
+    datePublished: post.date,
+    dateModified: post.updated,
+    ...(post.tags.length && { keywords: post.tags.join(', ') }),
+    ...(post.cover && { image: new URL(post.cover.url, site).href }),
+    author: { '@type': 'Person', '@id': personId(site), name: dict.site.person, url: absolute(site, `/${post.locale}/`) },
+    publisher: { '@id': personId(site) },
+    isPartOf: { '@id': `${absolute(site, `/${post.locale}/blog/`)}#blog` },
+  };
+}

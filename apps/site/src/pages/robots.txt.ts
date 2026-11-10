@@ -6,6 +6,6 @@ export const prerender = true;
 
 export const GET: APIRoute = ({ site }) =>
   new Response(
-    ['User-agent: *', 'Disallow: /admin', 'Disallow: /api/', 'Disallow: /auth/', 'Disallow: /media/', '', `Sitemap: ${new URL('/sitemap.xml', site).href}`, ''].join('\n'),
+    ['User-agent: *', 'Disallow: /admin', 'Disallow: /api/', 'Disallow: /auth/', 'Disallow: /media/', '', `Sitemap: ${new URL('/sitemap.xml', site).href}`, `Sitemap: ${new URL('/sitemap-blog.xml', site).href}`, ''].join('\n'),
     { headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
   );

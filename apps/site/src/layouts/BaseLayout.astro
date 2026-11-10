@@ -5,7 +5,7 @@ import Header from '../components/ui/Header.astro';
 import Footer from '../components/ui/Footer.astro';
 import Overlay from '../components/islands/Overlay';
 import ChatDock from '../components/islands/ChatDock';
-import { locales, t, type Locale } from '../i18n';
+import { locales, otherLocale, t, type Locale } from '../i18n';
 import { absolute, alternates, ogLocale } from '../lib/seo';
 import { serializeJsonLd } from '../lib/jsonld';
 // 공유 미리보기 이미지(11/05, 11/09 빌드 자산으로): 파일 이름에 내용 해시가 붙어(/_astro/og.<hash>.png) 다시 찍으면 주소가 바뀐다 —
@@ -22,11 +22,13 @@ interface Props {
   available?: readonly Locale[];
   /** 404 등 색인하지 않는 페이지 */
   noindex?: boolean;
+  /** 공유 미리보기 이미지(블로그 글의 첫 사진 등). 없으면 사이트 기본 OG */
+  image?: { url: string; width: number; height: number; alt?: string };
   /** 구조화 데이터(src/lib/jsonld.ts). 홈 Person+WebSite, 프로젝트 상세 CreativeWork */
   jsonLd?: unknown;
 }
 
-const { locale, title, description, type = 'website', available = locales, noindex = false, jsonLd } = Astro.props;
+const { locale, title, description, type = 'website', available = locales, noindex = false, jsonLd, image } = Astro.props;
 const dict = t(locale);
 // 탭 제목(11/05): 홈 `Yeonghun.y | iOS 개발자 · 빌더`, 그 밖 `페이지 — Yeonghun.y`(탭이 많아도 앞부분으로 구분). 크롬 탭 호버 카드도 이 제목을 보여 준다
 const pageTitle = title ? `${title} — ${dict.site.name}` : `${dict.site.name} | ${dict.site.role}`;
@@ -36,7 +38,11 @@ const site = Astro.site!;
 const path = Astro.url.pathname;
 const canonical = absolute(site, path);
 const alts = alternates(path, available);
-const ogUrl = new URL(ogImage.src, site).href;
+const og = image
+  ? { url: new URL(image.url, site).href, width: image.width, height: image.height, alt: image.alt || pageTitle }
+  : { url: new URL(ogImage.src, site).href, width: ogImage.width, height: ogImage.height, alt: dict.site.ogAlt };
+// 언어 전환: 이 페이지의 다른 언어판이 없으면(한 언어뿐인 글·404) 그 언어 홈으로(11/10)
+const switchHref = alts.find((a) => a.locale !== locale)?.path ?? `/${otherLocale(locale)}/`;
 // 홈은 챗 버튼이 처음엔 숨어 있다가 프로젝트가 나올 때쯤 나온다(src/lib/chat-fab.ts) — 깜빡임 없게 서버에서 숨긴 채로
 const isHome = /^\/(ko|en)\/?$/.test(path);
 ---
@@ -66,14 +72,14 @@ const isHome = /^\/(ko|en)\/?$/.test(path);
           <meta property="og:url" content={canonical} />
           <meta property="og:locale" content={ogLocale[locale]} />
           {alts.filter((a) => a.locale !== locale).map((a) => <meta property="og:locale:alternate" content={ogLocale[a.locale]} />)}
-          <meta property="og:image" content={ogUrl} />
-          <meta property="og:image:width" content={String(ogImage.width)} />
-          <meta property="og:image:height" content={String(ogImage.height)} />
-          <meta property="og:image:alt" content={dict.site.ogAlt} />
+          <meta property="og:image" content={og.url} />
+          <meta property="og:image:width" content={String(og.width)} />
+          <meta property="og:image:height" content={String(og.height)} />
+          <meta property="og:image:alt" content={og.alt} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={pageTitle} />
           <meta name="twitter:description" content={pageDescription} />
-          <meta name="twitter:image" content={ogUrl} />
+          <meta name="twitter:image" content={og.url} />
           {/* 실행되지 않는 데이터 블록이라 CSP와 상관없다 */}
           {jsonLd && <script type="application/ld+json" is:inline set:html={serializeJsonLd(jsonLd)} />}
           <link rel="alternate" type="text/plain" href={new URL('/llms.txt', site).href} title="llms.txt" />
@@ -87,7 +93,7 @@ const isHome = /^\/(ko|en)\/?$/.test(path);
       class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-[var(--radius)] focus:bg-surface focus:px-4 focus:py-2"
       >{dict.nav.skip}</a
     >
-    <Header locale={locale} />
+    <Header locale={locale} switchHref={switchHref} />
     <main id="main" class="flex-1">
       <slot />
     </main>

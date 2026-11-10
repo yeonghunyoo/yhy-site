@@ -10,7 +10,7 @@ const locale = isLocale(first) ? first : defaultLocale;
 const ko = locale === 'ko';
 ---
 
-<BaseLayout locale={locale} title="404" noindex>
+<BaseLayout locale={locale} title="404" noindex available={[locale]}>
   <section class="container-page grid min-h-[60dvh] place-items-center py-16 text-center">
     <div>
       <p class="font-mono text-sm text-muted">404</p>

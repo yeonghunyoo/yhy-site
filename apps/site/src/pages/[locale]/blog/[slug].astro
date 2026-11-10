@@ -1,0 +1,57 @@
+---
+// 블로그 글(docs/08-blog.md "사이트", S-017) — 요청 때 R2 blog/posts/{slug}.{locale}.json에서. 본문 HTML은 동기화가 정리한 것
+// (scripts/blog/convert.mjs: 허용 태그만, style·스크립트 없음 → CSP 그대로). 엣지 캐시는 src/worker.ts
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { isLocale, t } from '../../../i18n';
+import { getPost, localesOf } from '../../../lib/server/blog';
+import { blogPostJsonLd } from '../../../lib/jsonld';
+
+export const prerender = false;
+
+const { locale, slug = '' } = Astro.params;
+if (!isLocale(locale)) return Astro.rewrite('/404');
+const post = await getPost(slug, locale);
+if (!post) return Astro.rewrite('/404');
+const dict = t(locale);
+const { meta, html, toc } = post;
+const available = await localesOf(slug);
+const fmt = new Intl.DateTimeFormat(locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const updated = meta.updated.slice(0, 10);
+Astro.response.headers.set('Cache-Control', 'public, max-age=60');
+---
+
+<BaseLayout
+  locale={locale}
+  title={meta.title}
+  description={meta.summary}
+  type="article"
+  available={available}
+  image={meta.cover ? { ...meta.cover, alt: meta.title } : undefined}
+  jsonLd={blogPostJsonLd(Astro.site!, meta)}
+>
+  <article class="container-page py-10 md:py-16">
+    <a href={`/${locale}/blog/`} class="-ml-2 inline-flex min-h-11 items-center px-2 text-sm text-muted">{dict.blog.back}</a>
+    <h1 class="mt-4 max-w-[30ch] font-display text-3xl font-bold leading-tight md:text-5xl">{meta.title}</h1>
+    <p class="mt-4 font-mono text-sm text-muted">
+      <time datetime={meta.date}>{fmt.format(new Date(meta.date))}</time>
+      {updated > meta.date && <> · {dict.blog.updated} <time datetime={updated}>{fmt.format(new Date(updated))}</time></>}
+      {' · '}{dict.blog.minutes.replace('{n}', String(meta.minutes))}
+      {meta.tags.length > 0 && <> · {meta.tags.join(' · ')}</>}
+    </p>
+    {
+      toc.length >= 3 && (
+        <nav class="blog-toc mt-8" aria-label={dict.blog.toc}>
+          <p class="font-mono text-xs text-muted">{dict.blog.toc}</p>
+          <ol>
+            {toc.map((h) => (
+              <li class:list={{ sub: h.depth === 3 }}>
+                <a href={`#${h.id}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+    <div class="prose-body blog-body mt-10" set:html={html} />
+  </article>
+</BaseLayout>

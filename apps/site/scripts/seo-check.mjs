@@ -1,12 +1,20 @@
 // SEO 회귀 점검(11/09, docs/01-frontend.md "SEO·GEO" → "자동 점검", S-015). 빌드 결과(dist/client)의 HTML·sitemap·robots를 읽는다.
 // 사용: pnpm seo:check (먼저 pnpm build). 배포 스크립트(scripts/deploy.sh)가 빌드 뒤 돌리고, 오류가 있으면 배포를 멈춘다.
+//       pnpm seo:check --url https://bettercurl.dev — 블로그처럼 빌드에 없는 페이지(요청 때 그림)를 운영·로컬 주소에서 받아 같은 규칙으로(11/10, docs/08-blog.md).
+//       /sitemap-blog.xml의 주소를 그 origin에서 받는다
 // 오류 = 검색·공유에 바로 문제가 되는 것, 경고 = 고치면 좋은 것(종료 코드에 영향 없음). 라이브러리 없이 정규식으로 읽는다 — 빌드 HTML은 Astro가 만든 모양이 일정하다.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('../dist/client', import.meta.url)));
-if (!existsSync(ROOT)) {
+const urlArg = process.argv.indexOf('--url');
+const ORIGIN = urlArg > -1 ? process.argv[urlArg + 1]?.replace(/\/$/, '') : null;
+if (urlArg > -1 && !/^https?:\/\//.test(ORIGIN ?? '')) {
+  console.error('--url 뒤에 주소(https://…)');
+  process.exit(1);
+}
+if (!ORIGIN && !existsSync(ROOT)) {
   console.error('dist/client가 없다 — 먼저 pnpm build');
   process.exit(1);
 }
@@ -40,9 +48,15 @@ function htmlFiles(dir) {
 const LIMIT = { title: { ko: 40, en: 65 }, desc: { ko: [40, 120], en: [70, 170] } };
 const pages = [];
 
-for (const file of htmlFiles(ROOT).sort()) {
-  const path = '/' + relative(ROOT, file).replace(/index\.html$/, '');
-  const html = readFileSync(file, 'utf8');
+/** og:image 파일이 있는지 — 빌드 모드는 dist에서, 주소 모드는 그 origin에 HEAD */
+async function ogExists(u) {
+  const path = new URL(u).pathname;
+  if (!ORIGIN) return existsSync(join(ROOT, path));
+  const res = await fetch(`${ORIGIN}${path}`, { method: 'HEAD' }).catch(() => null);
+  return Boolean(res?.ok);
+}
+
+async function checkPage(path, html) {
   const head = html.slice(0, html.indexOf('</head>'));
   const metas = tagsOf(head, 'meta');
   const links = tagsOf(head, 'link');
@@ -67,7 +81,7 @@ for (const file of htmlFiles(ROOT).sort()) {
   if (!desc) err(path, 'description 없음');
   if (!linkHrefs('icon').length) err(path, '파비콘 없음');
   if (!linkHrefs('apple-touch-icon').length) warn(path, 'apple-touch-icon 없음');
-  if (noindex) continue; // 아래는 색인 페이지만
+  if (noindex) return; // 아래는 색인 페이지만
 
   const lim = LIMIT.title[locale] ?? 65;
   if (title && title.length > lim) warn(path, `title ${title.length}자(권장 ${lim}자 이내): ${title}`);
@@ -87,7 +101,7 @@ for (const file of htmlFiles(ROOT).sort()) {
   const ogImage = meta('og:image')[0];
   if (ogImage) {
     if (!/^https:\/\//.test(ogImage)) err(path, `og:image가 절대 주소가 아니다: ${ogImage}`);
-    else if (!existsSync(join(ROOT, new URL(ogImage).pathname))) err(path, `og:image 파일이 빌드에 없다: ${ogImage}`);
+    else if (!(await ogExists(ogImage))) err(path, `og:image 파일이 없다: ${ogImage}`);
   }
 
   // 3. 다국어
@@ -125,6 +139,27 @@ for (const file of htmlFiles(ROOT).sort()) {
   }
 }
 
+// ── 모드 ───────────────────────────────────────────────────
+let sitemapLocs = [];
+if (ORIGIN) {
+  const sm = await fetch(`${ORIGIN}/sitemap-blog.xml`).catch(() => null);
+  if (!sm?.ok) err('sitemap-blog.xml', `받을 수 없다(HTTP ${sm?.status ?? '연결 실패'})`);
+  else sitemapLocs = [...(await sm.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => decode(m[1]));
+  for (const loc of sitemapLocs) {
+    const path = new URL(loc).pathname;
+    const res = await fetch(`${ORIGIN}${path}`).catch(() => null);
+    if (!res?.ok) {
+      err(path, `HTTP ${res?.status ?? '연결 실패'}`);
+      continue;
+    }
+    await checkPage(path, await res.text());
+  }
+  const robots = await fetch(`${ORIGIN}/robots.txt`).then((r) => (r.ok ? r.text() : ''), () => '');
+  if (!/^Sitemap: \S+\/sitemap-blog\.xml$/m.test(robots)) err('robots.txt', 'sitemap-blog.xml 줄 없음');
+} else {
+  for (const file of htmlFiles(ROOT).sort()) await checkPage('/' + relative(ROOT, file).replace(/index\.html$/, ''), readFileSync(file, 'utf8'));
+}
+
 // ── 페이지 사이 ────────────────────────────────────────────
 const indexed = pages.filter((p) => !p.noindex);
 // 제목·설명 중복: 서로 hreflang 대응인 페이지(같은 글의 ko·en)끼리는 고유명사 제목이 같을 수 있어 뺀다
@@ -143,6 +178,7 @@ for (const p of indexed) {
   for (const h of p.hreflang) {
     if (h.lang === 'x-default') continue;
     const q = byUrl.get(h.href);
+    if (!q && ORIGIN) continue; // 주소 모드는 블로그 sitemap만 받는다 — 밖의 대상은 건너뛴다
     if (!q) err(p.path, `hreflang ${h.lang} 대상이 색인 페이지가 아니다: ${h.href}`);
     else if (!q.hreflang.some((b) => b.href === p.canonical)) err(p.path, `hreflang이 한쪽으로만 간다: ${h.href}`);
   }
@@ -150,7 +186,10 @@ for (const p of indexed) {
 
 // ── 4. sitemap·robots·llms.txt ────────────────────────────
 const sitemapFile = join(ROOT, 'sitemap.xml');
-if (!existsSync(sitemapFile)) err('sitemap.xml', '없음');
+if (ORIGIN) {
+  // 주소 모드: 블로그 sitemap의 주소 = 그 페이지 canonical
+  for (const p of indexed) if (!sitemapLocs.includes(p.canonical)) err('sitemap-blog.xml', `canonical이 sitemap 주소와 다르다: ${p.canonical}`);
+} else if (!existsSync(sitemapFile)) err('sitemap.xml', '없음');
 else {
   const locs = [...readFileSync(sitemapFile, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => decode(m[1]));
   const canonicals = new Set(indexed.map((p) => p.canonical).filter(Boolean));
@@ -158,13 +197,15 @@ else {
   for (const u of canonicals) if (!locs.includes(u)) err('sitemap.xml', `빠진 페이지: ${u}`);
 }
 const robotsFile = join(ROOT, 'robots.txt');
-if (!existsSync(robotsFile)) err('robots.txt', '없음');
+if (ORIGIN) {
+  /* robots는 위에서 */
+} else if (!existsSync(robotsFile)) err('robots.txt', '없음');
 else {
   const robots = readFileSync(robotsFile, 'utf8');
   if (!/^Sitemap: https:\/\/\S+\/sitemap\.xml$/m.test(robots)) err('robots.txt', 'Sitemap 줄 없음');
   if (/^Disallow: \/\s*$/m.test(robots)) err('robots.txt', '사이트 전체를 막고 있다(Disallow: /)');
 }
-if (!existsSync(join(ROOT, 'llms.txt'))) warn('llms.txt', '없음');
+if (!ORIGIN && !existsSync(join(ROOT, 'llms.txt'))) warn('llms.txt', '없음');
 
 // ── 결과 ──────────────────────────────────────────────────
 console.log(`SEO 점검: 페이지 ${pages.length}(색인 ${indexed.length}) · 오류 ${errors.length} · 경고 ${warnings.length}`);

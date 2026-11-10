@@ -60,6 +60,7 @@ Better Auth가 만드는 4개 테이블 위에 서비스 테이블을 얹는다(
 | `AI_DAILY_NEURON_CAP` · `CHAT_DAILY_TURN_CAP` · `MAIL_DAILY_CAP` · `MAIL_MONTHLY_CAP` · `LETTER_DAILY_CAP` | 사이트 전체 일일·월 상한(비우면 기본값, [guides/cost-guard.md](guides/cost-guard.md)) | 11/03 |
 | `KILL_LOGIN_MAIL` · `KILL_LETTERS` | 긴급 차단 스위치(1이면 중지) | 11/03 |
 | `CF_ANALYTICS_TOKEN` · `CF_ACCOUNT_ID` | `/admin/usage`의 Cloudflare 통계(분석 읽기 전용 토큰) | 11/03 |
+| `NOTION_TOKEN` | 블로그 동기화(`pnpm blog:sync`)만 — Notion 내부 통합, 읽기 전용, "bettercurl 블로그" 페이지에만 연결. **Worker에는 넣지 않는다**(로컬 `.env` 또는 클라우드 환경의 `api.notion.com` 네트워크 비밀). [08-blog.md](08-blog.md) | 11/10 |
 | `CHAT_ENABLED` | `1`이면 `/api/chat` 열림 | 2차 |
 | `RAG_SYNC_TOKEN` | 벡터 갱신 API(`POST /api/admin/rag/reindex`)를 관리자 세션 없이 부르는 토큰(32바이트 이상 무작위). 운영 비밀 + 로컬 `.prod.vars`(배포·`rag:sync:remote`가 읽는다). 비우면 세션으로만 | 11/04 |
 | `CHAT_MODEL` | 답변 모델 덮어쓰기(비우면 `src/lib/server/ai.ts` 기본값) — 모델 비교용 | 2차, 선택 |

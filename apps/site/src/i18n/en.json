@@ -12,7 +12,8 @@
     "language": "한국어",
     "menu": "Menu",
     "skip": "Skip to content",
-    "career": "Career"
+    "career": "Career",
+    "blog": "Blog"
   },
   "intro": {
     "name": "yhy",
@@ -179,5 +180,16 @@
     "askTitle": "Something to build together?",
     "askNote": "No sign-in needed; replies go to the email you leave.",
     "or": "or"
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Notes from building things — problems, experiments and lessons from shipping with iOS, agents and Cloudflare.",
+    "empty": "No posts yet.",
+    "back": "← Blog",
+    "minutes": "{n} min read",
+    "toc": "Contents",
+    "published": "Published",
+    "updated": "Updated",
+    "all": "All posts"
   }
 }

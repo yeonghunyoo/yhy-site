@@ -63,9 +63,34 @@ Notion "블로그 글" DB ──(pnpm site blog:sync)──▶ R2 blog/ ──(�
 - 요청 방어: `/blog/img/*`는 R2를 읽으므로 Cache API에서 대부분 끝난다. 순간 제한 목록에는 넣지 않는다(KV 쓰기 규칙) — 비용을 보고 2차에 판단
 - CSP: 본문은 동기화에서 정리한 HTML이라 인라인 스타일·스크립트가 없다. 이미지는 같은 출처(`'self'`)
 
+## 사진 용량
+
+- Notion 무료 플랜은 **파일 하나당 5MB**(유료 5GB) — 화면 캡처는 넉넉, 휴대폰 원본 사진은 줄이거나 JPG로 올린다(또는 이미지를 링크로 넣으면 그 주소에서 내려받는다)
+- 동기화: 원본 20MB 넘으면 건너뛰고 경고. 긴 변 1600px webp 품질 80, 결과가 1MB 넘으면 품질 65로 다시. 이름은 결과의 내용 해시 → 같은 사진은 한 번만 저장·올림
+- 동기화 끝에 R2 `blog/` 사진 총량과 무료 10GB 대비 %를 출력한다(index.json `images`에 장마다 크기 기록)
+
 ## 비용
 
 R2 읽기(Class B, 무료 월 1천만)는 index 60초 캐시 + 글·사진 엣지 캐시로 방문 수보다 훨씬 적다. Worker 호출은 페이지·사진 요청마다 센다(무료 하루 10만, 지금 페이지 요청도 이미 Worker를 거친다 — S-014). 쓰기(Class A)는 동기화 때만.
+
+## 구현 (11/10)
+
+| 파일 | 무엇 |
+| --- | --- |
+| `scripts/blog/convert.mjs` | Notion식 마크다운 → 정리된 HTML(태그 변환·제목 단계 내림·이미지 바꾸기·허용 태그만·목차·바깥 링크 noopener), 메타 점검 |
+| `scripts/blog/convert-check.mjs` · `fixture.md` | 변환 시험 18개(`pnpm test`) |
+| `scripts/blog-sync.mjs` | `pnpm blog:sync [--dry\|--local\|--fixture]` — Notion API(`data_sources/{id}/query`, `pages/{id}/markdown`) → 변환 → sharp webp → `wrangler r2 object put`. Notion 수정 시각이 같으면 건너뛴다, 공개 해제는 글 파일 삭제 |
+| `src/lib/server/blog.ts` | R2 `blog/index.json`(isolate에 60초) · `posts/{slug}.{locale}.json` 읽기 |
+| `src/pages/[locale]/blog/index.astro` · `[slug].astro` | 목록·글(SSR). `BaseLayout`에 `image`(첫 사진 → OG), `available`(그 slug의 언어) |
+| `src/pages/blog/img/[file].ts` · `src/pages/sitemap-blog.xml.ts` | 사진(영구 캐시) · 블로그 sitemap(lastmod) |
+| `src/lib/edge-cache.ts` + `src/worker.ts` | 블로그 목록·글 60초, sitemap 5분, 사진 1년 Cache API |
+| `src/lib/jsonld.ts` | `Blog`·`BlogPosting` |
+| `scripts/seo-check.mjs --url` | 블로그 sitemap 주소를 받아 같은 SEO 규칙 + robots의 sitemap-blog 줄 |
+| 그 밖 | 머리말 "블로그" 링크, robots.txt 두 번째 Sitemap, `llms.txt` 블로그 줄, 언어 전환은 다른 언어판이 없으면 그 언어 홈(404 포함) |
+
+**로컬 확인**(토큰 없이): `pnpm build` → `pnpm blog:sync --fixture --dry`(결과 `.wrangler/tmp/blog/`) → `dist/server/wrangler.json`에서 `remote`를 뺀 설정으로 로컬 R2에 넣고(`wrangler r2 object put … --local --persist-to <dir>`) `wrangler dev -c <그 설정> --persist-to <dir>` → `/ko/blog/fixture-test/`. `pnpm seo:check --url http://localhost:8787`. 11/10 확인: 목록·글·사진 200, 없는 글·영어판 없는 글 404, `/ko/blog` 301, sitemap·robots·`BlogPosting`·OG 이미지, `--url` 점검 오류 0
+
+**운영 순서**: 배포(코드) → Notion 토큰 → 첫 글 공개 → `pnpm blog:sync` → `pnpm seo:check --url https://bettercurl.dev` → Search Console에 `/sitemap-blog.xml` 제출. 글이 없을 때 배포하면 머리말 "블로그"가 빈 목록("아직 글이 없어요")으로 간다 — 첫 글과 함께 배포하는 게 낫다
 
 ## 완료 기준
 

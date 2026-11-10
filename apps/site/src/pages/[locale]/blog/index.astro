@@ -1,0 +1,44 @@
+---
+// 블로그 목록(docs/08-blog.md "사이트", S-017) — 요청 때 R2 blog/index.json에서. 엣지 캐시는 src/worker.ts
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { isLocale, t } from '../../../i18n';
+import { listPosts } from '../../../lib/server/blog';
+import { blogJsonLd } from '../../../lib/jsonld';
+
+export const prerender = false;
+
+const { locale } = Astro.params;
+if (!isLocale(locale)) return Astro.rewrite('/404');
+const dict = t(locale);
+const posts = await listPosts(locale);
+const fmt = new Intl.DateTimeFormat(locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+Astro.response.headers.set('Cache-Control', 'public, max-age=60');
+---
+
+<BaseLayout locale={locale} title={dict.blog.title} description={dict.blog.description} jsonLd={blogJsonLd(Astro.site!, locale, posts)}>
+  <section class="container-page py-10 md:py-16" aria-labelledby="blog-heading">
+    <p class="font-mono text-xs text-muted">// Blog</p>
+    <h1 id="blog-heading" class="mt-2 font-display text-4xl font-bold md:text-5xl">{dict.blog.title}</h1>
+    <p class="mt-4 max-w-[65ch] text-muted">{dict.blog.description}</p>
+    {
+      posts.length === 0 ? (
+        <p class="mt-12 text-muted">{dict.blog.empty}</p>
+      ) : (
+        <ol class="blog-list mt-10">
+          {posts.map((p) => (
+            <li>
+              <a href={`/${locale}/blog/${p.slug}/`}>
+                <span class="when">
+                  <time datetime={p.date}>{fmt.format(new Date(p.date))}</time> · {dict.blog.minutes.replace('{n}', String(p.minutes))}
+                </span>
+                <span class="name">{p.title}</span>
+                <span class="one">{p.summary}</span>
+                {p.tags.length > 0 && <span class="tags">{p.tags.join(' · ')}</span>}
+              </a>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </section>
+</BaseLayout>

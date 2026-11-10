@@ -43,6 +43,8 @@ async function section(site: URL, locale: Locale): Promise<string> {
   }
   lines.push('');
 
+  lines.push(`### ${t(locale).blog.title}`, '', `- [${t(locale).blog.title} (${locale})](${absolute(site, `/${locale}/blog/`)}): ${t(locale).blog.description}`, '');
+
   lines.push(`### ${L.contact}`, '');
   lines.push(`- Email: ${dict.contact.mail}`, `- ${L.letter}: ${absolute(site, `/${locale}/`)}#contact`, `- GitHub: https://${h.github}`, '');
   return lines.join('\n');

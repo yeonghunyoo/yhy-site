@@ -28,7 +28,8 @@
     "hero:og": "node scripts/hero/og.mjs",
     "icon:apple": "node scripts/apple-touch-icon.mjs",
     "seo:check": "node scripts/seo-check.mjs",
-    "test": "node scripts/redirects-check.mjs"
+    "test": "node scripts/redirects-check.mjs && node scripts/blog/convert-check.mjs",
+    "blog:sync": "node scripts/blog-sync.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",
@@ -56,8 +57,16 @@
     "daisyui": "^5.7.50",
     "drizzle-kit": "^0.31.11",
     "playwright": "^1.64.1",
+    "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-slug": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
     "sharp": "^0.35.5",
     "typescript": "^6.0.3",
+    "unified": "^11.0.5",
     "unpdf": "1.9.0",
     "wrangler": "^4.153.0"
   }

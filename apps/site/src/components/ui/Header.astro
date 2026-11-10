@@ -1,11 +1,13 @@
 ---
-import { t, otherLocale, switchLocalePath, type Locale } from '../../i18n';
+import { t, otherLocale, type Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
+  /** 다른 언어판 주소(BaseLayout이 hreflang 대응에서 정한다 — 없으면 그 언어 홈) */
+  switchHref: string;
 }
 
-const { locale } = Astro.props;
+const { locale, switchHref } = Astro.props;
 const dict = t(locale);
 const other = otherLocale(locale);
 ---
@@ -18,7 +20,12 @@ const other = otherLocale(locale);
     <!-- 섹션 바로가기는 뺐다(11/05) — 홈 데스크톱은 왼쪽 플로팅 목차(src/lib/toc.ts) -->
     <nav class="flex items-center gap-1 font-mono text-xs text-muted" aria-label="Main">
       <a
-        href={switchLocalePath(Astro.url.pathname, other)}
+        href={`/${locale}/blog/`}
+        aria-current={Astro.url.pathname.startsWith(`/${locale}/blog/`) ? 'page' : undefined}
+        class="flex min-h-11 items-center px-2 aria-[current=page]:text-fg">{dict.nav.blog}</a
+      >
+      <a
+        href={switchHref}
         hreflang={other}
         lang={other}
         class="flex min-h-11 items-center px-2">{dict.nav.language}</a

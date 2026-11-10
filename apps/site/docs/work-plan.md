@@ -13,7 +13,7 @@
 | 0–4 MVP (인프라·프론트·인증·레터·어드민) | 코드 완료. `https://bettercurl.dev` 운영 중(11/04 커스텀 도메인, 예전 workers.dev 주소는 301 — 11/10 배포). 어드민 화면 5개(지표·레터·사용자·챗 로그·사용량) 완료. **메일 경로·어드민 운영 확인이 남음** |
 | 홈 개편 | 11/05 3D 픽셀 히어로(임시 흉상) + 본문 S-010 + 썸네일 S-011 + 제목 글꼴 Quantico S-012 + 챗 바 |
 | SEO·GEO | **코드 완료·운영 반영(11/10 `e9f3ee09`)**: `<head>`·robots·sitemap·OG(해시 주소)·JSON-LD·`llms.txt`·끝 슬래시 301·apple-touch-icon, 배포 전 자동 점검(S-015). Lighthouse 모바일 홈 89~92·프로젝트 100, SEO 100. **남은 것은 사람 작업**: 검색엔진 등록, Always Use HTTPS, Web Analytics 결정, 홈 description |
-| 8 블로그 | 11/10 범위에 넣음(S-017). 설계 [08-blog.md](08-blog.md), Notion "블로그 글" DB 만듦. **구현 전** — Notion 통합 토큰이 필요 |
+| 8 블로그 | 11/10 범위에 넣음(S-017). 설계 [08-blog.md](08-blog.md), Notion "블로그 글" DB 만듦. **코드 완료(11/10, 로컬 R2로 확인), 배포 전** — Notion 통합 토큰·첫 글이 필요 |
 | 5–6 챗+RAG | 운영에 켜짐(11/03 테스트 기간). 운영 청크 247 = 벡터 247, 기준 질문 58개 경로·재현율 100%(11/04). **완료 기준 확인 전** |
 | 7 3D | 히어로로 앞당겨 반영. 실제 얼굴 스캔 모델은 후순위 |
 
@@ -29,9 +29,9 @@
 - [ ] **챗 완료 기준 문구 고치기** — "범위 밖은 모델 호출 없이 거절" → "무관 작업은 슈퍼바이저 1회 뒤, 근거 없음은 검색 뒤 답변 호출 없이 거절". [05-06-chat-rag.md](05-06-chat-rag.md) "완료 기준"과 chat-rag-setup "3. 확인"
 - [ ] **추천 칩·인사말 다듬기** — 지금 칩은 일반 질문 3개("어떤 프로젝트를…"). 문서로 확실히 답이 나오는 질문으로 바꿀 안을 만들어 확인받는다. 바꾸면 칩마다 로컬에서 답·출처 칩 확인, 페르소나를 건드리면 `?redteam=1`. chat-rag-setup 2-3
 - [ ] **답변 모델 다시 비교**(칩·기준 질문 뒤) — 실제 문서로 Gemma 4 vs Qwen3 14문항, 05-06 "모델 비교"에 표 추가. chat-rag-setup 3
-- [ ] **404 화면의 언어 전환 링크** — 없는 주소에서 "English"가 `/en/<없는 주소>/`로 가 또 404. 404에서는 언어 홈(`/en/`)으로. `src/components/ui/Header.astro`(11/09 체크리스트 점검에서 발견)
+- [x] **404 화면의 언어 전환 링크**(11/10) — 다른 언어판이 없으면(404·한 언어뿐인 블로그 글) 그 언어 홈으로. `BaseLayout`이 hreflang 대응에서 정해 `Header`에 넘긴다
 - [ ] **`CF_ACCOUNT_ID`를 `wrangler.jsonc` `vars`로**(정하면) — 계정 ID는 비밀이 아니라 코드에 두면 운영자가 넣을 비밀이 토큰 하나로 준다. 운영에 같은 이름 비밀이 이미 있으면 지우고 옮긴다(이름이 겹치면 배포가 막힌다)
-- [ ] **블로그 구현**([08-blog.md](08-blog.md), S-017) — `scripts/blog-sync.mjs`(Notion 마크다운 → 정리된 HTML, 사진 → webp → R2 `blog/`), `src/lib/server/blog.ts`, `/{locale}/blog/`·`/{locale}/blog/{slug}/`·`/blog/img/*`·`/sitemap-blog.xml`, robots·머리말 링크·`BlogPosting`, `seo-check --url`. 08-blog "완료 기준"
+- [x] **블로그 구현**(11/10, [08-blog.md](08-blog.md) "구현") — 동기화·변환(시험 18개)·R2 읽기·목록/글/사진/sitemap·엣지 캐시·`BlogPosting`·`seo-check --url`. 로컬 R2로 확인. 운영은 토큰·첫 글 뒤 08-blog "운영 순서"
 - [ ] **과정 보기 구현**(D의 공개 범위를 정한 뒤) — SSE `step` 이벤트 + 답 위 진행 줄·접힌 요약. chat-rag-setup 5
 
 ### B. 사람 작업이 먼저인 것
@@ -47,7 +47,8 @@
 - [ ] **Cloudflare Always Use HTTPS** — SSL/TLS → Edge Certificates. 지금 http로 오면 200(11/09 점검)
 - [ ] **검색 노출(운영자)** — 네이버 서치어드바이저도(11/09 체크리스트). AI 크롤러 차단(Block AI bots) 꺼져 있는지 확인, Google Search Console·Bing Webmaster Tools 등록 + sitemap 제출. [01-frontend.md](01-frontend.md) "운영자가 할 일". 11/09 밖에서 점검: 운영 `robots.txt`에 Cloudflare가 덧붙인 내용 없음(관리형 robots.txt 꺼짐), GPTBot·ClaudeBot·PerplexityBot·Googlebot·bingbot 이름으로 요청하면 200(이름만 바꾼 요청이라 Block AI bots 꺼짐의 확정은 아님 — 대시보드에서 확인), DNS TXT에 `google-site-verification` 없음 → Search Console은 아직 미등록으로 보인다. 등록은 "도메인" 속성 + Cloudflare DNS TXT가 간단
 - [ ] **Notion 통합 토큰**(블로그) — notion.so/profile/integrations에서 내부 통합(권한: 콘텐츠 읽기만) → "bettercurl 블로그" 페이지의 ⋯ → 연결에 그 통합 추가(이 페이지·DB만). 토큰은 로컬 `apps/site/.env`의 `NOTION_TOKEN` 또는 클라우드 환경의 네트워크 비밀(`api.notion.com`). [08-blog.md](08-blog.md) "Notion"
-- [ ] **첫 글** — Notion "🧪 핸드오프 실험"을 "블로그 글" DB로 옮기거나 복제(slug `handoff-experiment`, 요약, 발행일, 공개 체크)
+- [ ] **첫 글** — Notion "🧪 핸드오프 실험"을 "블로그 글" DB로 옮기거나 복제(slug `handoff-experiment`, 요약, 발행일, 공개 체크). 사진은 장당 5MB 이하(Notion 무료)
+- [ ] **블로그 운영 시작**(토큰·첫 글 뒤) — 배포 → `pnpm site blog:sync` → `pnpm site seo:check --url https://bettercurl.dev` → Search Console에 `/sitemap-blog.xml` 제출, 리치 결과 테스트(`BlogPosting`). [08-blog.md](08-blog.md) "운영 순서"·"완료 기준"
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
