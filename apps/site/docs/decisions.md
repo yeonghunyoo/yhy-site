@@ -25,6 +25,13 @@
   - 공개할 글만: DB에 "공개" 체크박스·slug·언어(ko/en)·요약 속성을 두고 그것만 가져온다. 노션 포트폴리오 페이지에는 전화번호·생년월일·예전 GitHub 주소가 있어 그대로 가져오면 안 된다
   - 글 구조화 데이터 `BlogPosting`, sitemap·`llms.txt`에 글 추가, 한/영 중 한 언어만 있는 글은 hreflang에서 뺀다(지금 프로젝트와 같은 규칙)
   - 빌드에 Notion 토큰이 필요해진다 — 루트 `pnpm build`가 토큰 없는 곳(클라우드 세션)에서도 통과하게, 토큰이 없으면 블로그만 빈 채로 빌드
+- 11/10 기술 확인(사용자 요청 "지금 확인")
+  - 이 환경에서 `api.notion.com`에 닿는다(토큰 없이 401). JS SDK `@notionhq/client` 5.31(11/06 갱신)
+  - Notion API에 페이지를 마크다운으로 주는 엔드포인트가 있다: `GET /v1/pages/{id}/markdown`(`Notion-Version: 2026-03-11`, `markdown_version=v2` = Notion식 마크다운). 블록 트리를 직접 돌 필요가 없다. 약 2만 블록 넘으면 `truncated`, 못 읽은 블록은 `unknown_block_ids`. 공식 문서에 내부 통합(토큰) 제한은 없다
+  - Notion식 마크다운은 표준이 아니다 — `<callout>`·`<columns>`·`<image source>`(캡션 포함)·`<b>`·`<code>`·`<p />`가 섞인다. 이 태그들을 HTML로 바꾸는 작은 변환기가 필요하다(Astro 로더의 `renderMarkdown`으로 나머지를 그린다)
+  - 파일 이미지 주소는 1시간 뒤 만료 → 빌드 때 내려받아 빌드 자산으로(필수)
+  - 토큰: Notion "내부 통합"을 만들어 블로그 DB에만 공유. 클라우드 세션에서는 환경의 네트워크 비밀(`api.notion.com` 헤더 주입)로 두면 코드·레포에 토큰이 없다. 로컬은 `apps/site/.env`
+  - 글 후보: "🧪 핸드오프 실험 — 정제 파이프라인 vs 원본 HTML 직행 (iOS)"(26/09, 표 2개·이미지 4장·결론까지 있어 바로 글이 된다, handoff-agent 프로젝트와 연결). "웹 개발 공부"·"프로토타입 킷 개발"은 메모 수준. "Tripade Proj"(회사 작업 보드·패치노트)는 공개하면 안 된다 — 블로그는 전용 DB의 "공개" 글만 읽어야 하는 이유
 - 상태: 제안. 사용자가 범위에 넣을지 정한다([work-plan.md](work-plan.md) D)
 
 ## 2026-11-09
