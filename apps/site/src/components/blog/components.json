@@ -1,0 +1,10 @@
+{
+  "pixel-bust": {
+    "description": "히어로의 픽셀 3D 흉상을 글 안에서 — 화면에 있는 동안 카메라가 천천히 돈다",
+    "props": { "height": "number" }
+  },
+  "scramble": {
+    "description": "글을 기호로 덮었다가 앞에서부터 풀어 보여 준다(대체 글 또는 text)",
+    "props": { "text": "string" }
+  }
+}

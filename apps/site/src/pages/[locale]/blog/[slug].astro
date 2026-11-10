@@ -55,3 +55,39 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60');
     <div class="prose-body blog-body mt-10" set:html={html} />
   </article>
 </BaseLayout>
+
+<script>
+  // 자리표시 컴포넌트(docs/08-blog.md, S-019): 자리가 있을 때만, 화면 가까이 오면 src/components/blog/<이름>.ts를 불러 mount.
+  // 이름은 동기화가 허용 목록으로 걸렀고, 여기서도 레포에 있는 파일만 찾는다(import.meta.glob)
+  const loaders = import.meta.glob('../../../components/blog/*.ts');
+  type Mod = { mount: (el: HTMLElement, props: Record<string, unknown>) => unknown };
+  const mount = async (el: HTMLElement) => {
+    const load = loaders[`../../../components/blog/${el.dataset.blogComponent}.ts`];
+    if (!load) return;
+    let props: Record<string, unknown> = {};
+    try {
+      props = JSON.parse(el.dataset.props || '{}');
+    } catch {
+      /* 빈 설정 */
+    }
+    try {
+      await ((await load()) as Mod).mount(el, props);
+    } catch (e) {
+      console.error('blog component', el.dataset.blogComponent, e); // 실패하면 대체 글이 그대로
+    }
+  };
+  const els = document.querySelectorAll<HTMLElement>('[data-blog-component]');
+  if (els.length) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          io.unobserve(e.target);
+          void mount(e.target as HTMLElement);
+        }
+      },
+      { rootMargin: '300px 0px' },
+    );
+    els.forEach((el) => io.observe(el));
+  }
+</script>

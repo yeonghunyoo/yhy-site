@@ -1,0 +1,46 @@
+# 블로그 동기화(apps/site/docs/08-blog.md "자동 동기화", decisions S-018).
+# Notion "블로그 글" DB의 공개 글 → 정리된 HTML·webp 사진 → R2 blog/. 코드 배포가 아니라 글 발행이다(Worker 코드는 바꾸지 않는다).
+# 수동 실행은 늘, 30분 주기는 저장소 변수 BLOG_SYNC = on일 때만. 키는 저장소 Secrets(NOTION_TOKEN, BLOG_R2_TOKEN, CLOUDFLARE_ACCOUNT_ID).
+name: blog-sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7,37 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blog-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.event_name == 'workflow_dispatch' || vars.BLOG_SYNC == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: 설치(사이트만)
+        run: pnpm install --frozen-lockfile --filter portfolio-web...
+      - name: 동기화
+        id: sync
+        run: pnpm blog:sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.BLOG_R2_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: SEO 점검(운영 주소)
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          sleep 70 # 엣지 캐시(블로그 60초)가 지나간 뒤
+          pnpm seo:check --url https://bettercurl.dev

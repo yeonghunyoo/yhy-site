@@ -8,6 +8,10 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
+import { readFileSync } from 'node:fs';
+
+/** 자리표시 컴포넌트 허용 목록(S-019) — 사이트의 src/components/blog/components.json과 같은 파일 */
+export const COMPONENTS = JSON.parse(readFileSync(new URL('../../src/components/blog/components.json', import.meta.url), 'utf8'));
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -21,6 +25,27 @@ export function normalizeNotionMarkdown(md) {
 
   // 못 읽은 블록이 있으면 글이 잘린 것 — 호출한 쪽이 그 글을 건너뛴다
   if (/<unknown\b/.test(s)) warnings.push({ fatal: true, msg: '못 읽은 블록(<unknown>)이 있다' });
+
+  // 자리표시 컴포넌트(S-019): 코드 블록 첫 줄 `@component 이름 {JSON}`, 둘째 줄부터 대체 글.
+  // 허용 목록에 있고 설정이 작은 JSON 객체(값은 글자·숫자·참거짓)면 빈 자리 + 대체 글, 아니면 대체 글만
+  s = s.replace(/```[^\n]*\n@component[ \t]+([^\s{]+)[ \t]*(\{[^\n]*\})?[ \t]*\n([\s\S]*?)```/g, (_, name, json = '', rest) => {
+    const fallback = rest.trim().replace(/\s*\n\s*/g, ' ');
+    const para = fallback ? `<p class="blog-embed-fallback">${esc(fallback)}</p>` : '';
+    let props = {};
+    try {
+      props = json ? JSON.parse(json) : {};
+    } catch {
+      warnings.push({ fatal: false, msg: `@component ${name}: 설정이 JSON이 아니다 — 대체 글만` });
+      return `\n\n${para}\n\n`;
+    }
+    const ok = props && typeof props === 'object' && !Array.isArray(props) && json.length <= 2048 && Object.values(props).every((v) => ['string', 'number', 'boolean'].includes(typeof v));
+    if (!COMPONENTS[name] || !ok) {
+      warnings.push({ fatal: false, msg: `@component ${name}: ${COMPONENTS[name] ? '설정이 작은 JSON 객체가 아니다' : '허용 목록(components.json)에 없다'} — 대체 글만` });
+      return `\n\n${para}\n\n`;
+    }
+    for (const k of Object.keys(props)) if (!COMPONENTS[name].props?.[k]) warnings.push({ fatal: false, msg: `@component ${name}: 모르는 설정 "${k}"` });
+    return `\n\n<div class="blog-embed" data-blog-component="${name}" data-props="${esc(JSON.stringify(props))}">${para}</div>\n\n`;
+  });
 
   // 그림: <image source="…">캡션</image> → figure. src는 원래 주소(나중에 resolveImage가 바꾼다)
   s = s.replace(/<image\s+source="([^"]+)"[^>]*?(?:\/>|>([\s\S]*?)<\/image>)/g, (_, src, cap = '') => {
@@ -57,6 +82,8 @@ const schema = {
     '*': (defaultSchema.attributes['*'] ?? []).filter((a) => a !== 'style'),
     h2: ['id'], h3: ['id'], h4: ['id'],
     aside: [['className', 'callout']],
+    div: [['className', 'blog-embed'], 'dataBlogComponent', 'dataProps'],
+    p: [['className', 'blog-embed-fallback']],
     img: ['src', 'alt', 'width', 'height', 'loading', 'decoding', 'fetchPriority'],
     a: ['href', 'title', 'rel', 'target'],
     code: [['className', /^language-./]],

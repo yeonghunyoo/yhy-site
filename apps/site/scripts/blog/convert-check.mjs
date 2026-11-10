@@ -32,5 +32,8 @@ ok(normalizeNotionMarkdown('a\n<unknown url="x"/>').warnings.some((w) => w.fatal
 ok(/<h2/.test((await renderPost('# 큰 제목\n\n## 작은', { resolveImage: async () => null })).html.split('\n')[0]), 'h1은 h2로 내림');
 const m = checkMeta({ title: 't', slug: 'Bad Slug', locale: 'ko', date: '2026-11-10', summary: '짧음' });
 ok(m.errors.some((e) => /slug/.test(e)) && m.warns.length === 1, '메타 점검');
+ok(/<div class="blog-embed" data-blog-component="scramble" data-props="\{&#x22;text&#x22;:&#x22;BETTER CALL YH!&#x22;\}"><p class="blog-embed-fallback">글자가 기호에서 풀린다\.<\/p><\/div>/.test(html), '자리표시 컴포넌트 → 빈 자리 + 대체 글');
+ok(!/evil-thing/.test(html) && /<p class="blog-embed-fallback">허용 목록에 없는 컴포넌트\.<\/p>/.test(html) && warnings.some((w) => /evil-thing/.test(w.msg)), '허용 목록 밖은 대체 글만 + 경고');
+ok(/<pre><code class="language-javascript">console\.log/.test(html), '보통 코드 블록은 그대로');
 if (fail) console.log('\n' + html);
 process.exit(fail ? 1 : 0);

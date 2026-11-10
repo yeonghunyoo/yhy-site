@@ -13,6 +13,19 @@
 
 ## 2026-11-10
 
+### S-019 · 확정 · 블로그 자리표시 컴포넌트 — Notion에는 이름만, 코드는 레포의 허용 목록
+- 결정: Notion 글에 코드 블록 `@component <이름> {JSON}`을 두면 동기화가 빈 자리(`<div data-blog-component>`)와 대체 글로 바꾸고, 글 페이지가 화면에 들어올 때 레포의 `src/components/blog/<이름>.ts`를 늦게 불러 붙인다. 이름은 `src/components/blog/components.json` 허용 목록에 있는 것만. 예시 `pixel-bust`(히어로 3D 장면 재사용)·`scramble`(글자 해독 효과)
+- 본 것: react-notion-x(비공식 Notion API·인라인 style이 CSP와 충돌·요청 때 React 렌더라 무료 Worker CPU 10ms에 걸림·Notion 모양 디자인) / Notion에 HTML·JS를 직접 넣기(Notion 계정이 털리면 사이트에 스크립트를 심을 수 있다, CSP 위반) / **허용 목록 컴포넌트(채택)**
+- 이유: 사용자 요청(11/10) — "노션 데이터에 플레이스홀더를 두고 CSS·HTML 애니메이션이나 three.js를 넣기". 코드는 git에 버전이 남고 CSP 그대로, 자리가 없는 글은 JS 0
+- 문서: [08-blog.md](08-blog.md) "자리표시 컴포넌트"
+
+### S-018 · 확정 · 블로그 동기화는 GitHub Actions에서(30분마다 + 수동), 키는 GitHub Secrets
+- 결정: `.github/workflows/blog-sync.yml`이 `pnpm blog:sync`를 돌린다. 수동 실행(workflow_dispatch)은 늘, 30분 주기는 저장소 변수 `BLOG_SYNC=on`일 때만. 키는 저장소 Secrets — `NOTION_TOKEN`(읽기 전용 통합), `BLOG_R2_TOKEN`(R2 쓰기만 되는 Cloudflare 토큰), `CLOUDFLARE_ACCOUNT_ID`. 바뀐 게 있으면 같은 작업에서 `seo:check --url`
+- 본 것: 개발 환경(클라우드 세션·로컬)에서 사람이 돌리기 — 운영이 개발 환경에 기댄다(사용자 지적 11/10) / Worker Cron·어드민 버튼(Worker 비밀) — 무료 플랜이면 요청당 CPU 10ms라 변환·사진 처리가 안 들어가고 sharp가 Worker에서 안 돈다, 계정 플랜은 API로 확인 안 됨 / **GitHub Actions(채택)** — 스크립트 그대로, CPU 제한 없음, 공개 레포라 무료
+- 배포 규칙과의 관계: 코드 배포는 그대로 로컬 `pnpm site deploy`만. 이 작업은 글·사진을 R2에 쓰는 **발행**이라 Worker 코드를 바꾸지 않는다
+- 주의: 공개 레포의 예약 실행은 60일 동안 레포 활동이 없으면 GitHub가 멈춘다 — 그때는 Actions 화면에서 다시 켠다
+- 문서: [08-blog.md](08-blog.md) "자동 동기화"
+
 ### S-017 · 확정 · 블로그 — Notion에서 쓰고, 동기화가 R2 `blog/`로 옮기고, 사이트는 요청 때 읽는다 (S-016 제안을 확정·수정)
 - 결정: 블로그를 범위에 넣는다(overview "비범위"에서 뺌, 8단계). Notion "블로그 글" DB(공개 체크만) → `pnpm site blog:sync`가 글을 HTML로 정리하고 사진을 webp로 R2 `blog/`에 저장 → Worker가 요청 때 R2에서 읽어 그리고 엣지에 캐시. 글 페이지·블로그 sitemap은 SSR, 머리·메타·JSON-LD는 정적 페이지와 같은 `BaseLayout`
 - 본 것: S-016 A 빌드 때 Notion에서 가져오기(사진이 Notion 서명 주소라 만료 — 결국 복사 필요, 글마다 전체 배포) / A' 빌드 때 R2에서 읽기(SEO 점검·정적 성능은 가장 좋지만 글마다 배포) / B 요청 때 Notion 직접(API 한도·장애가 사이트로) / **요청 때 R2(채택)**

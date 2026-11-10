@@ -21,6 +21,7 @@ yhy-site/
 │  ├─ cf-kit/          @yhy/cf-kit — 두 앱이 같이 쓰는 서버 모듈
 │  ├─ nuvo-db/         @nuvo/db (Drizzle, Postgres)
 │  └─ nuvo-shared/     @nuvo/shared (zod 스키마)
+├─ .github/workflows/  blog-sync.yml — site 블로그 글 발행(Notion → R2, 11/10 S-018). 코드 배포 CI는 없다
 ├─ docs/monorepo.md    이 문서 (레포 전체 규칙)
 ├─ CLAUDE.md           공통 규칙. 앱 규칙은 apps/*/CLAUDE.md
 ├─ tsconfig.base.json  nuvo 쪽 패키지가 extends

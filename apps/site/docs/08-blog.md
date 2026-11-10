@@ -45,6 +45,31 @@ Notion "블로그 글" DB ──(pnpm site blog:sync)──▶ R2 blog/ ──(�
    - 공개가 풀린 글은 index에서 빠지고 `posts/` 파일은 지운다. 사진은 남긴다(다른 글이 쓸 수 있다 — 정리는 2차 `blog:img:gc`)
 8. **점검(올린 뒤)**: 운영 주소로 새·바뀐 글을 받아 `seo-check`와 같은 규칙으로 확인(`scripts/seo-check.mjs --url`). 이미 올라간 뒤라 막지는 않고 보고만
 
+## 자동 동기화 — GitHub Actions (S-018)
+
+`.github/workflows/blog-sync.yml`. 운영 발행이 개발 환경(클라우드 세션·로컬)에 기대지 않게, 키를 GitHub Secrets에 두고 GitHub가 돌린다.
+
+- 언제: 수동(Actions → blog-sync → Run workflow, GitHub 앱에서도) 늘 / 30분마다는 저장소 변수 `BLOG_SYNC` = `on`일 때만(Secrets를 넣기 전에 실패 알림이 쌓이지 않게)
+- Secrets: `NOTION_TOKEN`(Notion 내부 통합, 콘텐츠 읽기만, "bettercurl 블로그"에만 연결), `BLOG_R2_TOKEN`(Cloudflare API 토큰 — 권한 "Workers R2 Storage: Edit" 하나, 이 계정만), `CLOUDFLARE_ACCOUNT_ID`
+- 순서: 체크아웃 → pnpm 설치(사이트만) → `pnpm blog:sync` → 바뀐 게 있으면 `pnpm seo:check --url https://bettercurl.dev`(늦어도 1분 캐시를 기다린 뒤)
+- 같은 시각에 둘이 돌지 않게 `concurrency`. 바뀐 게 없으면 R2 쓰기 0
+- 로컬·클라우드 세션의 `pnpm blog:sync`는 그대로 쓸 수 있다(확인·급할 때)
+
+## 자리표시 컴포넌트 (S-019)
+
+Notion 글 속에 애니메이션·three.js 같은 것을 넣는 방법. **Notion에는 이름과 설정만**, 코드는 레포에 있다.
+
+- Notion에서: 코드 블록(언어 아무거나)에 첫 줄 `@component <이름> {JSON 설정}`, 둘째 줄부터는 대체 글(스크립트가 없거나 실패할 때·검색엔진이 읽는 글)
+  ```
+  @component pixel-bust {"height": 420}
+  픽셀로 그린 흉상이 천천히 돈다.
+  ```
+- 동기화(`convert.mjs`): 이름이 허용 목록(`src/components/blog/components.json`)에 있고 설정이 JSON 객체(2KB 이하, 값은 글자·숫자·참거짓)면 `<div class="blog-embed" data-blog-component="<이름>" data-props="<JSON>"><p class="blog-embed-fallback">대체 글</p></div>`. 아니면 경고하고 대체 글만
+- 사이트(`[slug].astro` 스크립트): 자리가 있을 때만 화면에 들어오면 `import.meta.glob`으로 `src/components/blog/<이름>.ts`를 불러 `mount(el, props)`. 화면 밖·탭 숨김이면 컴포넌트가 스스로 멈춘다. 움직임 줄이기면 멈춘 그림으로. 불러오기·실행이 실패하면 대체 글이 그대로
+- 예시: `pixel-bust`(히어로 3D 장면을 글 안에서 — 화면에 있는 동안 카메라가 천천히 돈다, `height`), `scramble`(대체 글을 기호로 덮었다 푸는 효과, `text`)
+- 새 컴포넌트: `src/components/blog/<이름>.ts`(export `mount`) + `components.json`에 이름·설명·설정 → 배포. 그 뒤로는 Notion만 고친다
+- 규칙: 컴포넌트는 HTML `style=""`을 쓰지 않는다(CSP — DOM의 `el.style`은 된다), 무거운 것은 동적 import로(three.js는 이 컴포넌트를 쓰는 글에서만 받는다)
+
 ## 사이트(Worker)
 
 | 경로 | 무엇 | 캐시 |
@@ -85,12 +110,14 @@ R2 읽기(Class B, 무료 월 1천만)는 index 60초 캐시 + 글·사진 엣�
 | `src/pages/blog/img/[file].ts` · `src/pages/sitemap-blog.xml.ts` | 사진(영구 캐시) · 블로그 sitemap(lastmod) |
 | `src/lib/edge-cache.ts` + `src/worker.ts` | 블로그 목록·글 60초, sitemap 5분, 사진 1년 Cache API |
 | `src/lib/jsonld.ts` | `Blog`·`BlogPosting` |
+| `src/components/blog/components.json` · `pixel-bust.ts` · `scramble.ts` | 자리표시 컴포넌트 허용 목록과 예시(S-019). 글 페이지 스크립트가 `import.meta.glob`으로 늦게 불러 `mount` |
+| `.github/workflows/blog-sync.yml` | 자동 동기화(S-018) — 수동 늘, 30분 주기는 `BLOG_SYNC=on`. 바뀌면 `seo:check --url` |
 | `scripts/seo-check.mjs --url` | 블로그 sitemap 주소를 받아 같은 SEO 규칙 + robots의 sitemap-blog 줄 |
 | 그 밖 | 머리말 "블로그" 링크, robots.txt 두 번째 Sitemap, `llms.txt` 블로그 줄, 언어 전환은 다른 언어판이 없으면 그 언어 홈(404 포함) |
 
-**로컬 확인**(토큰 없이): `pnpm build` → `pnpm blog:sync --fixture --dry`(결과 `.wrangler/tmp/blog/`) → `dist/server/wrangler.json`에서 `remote`를 뺀 설정으로 로컬 R2에 넣고(`wrangler r2 object put … --local --persist-to <dir>`) `wrangler dev -c <그 설정> --persist-to <dir>` → `/ko/blog/fixture-test/`. `pnpm seo:check --url http://localhost:8787`. 11/10 확인: 목록·글·사진 200, 없는 글·영어판 없는 글 404, `/ko/blog` 301, sitemap·robots·`BlogPosting`·OG 이미지, `--url` 점검 오류 0
+**로컬 확인**(토큰 없이): `pnpm build` → `pnpm blog:sync --fixture --dry`(결과 `.wrangler/tmp/blog/`) → `dist/server/wrangler.json`에서 `remote`를 뺀 설정으로 로컬 R2에 넣고(`wrangler r2 object put … --local --persist-to <dir>`) `wrangler dev -c <그 설정> --persist-to <dir>` → `/ko/blog/fixture-test/`. `pnpm seo:check --url http://localhost:8787`. 11/10 확인: 목록·글·사진 200, 없는 글·영어판 없는 글 404, `/ko/blog` 301, sitemap·robots·`BlogPosting`·OG 이미지, `--url` 점검 오류 0. 자리표시: `scramble`·`pixel-bust` 둘 다 화면에 들어오면 붙음(브라우저 확인, 오류 0), 허용 목록 밖 이름은 대체 글만
 
-**운영 순서**: 배포(코드) → Notion 토큰 → 첫 글 공개 → `pnpm blog:sync` → `pnpm seo:check --url https://bettercurl.dev` → Search Console에 `/sitemap-blog.xml` 제출. 글이 없을 때 배포하면 머리말 "블로그"가 빈 목록("아직 글이 없어요")으로 간다 — 첫 글과 함께 배포하는 게 낫다
+**운영 순서**: 배포(코드) → Notion 토큰·R2 쓰기 토큰을 GitHub Secrets에 → 첫 글 공개 → Actions에서 blog-sync 수동 실행(첫 확인) → 저장소 변수 `BLOG_SYNC=on`(30분 자동) → Search Console에 `/sitemap-blog.xml` 제출. 글이 없을 때 배포하면 머리말 "블로그"가 빈 목록("아직 글이 없어요")으로 간다 — 첫 글과 함께 배포하는 게 낫다
 
 ## 완료 기준
 

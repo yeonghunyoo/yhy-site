@@ -31,6 +31,7 @@
 - [ ] **답변 모델 다시 비교**(칩·기준 질문 뒤) — 실제 문서로 Gemma 4 vs Qwen3 14문항, 05-06 "모델 비교"에 표 추가. chat-rag-setup 3
 - [x] **404 화면의 언어 전환 링크**(11/10) — 다른 언어판이 없으면(404·한 언어뿐인 블로그 글) 그 언어 홈으로. `BaseLayout`이 hreflang 대응에서 정해 `Header`에 넘긴다
 - [ ] **`CF_ACCOUNT_ID`를 `wrangler.jsonc` `vars`로**(정하면) — 계정 ID는 비밀이 아니라 코드에 두면 운영자가 넣을 비밀이 토큰 하나로 준다. 운영에 같은 이름 비밀이 이미 있으면 지우고 옮긴다(이름이 겹치면 배포가 막힌다)
+- [x] **블로그 자동 동기화·자리표시 컴포넌트**(11/10, S-018·S-019) — `.github/workflows/blog-sync.yml`, `@component` → 허용 목록 컴포넌트(`pixel-bust`·`scramble`), 시험 21개
 - [x] **블로그 구현**(11/10, [08-blog.md](08-blog.md) "구현") — 동기화·변환(시험 18개)·R2 읽기·목록/글/사진/sitemap·엣지 캐시·`BlogPosting`·`seo-check --url`. 로컬 R2로 확인. 운영은 토큰·첫 글 뒤 08-blog "운영 순서"
 - [ ] **과정 보기 구현**(D의 공개 범위를 정한 뒤) — SSE `step` 이벤트 + 답 위 진행 줄·접힌 요약. chat-rag-setup 5
 
@@ -46,9 +47,9 @@
   - [ ] WAF 속도 제한 규칙(`/api/` IP당 10초 20회), Bot Fight Mode — 도메인이 붙었으니 이제 가능
 - [ ] **Cloudflare Always Use HTTPS** — SSL/TLS → Edge Certificates. 지금 http로 오면 200(11/09 점검)
 - [ ] **검색 노출(운영자)** — 네이버 서치어드바이저도(11/09 체크리스트). AI 크롤러 차단(Block AI bots) 꺼져 있는지 확인, Google Search Console·Bing Webmaster Tools 등록 + sitemap 제출. [01-frontend.md](01-frontend.md) "운영자가 할 일". 11/09 밖에서 점검: 운영 `robots.txt`에 Cloudflare가 덧붙인 내용 없음(관리형 robots.txt 꺼짐), GPTBot·ClaudeBot·PerplexityBot·Googlebot·bingbot 이름으로 요청하면 200(이름만 바꾼 요청이라 Block AI bots 꺼짐의 확정은 아님 — 대시보드에서 확인), DNS TXT에 `google-site-verification` 없음 → Search Console은 아직 미등록으로 보인다. 등록은 "도메인" 속성 + Cloudflare DNS TXT가 간단
-- [ ] **Notion 통합 토큰**(블로그) — notion.so/profile/integrations에서 내부 통합(권한: 콘텐츠 읽기만) → "bettercurl 블로그" 페이지의 ⋯ → 연결에 그 통합 추가(이 페이지·DB만). 토큰은 로컬 `apps/site/.env`의 `NOTION_TOKEN` 또는 클라우드 환경의 네트워크 비밀(`api.notion.com`). [08-blog.md](08-blog.md) "Notion"
+- [ ] **블로그 키 → GitHub Secrets**(S-018) — ① Notion: notion.so/profile/integrations에서 내부 통합(콘텐츠 읽기만) → "bettercurl 블로그" 페이지 ⋯ → 연결에 추가(이 페이지·DB만) ② Cloudflare: API 토큰 새로(권한 "Workers R2 Storage: Edit" 하나, 이 계정만) ③ GitHub 저장소 Settings → Secrets and variables → Actions: `NOTION_TOKEN`·`BLOG_R2_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`. 자동 주기는 Variables에 `BLOG_SYNC` = `on`. [08-blog.md](08-blog.md) "자동 동기화"
 - [ ] **첫 글** — Notion "🧪 핸드오프 실험"을 "블로그 글" DB로 옮기거나 복제(slug `handoff-experiment`, 요약, 발행일, 공개 체크). 사진은 장당 5MB 이하(Notion 무료)
-- [ ] **블로그 운영 시작**(토큰·첫 글 뒤) — 배포 → `pnpm site blog:sync` → `pnpm site seo:check --url https://bettercurl.dev` → Search Console에 `/sitemap-blog.xml` 제출, 리치 결과 테스트(`BlogPosting`). [08-blog.md](08-blog.md) "운영 순서"·"완료 기준"
+- [ ] **블로그 운영 시작**(키·첫 글 뒤) — 배포 → Actions blog-sync 수동 실행(로그에서 동기화·SEO 점검 확인) → `BLOG_SYNC=on` → Search Console에 `/sitemap-blog.xml` 제출, 리치 결과 테스트(`BlogPosting`). [08-blog.md](08-blog.md) "운영 순서"·"완료 기준"
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인

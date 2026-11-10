@@ -37,3 +37,22 @@
 <mention-page url="https://www.notion.so/abc">비공개 페이지</mention-page>를 참고. [바깥 링크](https://developers.notion.com) <script>alert(1)</script>
 
 <video source="https://example.com/v.mp4"></video>
+
+```plain text
+@component scramble {"text": "BETTER CALL YH!"}
+글자가 기호에서 풀린다.
+```
+
+```plain text
+@component evil-thing {"x": 1}
+허용 목록에 없는 컴포넌트.
+```
+
+```javascript
+console.log('그냥 코드');
+```
+
+```plain text
+@component pixel-bust {"height": 360}
+픽셀로 그린 흉상이 천천히 돈다.
+```

@@ -240,6 +240,8 @@ const total = Object.values(images).reduce((t, i) => t + i.bytes, 0);
 console.log(
   `\n글 ${posts.length}편 · 사진 ${Object.keys(images).length}장 ${(total / 1048576).toFixed(1)}MB (R2 무료 10GB의 ${((total / (10 * 1024 ** 3)) * 100).toFixed(3)}%) · R2 쓰기 ${writes}회 · 오류 ${errors}`,
 );
+// GitHub Actions(S-018): 바뀐 게 있을 때만 다음 단계(SEO 점검)를 돌린다
+if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `changed=${changed && !DRY ? 'true' : 'false'}\n`, { flag: 'a' });
 if (DRY) console.log(`확인만 — 결과: ${TMP}/`);
 else if (!LOCAL && changed) console.log('운영 반영: 늦어도 1분 뒤. 확인 → pnpm seo:check --url https://bettercurl.dev');
 process.exit(errors ? 1 : 0);
