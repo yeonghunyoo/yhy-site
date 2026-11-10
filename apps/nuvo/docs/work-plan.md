@@ -46,7 +46,7 @@
   - [ ] 코드: Better Auth에 Apple 제공자 추가, 웹 로그인 화면에 버튼, 계정 삭제 때 Apple 토큰 폐기, 알림 엔드포인트 라우트
 
 ### C. 운영 배포와 배포 뒤 확인 (배포는 요청할 때만)
-- [ ] 11/05 코드를 운영에 반영 — 운영 Neon에 마이그레이션 **0004~0007** 적용 → 배포 → 운영자 계정 수동 구독 켜기. 순서는 [developer-guide.md](developer-guide.md) "11/05 코드 배포 순서"
+- [ ] **11/05~11/10 코드를 운영에 반영 (11/10: 아직 안 함 — git `main`에만 있음, 자동 배포 없음)** — 운영 Neon에 마이그레이션 **0004~0007** 적용 → 배포(도메인 있으면 `NUVO_SITE_URL`) → 운영자 계정 수동 구독 켜기. 정할 것(배포할 계정·누가 배포·CI)과 순서는 [developer-guide.md](developer-guide.md) "배포 대기"·"11/05 코드 배포 순서"
 - [ ] 응답 헤더 실측: `X-Robots-Tag: noindex`(`/` 외, `/api/*`·`/m/*`), CSP(D-021)
 - [ ] 실기기 검증([developer-guide.md](developer-guide.md) 17단계): iOS Safari 업로드 메타데이터, 대용량 폴더 스캔, HEIC 속도, 저사양 3D, 두 사람 동시 업로드 알림
 
