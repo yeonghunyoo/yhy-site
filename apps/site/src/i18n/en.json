@@ -190,6 +190,10 @@
     "toc": "Contents",
     "published": "Published",
     "updated": "Updated",
-    "all": "All posts"
+    "all": "All posts",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied"
   }
 }

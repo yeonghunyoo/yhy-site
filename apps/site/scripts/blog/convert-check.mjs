@@ -34,6 +34,16 @@ const m = checkMeta({ title: 't', slug: 'Bad Slug', locale: 'ko', date: '2026-11
 ok(m.errors.some((e) => /slug/.test(e)) && m.warns.length === 1, '메타 점검');
 ok(/<div class="blog-embed" data-blog-component="scramble" data-props="\{&#x22;text&#x22;:&#x22;BETTER CALL YH!&#x22;\}"><p class="blog-embed-fallback">글자가 기호에서 풀린다\.<\/p><\/div>/.test(html), '자리표시 컴포넌트 → 빈 자리 + 대체 글');
 ok(!/evil-thing/.test(html) && /<p class="blog-embed-fallback">허용 목록에 없는 컴포넌트\.<\/p>/.test(html) && warnings.some((w) => /evil-thing/.test(w.msg)), '허용 목록 밖은 대체 글만 + 경고');
-ok(/<pre><code class="language-javascript">console\.log/.test(html), '보통 코드 블록은 그대로');
+ok(/<pre><span class="code-ln" aria-hidden="true">1<\/span><code class="hljs language-javascript">[\s\S]*console[\s\S]*<\/code><\/pre>/.test(html), '보통 코드 블록: 줄 번호 + 문법 색');
+
+// 단계·탭(S-020): Notion 2열 블록 + 탭 블록(fixture-steps.md는 Notion에서 다시 읽은 실제 형식)
+const steps = (await renderPost(readFileSync(new URL('./fixture-steps.md', import.meta.url), 'utf8'), { resolveImage: async () => null })).html;
+ok((steps.match(/<div class="blog-steps">/g) ?? []).length === 1 && (steps.match(/<div class="blog-step">/g) ?? []).length === 3, '이어진 2열 블록 3개 → 단계 묶음 1개·단계 3개');
+ok(/<div class="blog-step-text">\s*<h3 id="sdk-설치">SDK 설치<\/h3>/.test(steps), '단계 왼쪽: 소제목 + 설명');
+ok(/<div class="code-tabs">\s*<div class="code-tab" data-label="npm">\s*<p class="code-label">npm<\/p>[\s\S]*data-label="pnpm"/.test(steps), '탭 여럿 → code-tabs(npm·pnpm)');
+ok(/<div class="code-file">\s*<div class="code-tab" data-label="proxy\.ts">/.test(steps), '탭 하나 → 파일명 이름표');
+ok(/<span class="hljs-keyword">import<\/span>/.test(steps), '문법 색(클래스)');
+ok(/<\/div><\/div><h2 id="단계-밖의-보통-코드">/.test(steps.replace(/\n/g, '')), '2열 밖 코드는 단계 밖');
+
 if (fail) console.log('\n' + html);
 process.exit(fail ? 1 : 0);

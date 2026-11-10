@@ -13,6 +13,17 @@
 
 ## 2026-11-10
 
+### S-020 · 확정 · 블로그 글 화면은 Vercel 블로그식(글에만 집중), 코드 설명은 Clerk식 단계 — Notion 2열 블록 하나 = 한 단계
+- 결정
+  - 글 화면: 경로(블로그 / 태그) → 큰 제목 → 본문 한 단(680px). 목차·사이드바 없음. 날짜·읽는 시간·주소 복사는 넓은 화면(1180px~)에서 본문 오른쪽 옆, 좁으면 제목 아래 한 줄
+  - 단계: Notion 2열 블록에서 왼쪽에 글, 오른쪽에 코드(또는 탭 블록)가 있으면 한 단계. 이어진 단계는 번호(①②③)·세로선으로 묶고 본문보다 넓게(최대 1040px), 좁으면 설명 → 코드로 쌓는다
+  - 코드 이름표: Notion 탭 블록. 탭이 여럿이면 전환(npm·pnpm), 하나면 파일명(`proxy.ts`). Notion 코드 블록 캡션은 API 마크다운에 나오지 않아 쓰지 않는다
+  - 코드 블록: 동기화가 문법 색을 `hljs-*` 클래스로 미리 입힌다(rehype-highlight, CSS 클래스라 CSP 그대로). 줄 번호, 복사 버튼. 색은 `tokens.css`의 `--code-*`
+- 본 것: 글 화면 — 지금(본문 위 목차) / Obvious·Mintlify식 오른쪽 목차 / **Vercel식(채택, 사용자 요청 "글과 내용에만 집중")**. 단계 작성 — 번호 목록 안에 코드 넣기(Notion 내보내기 형식이 들여쓰기·태그형으로 흔들림) / 코드 첫 줄에 `@step` 같은 표시(Notion에서 안 보임) / **2열 블록(채택: Notion 화면에서도 설명·코드가 나란히 보여 쓰는 모양과 사이트 모양이 같다)**
+- 자료: Notion "블로그 글" DB의 비공개 예시 글을 다시 읽은 형식(`scripts/blog/fixture-steps.md`), Vercel 글 페이지 캡처(11/10), Notion식 마크다운 명세(`<columns>`·`<tabs>`)
+- 사용자 요청(11/10): "Vercel blog처럼 글과 내용에만 집중", "코드 설명·스니펫을 Clerk처럼 — 설명을 순서대로 하고 각 순서에 코드 블록을 매칭"
+- 문서: [08-blog.md](08-blog.md) "글 화면과 단계형 코드"
+
 ### S-019 · 확정 · 블로그 자리표시 컴포넌트 — Notion에는 이름만, 코드는 레포의 허용 목록
 - 결정: Notion 글에 코드 블록 `@component <이름> {JSON}`을 두면 동기화가 빈 자리(`<div data-blog-component>`)와 대체 글로 바꾸고, 글 페이지가 화면에 들어올 때 레포의 `src/components/blog/<이름>.ts`를 늦게 불러 붙인다. 이름은 `src/components/blog/components.json` 허용 목록에 있는 것만. 예시 `pixel-bust`(히어로 3D 장면 재사용)·`scramble`(글자 해독 효과)
 - 본 것: react-notion-x(비공식 Notion API·인라인 style이 CSP와 충돌·요청 때 React 렌더라 무료 Worker CPU 10ms에 걸림·Notion 모양 디자인) / Notion에 HTML·JS를 직접 넣기(Notion 계정이 털리면 사이트에 스크립트를 심을 수 있다, CSP 위반) / **허용 목록 컴포넌트(채택)**

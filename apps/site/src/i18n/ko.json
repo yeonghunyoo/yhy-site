@@ -190,6 +190,10 @@
     "toc": "목차",
     "published": "발행",
     "updated": "고침",
-    "all": "모든 글"
+    "all": "모든 글",
+    "copy": "복사",
+    "copied": "복사됨",
+    "copyLink": "주소 복사",
+    "linkCopied": "주소를 복사했어요"
   }
 }

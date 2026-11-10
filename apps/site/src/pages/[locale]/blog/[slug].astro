@@ -13,7 +13,7 @@ if (!isLocale(locale)) return Astro.rewrite('/404');
 const post = await getPost(slug, locale);
 if (!post) return Astro.rewrite('/404');
 const dict = t(locale);
-const { meta, html, toc } = post;
+const { meta, html } = post; // toc는 쓰지 않는다(S-020: 목차 없이 글에 집중)
 const available = await localesOf(slug);
 const fmt = new Intl.DateTimeFormat(locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 const updated = meta.updated.slice(0, 10);
@@ -29,30 +29,25 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60');
   image={meta.cover ? { ...meta.cover, alt: meta.title } : undefined}
   jsonLd={blogPostJsonLd(Astro.site!, meta)}
 >
-  <article class="container-page py-10 md:py-16">
-    <a href={`/${locale}/blog/`} class="-ml-2 inline-flex min-h-11 items-center px-2 text-sm text-muted">{dict.blog.back}</a>
-    <h1 class="mt-4 max-w-[30ch] font-display text-3xl font-bold leading-tight md:text-5xl">{meta.title}</h1>
-    <p class="mt-4 font-mono text-sm text-muted">
-      <time datetime={meta.date}>{fmt.format(new Date(meta.date))}</time>
-      {updated > meta.date && <> · {dict.blog.updated} <time datetime={updated}>{fmt.format(new Date(updated))}</time></>}
-      {' · '}{dict.blog.minutes.replace('{n}', String(meta.minutes))}
-      {meta.tags.length > 0 && <> · {meta.tags.join(' · ')}</>}
-    </p>
-    {
-      toc.length >= 3 && (
-        <nav class="blog-toc mt-8" aria-label={dict.blog.toc}>
-          <p class="font-mono text-xs text-muted">{dict.blog.toc}</p>
-          <ol>
-            {toc.map((h) => (
-              <li class:list={{ sub: h.depth === 3 }}>
-                <a href={`#${h.id}`}>{h.text}</a>
-              </li>
-            ))}
-          </ol>
-        </nav>
-      )
-    }
-    <div class="prose-body blog-body mt-10" set:html={html} />
+  <!-- 글 화면(11/10, S-020 — Vercel 블로그식): 경로 → 제목 → 좁은 본문 한 단. 사이드바·목차 없이 글에 집중.
+       날짜·읽는 시간·주소 복사는 넓은 화면에서 본문 오른쪽 옆, 좁은 화면에서 제목 아래 한 줄 -->
+  <article class="post container-page" data-copy={dict.blog.copy} data-copied={dict.blog.copied}>
+    <div class="post-col">
+      <p class="post-crumb">
+        <a href={`/${locale}/blog/`}>{dict.blog.title}</a>
+        {meta.tags[0] && <><span aria-hidden="true">/</span> {meta.tags[0]}</>}
+      </p>
+      <h1 class="post-title">{meta.title}</h1>
+      <div class="post-body-wrap">
+        <aside class="post-meta" aria-label={dict.blog.published}>
+          <time datetime={meta.date}>{fmt.format(new Date(meta.date))}</time>
+          <span>{dict.blog.minutes.replace('{n}', String(meta.minutes))}</span>
+          {updated > meta.date && <span>{dict.blog.updated} <time datetime={updated}>{fmt.format(new Date(updated))}</time></span>}
+          <button type="button" class="post-copylink" data-done={dict.blog.linkCopied}>{dict.blog.copyLink}</button>
+        </aside>
+        <div class="prose-body blog-body" set:html={html} />
+      </div>
+    </div>
   </article>
 </BaseLayout>
 
@@ -76,6 +71,75 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60');
       console.error('blog component', el.dataset.blogComponent, e); // 실패하면 대체 글이 그대로
     }
   };
+  // 코드(S-020): 탭 전환·복사 버튼·주소 복사. 스크립트가 없으면 탭 내용이 이름표와 함께 차례로 보인다
+  const article = document.querySelector<HTMLElement>('.post');
+  const copyText = async (text: string, btn: HTMLButtonElement, done: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      const label = btn.textContent;
+      btn.textContent = done;
+      setTimeout(() => (btn.textContent = label), 1500);
+    } catch {
+      /* 권한 없음 — 그대로 */
+    }
+  };
+  const copyButton = (getText: () => string) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'code-copy';
+    btn.textContent = article?.dataset.copy ?? 'Copy';
+    btn.addEventListener('click', () => void copyText(getText(), btn, article?.dataset.copied ?? 'Copied'));
+    return btn;
+  };
+  document.querySelectorAll<HTMLElement>('.blog-body .code-tabs, .blog-body .code-file').forEach((box) => {
+    const panes = [...box.querySelectorAll<HTMLElement>(':scope > .code-tab')];
+    const bar = document.createElement('div');
+    bar.className = 'code-bar';
+    const tabs = document.createElement('div');
+    tabs.className = 'code-bar-tabs';
+    if (box.classList.contains('code-tabs')) tabs.setAttribute('role', 'tablist');
+    bar.appendChild(tabs);
+    const show = (i: number) =>
+      panes.forEach((p, j) => {
+        p.hidden = j !== i;
+        tabs.children[j]?.setAttribute('aria-selected', String(j === i));
+      });
+    panes.forEach((pane, i) => {
+      const label = pane.dataset.label ?? '';
+      if (box.classList.contains('code-tabs')) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('role', 'tab');
+        b.textContent = label;
+        b.addEventListener('click', () => show(i));
+        tabs.appendChild(b);
+      } else {
+        const name = document.createElement('span');
+        name.textContent = label;
+        tabs.appendChild(name);
+      }
+      pane.querySelector('.code-label')?.remove();
+    });
+    // 복사 버튼은 지금 보이는 탭의 코드를 복사한다
+    bar.appendChild(copyButton(() => panes.find((p) => !p.hidden)?.querySelector('code')?.textContent ?? ''));
+    box.insertBefore(bar, box.firstChild);
+    box.classList.add('is-live');
+    show(0);
+  });
+  // 이름표 없는 코드 블록: 오른쪽 위에 복사 버튼
+  document.querySelectorAll<HTMLElement>('.blog-body pre').forEach((pre) => {
+    if (pre.closest('.code-tabs, .code-file')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-plain';
+    pre.parentElement?.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    wrap.appendChild(copyButton(() => pre.querySelector('code')?.textContent ?? ''));
+  });
+  document.querySelector<HTMLButtonElement>('.post-copylink')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    void copyText(location.href.split('#')[0], btn, btn.dataset.done ?? 'Copied');
+  });
+
   const els = document.querySelectorAll<HTMLElement>('[data-blog-component]');
   if (els.length) {
     const io = new IntersectionObserver(

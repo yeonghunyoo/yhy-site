@@ -8,6 +8,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
+import rehypeHighlight from 'rehype-highlight';
 import { readFileSync } from 'node:fs';
 
 /** 자리표시 컴포넌트 허용 목록(S-019) — 사이트의 src/components/blog/components.json과 같은 파일 */
@@ -52,16 +53,40 @@ export function normalizeNotionMarkdown(md) {
     const caption = cap.replace(/<[^>]+>/g, '').trim();
     return `\n\n<figure><img src="${esc(src)}" alt="${esc(caption)}" />${caption ? `<figcaption>${esc(caption)}</figcaption>` : ''}</figure>\n\n`;
   });
-  // 콜아웃 → 인용 상자, 단(columns) → 차례로 펼친다
+  // 코드 탭(S-020): Notion 탭 블록 → 탭마다 이름표 + 내용. 탭이 여럿이면 전환(code-tabs), 하나면 파일명 이름표(code-file)
+  s = s.replace(/<tabs\b[^>]*>([\s\S]*?)<\/tabs>/g, (_, inner) => {
+    const tabs = [...inner.matchAll(/<tab\b[^>]*>[ \t]*\n?([^\n]*)\n([\s\S]*?)<\/tab>/g)].map((m) => ({ label: m[1].replace(/<[^>]+>/g, '').trim(), body: m[2].trim() }));
+    if (!tabs.length) return '\n\n';
+    const kind = tabs.length > 1 ? 'code-tabs' : 'code-file';
+    const panes = tabs.map((t) => `<div class="code-tab" data-label="${esc(t.label)}">\n\n<p class="code-label">${esc(t.label)}</p>\n\n${t.body}\n\n</div>`);
+    return `\n\n<div class="${kind}">\n\n${panes.join('\n\n')}\n\n</div>\n\n`;
+  });
+  // 단계(S-020, Clerk식): 2열 블록에서 왼쪽은 글, 오른쪽에 코드가 있으면 한 단계. 이어진 단계는 렌더에서 묶고 번호를 붙인다.
+  // 코드가 없는 2열 블록은 차례로 펼친다
+  const hasCode = (t) => /```|class="code-(tabs|file)"/.test(t);
+  s = s.replace(/<columns\b[^>]*>([\s\S]*?)<\/columns>/g, (_, inner) => {
+    const cols = [...inner.matchAll(/<column\b[^>]*>([\s\S]*?)<\/column>/g)].map((m) => m[1].trim());
+    if (cols.length === 2 && !hasCode(cols[0]) && hasCode(cols[1])) {
+      return `\n\n<div class="blog-step">\n\n<div class="blog-step-text">\n\n${cols[0]}\n\n</div>\n\n<div class="blog-step-code">\n\n${cols[1]}\n\n</div>\n\n</div>\n\n`;
+    }
+    return `\n\n${cols.join('\n\n')}\n\n`;
+  });
+  // 콜아웃 → 인용 상자, 인용(태그형) → blockquote
   s = s.replace(/<callout\b[^>]*>/g, '\n\n<aside class="callout">\n\n').replace(/<\/callout>/g, '\n\n</aside>\n\n');
-  s = s.replace(/<\/?columns?\b[^>]*>/g, '\n\n');
+  s = s.replace(/<quote\b[^>]*>/g, '\n\n<blockquote>\n\n').replace(/<\/quote>/g, '\n\n</blockquote>\n\n');
+  // 토글(태그형): 첫 줄이 제목, 빈 줄 뒤가 내용 → details
+  s = s.replace(/<toggle\b[^>]*>[ \t]*\n?([^\n]*)\n?([\s\S]*?)<\/toggle>/g, (_, title, body) => `\n\n<details>\n<summary>${title.trim()}</summary>\n\n${body.trim()}\n\n</details>\n\n`);
+  // 동기화 블록은 내용만, 링크 미리보기는 링크로, 날짜는 글자로
+  s = s.replace(/<\/?synced-block(?:-reference)?\b[^>]*>/g, '\n\n');
+  s = s.replace(/<link-preview\b[^>]*url="([^"]+)"[^>]*\/>/g, '<$1>');
+  s = s.replace(/<date\b[^>]*start="([^"]+)"[^>]*\/>/g, '$1');
   // 토글은 HTML details 그대로(허용 태그)
   s = s.replace(/<details\b[^>]*>/g, '\n\n<details>\n\n').replace(/<\/details>/g, '\n\n</details>\n\n');
   s = s.replace(/<summary\b[^>]*>([\s\S]*?)<\/summary>/g, '<summary>$1</summary>\n\n');
   // 빈 문단·빈 블록·목차 블록
-  s = s.replace(/<p\s*\/>/g, '\n').replace(/<empty-block\s*\/>/g, '\n').replace(/<table_of_contents\s*\/>/g, '');
+  s = s.replace(/<p\s*\/>/g, '\n').replace(/<empty-block\s*\/>/g, '\n').replace(/<table[_-]of[_-]contents\b[^>]*\/>/g, '');
   // 다른 페이지·DB·멘션은 글자만(링크는 비공개 Notion 주소라 내보내지 않는다)
-  s = s.replace(/<(mention-[a-z-]+|page|database)\b[^>]*>([\s\S]*?)<\/\1>/g, '$2').replace(/<(mention-[a-z-]+|page|database)\b[^>]*\/>/g, '');
+  s = s.replace(/<(mention(?:-[a-z-]+)?|page|database|folder)\b[^>]*>([\s\S]*?)<\/\1>/g, '$2').replace(/<(mention(?:-[a-z-]+)?|page|database|folder)\b[^>]*\/>/g, '');
   // 글자 색·배경색은 버린다(CSP: style 금지, 사이트 색은 토큰으로)
   s = s.replace(/<span\b[^>]*>([\s\S]*?)<\/span>/g, '$1').replace(/\s*\{color="[^"]*"\}/g, '');
   // 지원하지 않는 미디어(동영상·파일·PDF·오디오·임베드·북마크)
@@ -76,14 +101,14 @@ export function normalizeNotionMarkdown(md) {
 const schema = {
   ...defaultSchema,
   clobberPrefix: '',
-  tagNames: [...defaultSchema.tagNames, 'figure', 'figcaption', 'aside', 'details', 'summary'],
+  tagNames: [...defaultSchema.tagNames, 'figure', 'figcaption', 'aside', 'details', 'summary', 'u'],
   attributes: {
     ...defaultSchema.attributes,
     '*': (defaultSchema.attributes['*'] ?? []).filter((a) => a !== 'style'),
     h2: ['id'], h3: ['id'], h4: ['id'],
     aside: [['className', 'callout']],
-    div: [['className', 'blog-embed'], 'dataBlogComponent', 'dataProps'],
-    p: [['className', 'blog-embed-fallback']],
+    div: [['className', 'blog-embed', 'blog-steps', 'blog-step', 'blog-step-text', 'blog-step-code', 'code-tabs', 'code-file', 'code-tab'], 'dataBlogComponent', 'dataProps', 'dataLabel'],
+    p: [['className', 'blog-embed-fallback', 'code-label']],
     img: ['src', 'alt', 'width', 'height', 'loading', 'decoding', 'fetchPriority'],
     a: ['href', 'title', 'rel', 'target'],
     code: [['className', /^language-./]],
@@ -148,6 +173,38 @@ export async function renderPost(notionMarkdown, { resolveImage }) {
       });
     })
     .use(rehypeSanitize, schema)
+    // 문법 색(S-020): 정리한 뒤에 입힌다 — 글자를 span.hljs-*로 감쌀 뿐이라 안전하고, 색은 CSS 클래스라 CSP 그대로
+    .use(rehypeHighlight, { detect: false, aliases: { bash: ['sh', 'shell', 'zsh', 'console'] } })
+    .use(() => (tree) => {
+      // 줄 번호: pre 안 코드 옆에 숫자 열(aria-hidden). pre는 줄을 접지 않아 높이가 맞는다
+      walk(tree, (n) => {
+        if (n.type !== 'element' || n.tagName !== 'pre') return;
+        const code = n.children.find((c) => c.type === 'element' && c.tagName === 'code');
+        if (!code) return;
+        const lines = textOf(code).replace(/\n$/, '').split('\n').length;
+        const numbers = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+        n.children = [{ type: 'element', tagName: 'span', properties: { className: ['code-ln'], ariaHidden: 'true' }, children: [{ type: 'text', value: numbers }] }, code];
+      });
+      // 이어진 단계(div.blog-step)를 div.blog-steps 하나로 묶는다(daisyUI .steps·.step과 겹치지 않게 blog- 접두) — 번호는 CSS counter
+      walk(tree, (n) => {
+        if (!n.children?.length || (n.properties?.className ?? []).includes('blog-steps')) return;
+        const out = [];
+        let group = null;
+        for (const c of n.children) {
+          const isStep = c.type === 'element' && c.tagName === 'div' && (c.properties?.className ?? []).includes('blog-step');
+          if (isStep) {
+            if (!group) out.push((group = { type: 'element', tagName: 'div', properties: { className: ['blog-steps'] }, children: [] }));
+            group.children.push(c);
+          } else if (group && c.type === 'text' && !c.value.trim()) {
+            /* 단계 사이 빈 줄 */
+          } else {
+            group = null;
+            out.push(c);
+          }
+        }
+        n.children = out;
+      });
+    })
     .use(rehypeSlug)
     // 목차와 바깥 링크
     .use(() => (tree) => {

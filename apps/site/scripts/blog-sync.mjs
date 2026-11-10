@@ -4,7 +4,7 @@
 // 사용: pnpm blog:sync            운영 R2에 올린다
 //       pnpm blog:sync --dry      올리지 않고 .wrangler/tmp/blog/에 결과만 쓴다
 //       pnpm blog:sync --local    wrangler dev의 로컬 R2에 올린다(로컬 확인용)
-//       pnpm blog:sync --fixture  Notion 대신 scripts/blog/fixture.md 한 편(slug fixture-test)으로 — 토큰 없이 확인
+//       pnpm blog:sync --fixture  Notion 대신 scripts/blog/fixture*.md 두 편(fixture-test, steps-example)으로 — 토큰 없이 확인
 // 토큰: 환경변수 NOTION_TOKEN 또는 .env의 NOTION_TOKEN(Notion 내부 통합, 읽기 전용, "bettercurl 블로그" 페이지에만 연결)
 // R2 쓰기: wrangler(로그인 또는 CLOUDFLARE_API_TOKEN). 버킷은 wrangler.jsonc의 R2(portfolio-rag)
 import { execFileSync } from 'node:child_process';
@@ -172,8 +172,15 @@ async function resolveImage(src) {
 }
 
 // ── 본 작업 ──────────────────────────────────────────────
+const FIXTURES = {
+  fixture: 'scripts/blog/fixture.md',
+  steps: 'scripts/blog/fixture-steps.md', // Notion 2열·탭 블록을 다시 읽은 실제 형식(S-020)
+};
 const entries = FIXTURE
-  ? [{ id: 'fixture', meta: { title: '변환 확인용 글', slug: 'fixture-test', locale: 'ko', summary: 'Notion식 마크다운 변환·사진·표·콜아웃을 확인하는 글이다. 운영에는 올리지 않는다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString() } }]
+  ? [
+      { id: 'fixture', meta: { title: '변환 확인용 글', slug: 'fixture-test', locale: 'ko', summary: 'Notion식 마크다운 변환·사진·표·콜아웃을 확인하는 글이다. 운영에는 올리지 않는다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString() } },
+      { id: 'steps', meta: { title: 'Clerk식 단계별 코드 설명 — Notion 2열 블록으로 쓰기', slug: 'steps-example', locale: 'ko', summary: '설명과 코드를 단계마다 나란히 두는 글의 확인용 견본이다. 운영에는 올리지 않는다.', date: '2026-11-10', tags: ['Web'], updated: new Date().toISOString() } },
+    ]
   : await listPublished();
 console.log(`공개 글 ${entries.length}편 (${DRY ? '확인만' : LOCAL ? '로컬 R2' : `운영 R2 ${BUCKET}`})`);
 
@@ -201,7 +208,7 @@ for (const { id, meta } of entries) {
     continue;
   }
   try {
-    const md = FIXTURE ? readFileSync('scripts/blog/fixture.md', 'utf8') : await pageMarkdown(id);
+    const md = FIXTURE ? readFileSync(FIXTURES[id], 'utf8') : await pageMarkdown(id);
     const { html, toc, images: used, warnings } = await renderPost(md, { resolveImage });
     const fatal = warnings.filter((w) => w.fatal);
     if (fatal.length) throw new Error(fatal.map((w) => w.msg).join(', '));

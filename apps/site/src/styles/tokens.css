@@ -18,6 +18,15 @@
   --color-tag: #ff5fa8;
   --color-danger: #f87171;
   --color-success: #6fd08a;
+  /* 블로그 코드 블록(11/10, docs/08-blog.md S-020): 바탕보다 한 단계 어둡게, 문법 색은 채도를 낮춰 강조색(키워드)과 겹치지 않게 */
+  --code-bg: #111316;
+  --code-keyword: var(--color-accent);
+  --code-string: #a6d189;
+  --code-number: #e5a56f;
+  --code-comment: #6f756d;
+  --code-title: #e9ebe6;
+  --code-attr: #9fc6d4;
+  --code-line: #464c52; /* 줄 번호 */
 
   --font-sans: 'IBM Plex Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Quantico', 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
