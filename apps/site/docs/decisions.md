@@ -11,6 +11,25 @@
 
 ---
 
+## 2026-11-11
+
+### S-022 · 잠정 · 상호작용과 면 — 버튼 떠오름·눌림, 제목 강조, 선 없이 면의 층 (dev에서 확인 중)
+- 결정(잠정): ① 버튼은 선 없이 면. 마우스는 호버 때 1px 떠오르고 한 단계 밝게, 누름은 가운데 기준 0.97(60ms, 떠오른 자리 그대로). 터치는 누를 때만 ② 목록(홈 프로젝트·블로그)은 제목만 강조색 — 마우스는 호버, 터치는 누르는 동안(+ 줄 바탕). 호버 규칙은 `(hover: hover) and (pointer: fine)` 안에만 ③ 선 없음: 장식용 선 대신 바탕 밝기의 층 — 바탕 `#17191c` → 컨테이너 `--color-surface #25292e` → 그 안 `--color-surface-2 #31363c` → 호버·누름 `--color-surface-3 #3b4147`, 컨테이너 위쪽 모서리 `--color-edge`(흰 5%). 코드 블록만 바탕보다 어둡게(`--code-bg`)
+- 남기는 선: 입력칸 테두리(쓸 수 있다는 신호), 키보드 포커스 테두리, 구조를 나누는 선(글 머리 아래 구분선, 표의 줄, 변경 이력 타임라인), 어드민 화면(이번 범위 밖)
+- 본 것: 1차 샘플(스포트라이트·기울기·링크 밑줄·탭 밑줄 이동 — 사용자 "너무 과함") / 2차(버튼·제목만, 터치 분리 — 채택) / 버튼 눌림 아래 쏠림(떠오름이 풀리며 내려앉음 → 떠오른 자리에서 가운데로 줄어들게) / 선 있음 vs 선 없음(Vercel식 — 채택) / 컨테이너 `#1c1f22`(바탕과 구분 안 됨 → `#25292e`)
+- 자료: 비교 샘플 https://claude.ai/artifact/9puE8hKce1oez7ZCb3oRPr (비공개, 7판)
+- 사용자 요청(11/10~11): "버튼과 타이틀 강조 정도가 적당, 모바일은 다르게", "scale은 중앙 기점", "테두리 없는 스타일(Vercel)", "뷰 컨테이너도", "컨테이너 배경이 스크롤 배경과 구분이 안 됨", "본선 전에 데브로"
+- 상태: dev(`portfolio-web-dev`)에 올려 확인 → 사용자가 좋다고 하면 확정하고 `main`·운영으로
+- 문서: [01-frontend.md](01-frontend.md) "상호작용과 면"
+
+### S-021 · 확정 · 개발 환경 — 운영 전에 dev Worker에서 확인
+- 결정: 같은 코드를 `CLOUDFLARE_ENV=dev`로 빌드해 별도 Worker `portfolio-web-dev`(https://portfolio-web-dev.yeonghun-yoo.workers.dev)에 올린다(`pnpm site deploy:dev`). D1·KV는 dev 전용(`portfolio-web-dev`, 운영 데이터 안 건드림), R2·Vectorize·Workers AI는 운영과 같이 읽는다. 비밀값은 올리지 않는다 — 메일·Telegram·로그인은 dev에서 꺼진 채(키가 없으면 그 기능만 실패). 운영 도메인이 아닌 주소는 `X-Robots-Tag: noindex, nofollow`
+- 작업 흐름: 큰 디자인·구조 변경은 세션 브랜치에서 dev에 먼저 → 확인 뒤 `main`·운영(`pnpm site deploy`). 작은 수정은 지금처럼 `main`
+- 본 것: Worker 버전 미리보기 주소(`preview_urls`) — 운영과 같은 D1·KV에 쓰게 되고 비밀값도 같이 쓴다 / 로컬 wrangler dev만 — 휴대폰·다른 사람이 못 본다 / **별도 dev Worker(채택)**
+- 고친 것: 예전 workers.dev 301(S-014)을 운영 Worker 주소(`portfolio-web.<계정>.workers.dev`)에만 걸었다 — 전에는 모든 `*.workers.dev`를 돌려 dev도 운영으로 넘어갔다
+- 사용자 요청(11/11): "디자인 본선에 적용하기 전에 데브로 적용해 보자"
+- 문서: [00-infra.md](00-infra.md) "개발 환경"
+
 ## 2026-11-10
 
 ### S-020 · 확정 · 블로그 글 화면은 Vercel 블로그식(글에만 집중), 코드 설명은 Clerk식 단계 — Notion 2열 블록 하나 = 한 단계

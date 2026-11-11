@@ -551,7 +551,7 @@ export default function ChatDock({ dict, locale }: Props) {
                           href={link.href}
                           onClick={() => followSource(link.href)}
                           aria-label={`${link.label} — ${dict.chat.goTo}`}
-                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-3 text-sm text-muted hover:border-accent hover:text-fg transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-surface-2 px-3 text-sm text-muted pointer-fine:hover:bg-surface-3 hover:text-fg transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                         >
                           {link.label}
                           <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">

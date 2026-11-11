@@ -17,6 +17,8 @@ const cases = [
   ['GET', 'https://portfolio-web.yeonghun-yoo.workers.dev/ko?a=b', 301, 'https://bettercurl.dev/ko/?a=b'],
   ['GET', 'https://portfolio-web.yeonghun-yoo.workers.dev/', 301, 'https://bettercurl.dev/'],
   ['POST', 'https://portfolio-web.yeonghun-yoo.workers.dev/api/letters', 308, 'https://bettercurl.dev/api/letters'],
+  ['GET', 'https://portfolio-web-dev.yeonghun-yoo.workers.dev/ko/', null], // dev Worker(S-021)는 그대로
+  ['GET', 'https://portfolio-web-dev.yeonghun-yoo.workers.dev/ko', 301, 'https://portfolio-web-dev.yeonghun-yoo.workers.dev/ko/'],
 ];
 let fail = 0;
 for (const [method, url, status, location] of cases) {

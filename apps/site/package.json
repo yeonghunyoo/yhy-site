@@ -29,7 +29,8 @@
     "icon:apple": "node scripts/apple-touch-icon.mjs",
     "seo:check": "node scripts/seo-check.mjs",
     "test": "node scripts/redirects-check.mjs && node scripts/blog/convert-check.mjs",
-    "blog:sync": "node scripts/blog-sync.mjs"
+    "blog:sync": "node scripts/blog-sync.mjs",
+    "deploy:dev": "sh scripts/deploy-dev.sh"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",

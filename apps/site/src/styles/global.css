@@ -15,6 +15,8 @@
 @theme inline {
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
   --color-fg: var(--color-fg);
   --color-muted: var(--color-muted);
   --color-border: var(--color-border);
@@ -284,13 +286,16 @@ html[data-fab='hidden'] .chat-fab {
 /* 블로그(11/10, docs/08-blog.md) — 목록은 홈 프로젝트 목록과 같은 결, 본문은 .prose-body + Notion에서 온 요소(표·그림·콜아웃·토글) */
 @layer components {
   .blog-list {
-    border-top: 1px solid var(--color-border);
+    display: grid;
+    gap: 0.25rem;
+    margin-inline: -0.75rem; /* 줄 바탕이 글자 바깥으로 살짝 나오게(선 없음, S-022) */
   }
   .blog-list > li > a {
     display: grid;
     gap: 0.375rem;
-    padding: 1.25rem 0;
-    border-bottom: 1px solid var(--color-border);
+    padding: 1.125rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: background-color var(--dur) var(--ease);
   }
   .blog-list .when,
   .blog-list .tags {
@@ -302,9 +307,22 @@ html[data-fab='hidden'] .chat-fab {
     font-size: 1.25rem;
     font-weight: 700;
   }
-  .blog-list > li > a:hover .name,
-  .blog-list > li > a:focus-visible .name {
+  .blog-list .name {
+    transition: color var(--dur) var(--ease);
+  }
+  /* 마우스: 제목만 강조색. 터치: 누르는 동안 제목 강조색 + 줄 바탕 한 단계(S-022) */
+  @media (hover: hover) and (pointer: fine) {
+    .blog-list > li > a:hover .name {
+      color: var(--color-accent);
+    }
+  }
+  .blog-list > li > a:focus-visible .name,
+  .blog-list > li > a:active .name {
     color: var(--color-accent);
+  }
+  .blog-list > li > a:active {
+    background: var(--color-surface);
+    transition-duration: var(--dur-press);
   }
   .blog-list .one {
     color: var(--color-muted);
@@ -325,8 +343,7 @@ html[data-fab='hidden'] .chat-fab {
   .blog-body img {
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius);
-    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
   }
   .blog-body figcaption {
     margin-top: 0.5rem;
@@ -336,9 +353,9 @@ html[data-fab='hidden'] .chat-fab {
   .blog-body .callout {
     margin: 1.5rem 0;
     padding: 1rem 1.25rem 0.25rem;
-    border-left: 2px solid var(--color-accent);
     background: var(--color-surface);
-    border-radius: var(--radius);
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 0 var(--color-edge);
   }
   .blog-body table {
     display: block;
@@ -469,8 +486,7 @@ html[data-fab='hidden'] .chat-fab {
     position: relative;
     margin: 1.75rem 0;
     overflow: hidden;
-    border: 1px solid var(--color-border);
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     background: var(--code-bg);
   }
   .blog-body .code-bar {
@@ -479,7 +495,7 @@ html[data-fab='hidden'] .chat-fab {
     justify-content: space-between;
     gap: 1rem;
     padding: 0 0.5rem 0 0.875rem;
-    border-bottom: 1px solid var(--color-border);
+    background: var(--code-bar);
     font-family: var(--font-mono);
     font-size: 0.75rem;
     color: var(--color-muted);
@@ -511,9 +527,19 @@ html[data-fab='hidden'] .chat-fab {
     font-size: 0.6875rem;
     color: var(--color-quiet);
   }
-  .blog-body .code-copy:hover {
-    color: var(--color-fg);
-    background: var(--color-surface);
+  .blog-body .code-copy {
+    transform-origin: 50% 50%;
+    transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .blog-body .code-copy:hover {
+      color: var(--color-fg);
+      background: var(--color-surface-2);
+    }
+  }
+  .blog-body .code-copy:active {
+    transform: scale(0.95);
+    transition-duration: var(--dur-press);
   }
   .blog-body .code-plain > .code-copy {
     position: absolute;
@@ -524,13 +550,13 @@ html[data-fab='hidden'] .chat-fab {
   .blog-body .code-label {
     margin: 0;
     padding: 0.5rem 0.875rem;
-    border-bottom: 1px solid var(--color-border);
+    background: var(--code-bar);
     font-family: var(--font-mono);
     font-size: 0.75rem;
     color: var(--color-muted);
   }
   .blog-body .code-tab + .code-tab {
-    border-top: 1px solid var(--color-border);
+    border-top: 2px solid var(--color-bg);
   }
   .blog-body .is-live > .code-tab + .code-tab {
     border-top: 0;
@@ -611,9 +637,8 @@ html[data-fab='hidden'] .chat-fab {
     place-items: center;
     width: 1.375rem;
     height: 1.375rem;
-    border: 1px solid var(--color-border);
     border-radius: 999px;
-    background: var(--color-bg);
+    background: var(--color-surface-2);
     font-family: var(--font-mono);
     font-size: 0.6875rem;
     color: var(--color-muted);
@@ -668,4 +693,31 @@ html[data-fab='hidden'] .chat-fab {
     font-size: clamp(1.25rem, 4vw, 2rem);
     letter-spacing: 0.02em;
   }
+}
+
+/* ── 상호작용·깊이(11/11, decisions S-022 잠정 — dev에서 확인 중) ─────────────────────────
+   버튼: 선 없이 면, 마우스는 호버 때 1px 떠오름·한 단계 밝게, 누름은 가운데 기준 0.97(마우스는 떠오른 자리 그대로).
+   터치는 호버가 없으니 누를 때만 반응. 휴대폰 기본 회색 탭 번쩍임은 끈다. 움직임 줄이기면 크기·위치 변화 없이 색만 */
+:root { -webkit-tap-highlight-color: transparent; }
+.btn {
+  border-color: transparent;
+  background-color: var(--color-surface-2);
+  box-shadow: inset 0 1px 0 var(--color-edge);
+  transform-origin: 50% 50%;
+  transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn:not(:disabled):hover { transform: translateY(-1px); background-color: var(--color-surface-3); border-color: transparent; }
+  .btn-primary:not(:disabled):hover { background-color: var(--color-accent-hover); }
+  .btn:not(:disabled):hover:active { transform: translateY(-1px) scale(0.97); }
+}
+.btn:not(:disabled):active { transform: scale(0.97); transition-duration: var(--dur-press); background-color: var(--color-surface-3); }
+.btn-primary:not(:disabled):active { background-color: var(--color-accent-press); }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn:hover, .btn:active { transform: none !important; }
 }

@@ -7,7 +7,11 @@
   /* 나이트 한 가지(11/03 확정): 기기의 밝은·어두운 설정과 상관없이 같은 색 */
   color-scheme: dark;
   --color-bg: #17191c;
-  --color-surface: #202327;
+  /* 면 단계(11/11, S-022 잠정 — 선 없음: 선 대신 바탕 밝기로 구분). 바탕 → 컨테이너(surface) → 그 안의 요소(surface-2) → 호버·누름(surface-3) */
+  --color-surface: #25292e;
+  --color-surface-2: #31363c;
+  --color-surface-3: #3b4147;
+  --color-edge: rgb(255 255 255 / 0.05); /* 빛 받은 위쪽 모서리 — 선 없이 윤곽 */
   --color-fg: #e9ebe6;
   --color-muted: #b0b4ad;
   --color-quiet: #858a81;
@@ -15,11 +19,14 @@
   --color-border: #3a3f44;
   --color-accent: #8c98ff;
   --color-accent-fg: #0e1016;
+  --color-accent-hover: #9ca6ff;
+  --color-accent-press: #7f8bf5;
   --color-tag: #ff5fa8;
   --color-danger: #f87171;
   --color-success: #6fd08a;
   /* 블로그 코드 블록(11/10, docs/08-blog.md S-020): 바탕보다 한 단계 어둡게, 문법 색은 채도를 낮춰 강조색(키워드)과 겹치지 않게 */
   --code-bg: #111316;
+  --code-bar: #1b1e22; /* 이름표 띠 — 선 대신 한 단계 밝게 */
   --code-keyword: var(--color-accent);
   --code-string: #a6d189;
   --code-number: #e5a56f;
@@ -33,6 +40,10 @@
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius: 0.25rem;
+  /* 움직임(11/11, S-022): 호버·누름 반응. 누름은 빠르게 들어가고(60ms) 기본 속도로 돌아온다 */
+  --dur: 160ms;
+  --dur-press: 60ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* 떠 있는 것의 그림자(11/05): 어두운 바탕에서 큰 검은 그림자는 탁해 보여서, 1px 밝은 테두리 + 짧고 옅은 그림자 두 겹으로.
      float = 챗 바·알약, pop = 펼친 챗 창·확대한 썸네일 */
   --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.24), 0 8px 24px rgb(0 0 0 / 0.22);

@@ -34,4 +34,27 @@
     "binding": "ASSETS",
     "run_worker_first": ["/*", "!/_astro/*", "!/hero/*", "!/favicon.svg", "!/apple-touch-icon.png"]
   }
+  ,
+  // 개발 환경(11/11, decisions S-021): 운영에 넣기 전 확인용 Worker. `pnpm deploy:dev` → https://portfolio-web-dev.yeonghun-yoo.workers.dev
+  // D1·KV는 dev 전용(운영 데이터를 건드리지 않는다). R2(블로그·RAG 원본)·Vectorize·AI는 운영과 같이 읽는다. 비밀값은 넣지 않는다 —
+  // 메일·Telegram·로그인은 dev에서 꺼져 있다(키가 없으면 그 기능만 실패). 검색에는 X-Robots-Tag noindex(src/worker.ts)
+  "env": {
+    "dev": {
+      "name": "portfolio-web-dev",
+      "workers_dev": true,
+      "preview_urls": false,
+      "routes": [],
+      "d1_databases": [{ "binding": "DB", "database_name": "portfolio-web-dev", "database_id": "b9136d0d-e416-482f-b0ee-8d5b67045612", "migrations_dir": "migrations" }],
+      "kv_namespaces": [{ "binding": "KV", "id": "285b0afb76f6418f8ff07a488fec4af3" }],
+      "ai": { "binding": "AI", "remote": true },
+      "vectorize": [{ "binding": "VEC", "index_name": "portfolio-rag", "remote": true }],
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "portfolio-rag", "remote": true }],
+      "vars": {
+        "SITE_NAME": "yhy (dev)",
+        "BETTER_AUTH_URL": "https://portfolio-web-dev.yeonghun-yoo.workers.dev",
+        "MAIL_FROM": "letters@mail.bettercurl.dev",
+        "LETTER_TO": "letters@bettercurl.dev"
+      }
+    }
+  }
 }

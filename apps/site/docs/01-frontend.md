@@ -271,3 +271,21 @@ JSON-LD·`llms.txt`는 도메인 전에 만들어 두고 URL만 `Astro.site`로 
 - /ko, /en 모두 인트로·프로젝트·연락 섹션이 보인다
 - Lighthouse 모바일 성능 90 이상, 가로 스크롤 없음
 - 실기기 2대에서 레이아웃 깨짐 없음
+
+## 상호작용과 면 (11/11, S-022 잠정 — dev에서 확인 중)
+
+**움직임 토큰**(tokens.css): `--dur` 160ms, `--dur-press` 60ms, `--ease` cubic-bezier(0.2, 0.8, 0.2, 1)
+
+**버튼**(daisyUI `.btn` 위에 global.css 끝에서 덮음): 선 없이 `--color-surface-2` 면 + 위쪽 `--color-edge`. 마우스 호버 1px 떠오름·`--color-surface-3`(주 버튼은 `--color-accent-hover`), 누름 가운데 기준 `scale(0.97)` — 마우스는 `translateY(-1px) scale(0.97)`로 떠오른 자리 그대로. 터치는 누름만. 움직임 줄이기면 크기·위치 변화 없음
+
+**목록 제목**(홈 프로젝트 `.home-work`, 블로그 `.blog-list`): 마우스 호버 = 제목 강조색(+ 홈은 화살표·썸네일 확대), 터치 = 누르는 동안 제목 강조색(+ 블로그는 줄 바탕)
+
+**규칙**
+- 호버는 `@media (hover: hover) and (pointer: fine)` 안에만(Tailwind는 `pointer-fine:hover:`) — 휴대폰에서 호버가 눌린 채 남는다
+- 누름은 `:active`. iOS는 문서에 빈 `touchstart` 리스너가 있어야 보인다(BaseLayout). 휴대폰 기본 탭 번쩍임은 끈다(`-webkit-tap-highlight-color: transparent`)
+- 크기 변화는 늘 가운데 기준(`transform-origin: 50% 50%`)
+
+**면의 층(선 없음)**: 바탕 `--color-bg` → 컨테이너 `--color-surface` → 그 안 `--color-surface-2` → 호버·누름 `--color-surface-3`. 안쪽이 늘 한 단계 밝다(어두우면 묻힌다). 코드 블록만 바탕보다 어둡게(`--code-bg`, 이름표 띠 `--code-bar`)
+- 선을 남기는 곳: 입력칸(`.field`), 키보드 포커스, 구조 구분(글 머리 아래, 표 줄, 변경 이력 타임라인, 단계 세로선). 어드민은 이번 범위 밖
+- 11/11 바꾼 곳: 버튼 전체, 블로그 목록·코드 블록·콜아웃·이미지·단계 번호, 프로젝트 상세 스택 칩·갤러리 썸네일과 화살표, 챗 제안 칩, 시트 테두리
+

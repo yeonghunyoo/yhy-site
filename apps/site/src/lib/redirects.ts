@@ -3,6 +3,12 @@
 
 export const SITE_ORIGIN = 'https://bettercurl.dev';
 
+/** 운영 Worker의 예전 workers.dev 주소만 도메인으로 보낸다. dev Worker(portfolio-web-dev.…workers.dev, S-021)는 그대로 둔다 */
+export const isProdWorkersDev = (host: string) => /^portfolio-web\.[^.]+\.workers\.dev$/.test(host);
+
+/** 검색에 내보낼 주소인지 — 운영 도메인만. 나머지(dev Worker·로컬)는 X-Robots-Tag noindex */
+export const isProdHost = (host: string) => host === new URL(SITE_ORIGIN).hostname;
+
 /** 언어 페이지인데 끝 슬래시가 없으면(/ko, /en/privacy, /ko/projects/nuvo) 붙인 경로. 파일(.txt 등)·그 밖 경로는 그대로 */
 export function withTrailingSlash(pathname: string): string {
   return /^\/(ko|en)(\/[^.]*)?$/.test(pathname) && !pathname.endsWith('/') ? `${pathname}/` : pathname;
@@ -18,7 +24,7 @@ export function redirectFor(request: Request): Response | null {
   const url = new URL(request.url);
   const status = request.method === 'GET' || request.method === 'HEAD' ? 301 : 308;
   const path = withTrailingSlash(url.pathname);
-  if (url.hostname.endsWith('.workers.dev')) return Response.redirect(`${SITE_ORIGIN}${path}${url.search}`, status);
+  if (isProdWorkersDev(url.hostname)) return Response.redirect(`${SITE_ORIGIN}${path}${url.search}`, status);
   if (path !== url.pathname) return Response.redirect(`${url.origin}${path}${url.search}`, status);
   return null;
 }

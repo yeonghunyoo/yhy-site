@@ -107,6 +107,8 @@ const isHome = /^\/(ko|en)\/?$/.test(path);
       import { initNoDrag } from '../lib/no-drag';
       initChatFab();
       initNoDrag();
+      // iOS Safari는 터치 리스너가 있어야 :active(누름 반응)를 보여 준다(11/11, S-022)
+      document.addEventListener('touchstart', () => {}, { passive: true });
     </script>
   </body>
 </html>

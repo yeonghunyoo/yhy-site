@@ -82,3 +82,21 @@
   - 등록 가능 여부·가격 조회(11/04 확인): `POST /accounts/{id}/registrar/domain-check` 본문 `{"domains": ["a.dev", …]}` → 도메인마다 `registrable`, `tier`(standard/premium), `reason`, `pricing`(첫해·갱신). 이름으로 넓게 찾기는 `GET /accounts/{id}/registrar/domain-search?q=이름`. 토큰에 Registrar 권한이 필요하다. `GET /registrar/domains/{도메인}`은 지원 확장자 여부만 알려 준다(가능 여부 아님)
 - [x] GitHub 레포 생성 (`yeonghunyoo/yhy-site`)
 - [x] Cloudflare 계정 생성, `wrangler login`, workers.dev 서브도메인 등록
+
+## 개발 환경 (11/11, S-021)
+
+운영에 넣기 전 확인용 Worker. 같은 코드, 다른 이름·데이터.
+
+| | 운영 | dev |
+| --- | --- | --- |
+| Worker | `portfolio-web` | `portfolio-web-dev` |
+| 주소 | https://bettercurl.dev | https://portfolio-web-dev.yeonghun-yoo.workers.dev |
+| 배포 | `pnpm site deploy` | `pnpm site deploy:dev` (`scripts/deploy-dev.sh`: `CLOUDFLARE_ENV=dev astro build` → SEO 점검(경고만) → dev D1 마이그레이션 → `wrangler deploy`) |
+| D1 | `portfolio-web` | `portfolio-web-dev` (`b9136d0d-…`) |
+| KV | `923982f2…` | `285b0afb…` |
+| R2·Vectorize·AI | 같이 씀(읽기) | 같이 씀(읽기) |
+| 비밀값 | Cloudflare 환경변수 | 없음 — 메일·Telegram·로그인은 꺼진 채 |
+| 검색 | 색인 | `X-Robots-Tag: noindex, nofollow`(src/worker.ts) |
+
+설정은 `wrangler.jsonc`의 `env.dev`(바인딩·vars는 환경마다 다시 적는다 — 위에서 물려받지 않는다). dev에서 블로그는 운영 R2를 읽으므로 같은 글이 보인다.
+

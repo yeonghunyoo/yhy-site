@@ -47,7 +47,7 @@ const items = await Promise.all(
           {items.map((it, i) => (
             <button
               type="button"
-              class="h-72 max-w-[calc(100vw-2rem)] shrink-0 snap-start cursor-zoom-in overflow-hidden rounded-[var(--radius)] border border-border bg-surface md:h-[28rem]"
+              class="h-72 max-w-[calc(100vw-2rem)] shrink-0 snap-start cursor-zoom-in overflow-hidden rounded-[var(--radius)] bg-surface md:h-[28rem]"
               data-open={i}
               aria-label={`${g.open}: ${it.alt}`}
             >
@@ -69,7 +69,7 @@ const items = await Promise.all(
           <>
             <button
               type="button"
-              class="absolute top-1/2 left-2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg/80 text-fg backdrop-blur disabled:hidden pointer-fine:flex"
+              class="absolute top-1/2 left-2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface-2/90 text-fg backdrop-blur disabled:hidden pointer-fine:flex"
               aria-label={g.prev}
               data-prev
               disabled
@@ -80,7 +80,7 @@ const items = await Promise.all(
             </button>
             <button
               type="button"
-              class="absolute top-1/2 right-2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg/80 text-fg backdrop-blur disabled:hidden pointer-fine:flex"
+              class="absolute top-1/2 right-2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface-2/90 text-fg backdrop-blur disabled:hidden pointer-fine:flex"
               aria-label={g.next}
               data-next
             >

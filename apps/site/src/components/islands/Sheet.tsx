@@ -96,7 +96,7 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="group/sheet relative flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius)] border border-border bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
+        className="group/sheet relative flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius)] bg-surface shadow-2xl outline-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-surface md:max-w-lg md:rounded-[var(--radius)] md:after:hidden"
         style={{
           transform: dragY ? `translateY(${dragY}px)` : undefined,
           transition: dragStart.current === null ? 'transform 0.2s' : undefined,
