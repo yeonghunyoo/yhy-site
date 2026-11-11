@@ -55,6 +55,9 @@
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
+- [ ] **dev 디자인 확인(S-022)** — https://portfolio-web-dev.yeonghun-yoo.workers.dev 에서 버튼·제목 반응·선 없음(마우스·휴대폰). 좋으면 S-022 확정 → 세션 브랜치를 `main`에 합치고 운영 배포
+- [ ] **dev D1 바인딩 오류 10021**(11/11) — dev에서 레터·챗·어드민이 안 됨. [00-infra.md](00-infra.md) "개발 환경" 알려진 문제
+- [x] **dev 배포** — 11/11 `1132ee17`(세션 브랜치 877d962, D1 없이)
 - [x] **배포** — 11/10 `7474b086`(`main` 1f2ebc2: 블로그 글 단 왼쪽 기준선, 그림·북마크 변환). SEO 점검 오류 0
 - [x] **배포** — 11/10 `dabbc785`(`main` d5fc8e6까지: 8 블로그 코드 S-017~S-020·목록 숨김). SEO 점검 오류 0. 블로그 목록은 비어 있음("아직 글이 없어요") — 시험 글 두 편(`/ko/blog/steps-example/`, `/ko/blog/fixture-test/`)만 목록 숨김·noindex로 운영 R2에. 실제 글이 생기면 시험 글은 Notion 동기화가 index를 새로 쓰며 빠진다
 - [x] **배포** — 11/10 `e9f3ee09`(클라우드 세션, `main` f1d8fb0까지: S-014 workers.dev 301, JSON-LD·`llms.txt`, S-015 SEO 후속·3D 늦은 시작). 배포 스크립트의 SEO 점검 통과(오류 0, 경고 1 — 홈 description 길이). 비밀값 그대로, RAG 동기화 건너뜀

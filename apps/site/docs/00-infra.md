@@ -100,3 +100,5 @@
 
 설정은 `wrangler.jsonc`의 `env.dev`(바인딩·vars는 환경마다 다시 적는다 — 위에서 물려받지 않는다). dev에서 블로그는 운영 R2를 읽으므로 같은 글이 보인다.
 
+**알려진 문제(11/11)**: dev D1(`portfolio-web-dev`)을 Worker에 붙이는 배포가 Cloudflare 오류 10021("binding DB of type d1 failed to generate")로 계속 실패한다. D1 만들기·마이그레이션은 되고, 운영 D1 바인딩은 된다. 그래서 `deploy-dev.sh`는 실패하면 D1 없이 올린다 — dev에서 화면·블로그는 되고 레터·챗(RAG가 D1을 읽음)·어드민은 안 된다. 할 일: 대시보드에서 dev Worker에 D1 바인딩을 직접 붙여 보기, 안 되면 D1을 새로 만들어 id 교체, 그래도 안 되면 Cloudflare 문의
+
