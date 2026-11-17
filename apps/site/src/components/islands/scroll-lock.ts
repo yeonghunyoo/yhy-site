@@ -55,10 +55,14 @@ export function lockScroll(): () => void {
   if (state.count++ === 0) {
     state.y = window.scrollY;
     state.saved = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: html.style.overflow };
+    // 자리를 차지하는 스크롤바(Windows, macOS "스크롤 막대 항상 보기")가 있으면 hidden으로 없애지 않고 빈 칸으로 남긴다 —
+    // 없애면 화면이 그 너비(약 15px)만큼 넓어져 가운데 정렬된 배경이 오른쪽으로 반쯤 밀린다(11/17). body가 고정이라 스크롤은 안 된다.
+    // body를 고정하면 그 순간 스크롤바가 사라지므로 고정하기 전에 잰다
+    const hasScrollbar = window.innerWidth > html.clientWidth;
     body.style.position = 'fixed';
     body.style.top = `-${state.y}px`;
     body.style.width = '100%';
-    html.style.overflow = 'hidden';
+    html.style.overflow = hasScrollbar ? 'hidden scroll' : 'hidden';
     document.addEventListener('touchstart', onTouchStart, { passive: true });
     document.addEventListener('touchmove', onTouchMove, { passive: false });
   }
