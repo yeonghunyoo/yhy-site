@@ -49,12 +49,14 @@
   - [ ] WAF 속도 제한 규칙(`/api/` IP당 10초 20회), Bot Fight Mode — 도메인이 붙었으니 이제 가능
 - [ ] **Cloudflare Always Use HTTPS** — SSL/TLS → Edge Certificates. 지금 http로 오면 200(11/09 점검)
 - [ ] **검색 노출(운영자)** — 네이버 서치어드바이저도(11/09 체크리스트). AI 크롤러 차단(Block AI bots) 꺼져 있는지 확인, Google Search Console·Bing Webmaster Tools 등록 + sitemap 제출. [01-frontend.md](01-frontend.md) "운영자가 할 일". 11/09 밖에서 점검: 운영 `robots.txt`에 Cloudflare가 덧붙인 내용 없음(관리형 robots.txt 꺼짐), GPTBot·ClaudeBot·PerplexityBot·Googlebot·bingbot 이름으로 요청하면 200(이름만 바꾼 요청이라 Block AI bots 꺼짐의 확정은 아님 — 대시보드에서 확인), DNS TXT에 `google-site-verification` 없음 → Search Console은 아직 미등록으로 보인다. 등록은 "도메인" 속성 + Cloudflare DNS TXT가 간단
-- [ ] **블로그 키 → GitHub Secrets**(S-018) — ① Notion: notion.so/profile/integrations에서 내부 통합(콘텐츠 읽기만) → "bettercurl 블로그" 페이지 ⋯ → 연결에 추가(이 페이지·DB만) ② Cloudflare: API 토큰 새로(권한 "Workers R2 Storage: Edit" 하나, 이 계정만) ③ GitHub 저장소 Settings → Secrets and variables → Actions: `NOTION_TOKEN`·`BLOG_R2_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`. 자동 주기는 Variables에 `BLOG_SYNC` = `on`. [08-blog.md](08-blog.md) "자동 동기화"
+- [x] **블로그 키 → GitHub Secrets**(S-018) — ① Notion: notion.so/profile/integrations에서 내부 통합(콘텐츠 읽기만) → "bettercurl 블로그" 페이지 ⋯ → 연결에 추가(이 페이지·DB만) ② Cloudflare: API 토큰 새로(권한 "Workers R2 Storage: Edit" 하나, 이 계정만) ③ GitHub 저장소 Settings → Secrets and variables → Actions: `NOTION_TOKEN`·`BLOG_R2_TOKEN`·`CLOUDFLARE_ACCOUNT_ID`. 자동 주기는 Variables에 `BLOG_SYNC` = `on`. [08-blog.md](08-blog.md) "자동 동기화" — 11/17 넣음, 수동 실행 성공(공개 글 0편, 시험 글 두 편 내림, 오류 0). `BLOG_SYNC` = `on`
 - [ ] **첫 글** — Notion "🧪 핸드오프 실험"을 "블로그 글" DB로 옮기거나 복제(slug `handoff-experiment`, 요약, 발행일, 공개 체크). 사진은 장당 5MB 이하(Notion 무료)
 - [ ] **블로그 운영 시작**(키·첫 글 뒤) — 배포 → Actions blog-sync 수동 실행(로그에서 동기화·SEO 점검 확인) → `BLOG_SYNC=on` → Search Console에 `/sitemap-blog.xml` 제출, 리치 결과 테스트(`BlogPosting`). [08-blog.md](08-blog.md) "운영 순서"·"완료 기준"
 - [ ] **Turnstile 키 발급**(선택) — 받으면 코드: 레터·챗 봇 검사, CSP에 `challenges.cloudflare.com`. cost-guard "다음 단계"
 
 ### C. 운영 배포와 배포 뒤 확인
+- [ ] **iPhone 실기기: 레터 입력** — 입력칸을 누르면 시트가 키보드 바로 위에 붙고 제목이 잘리지 않는다(11/21 수정, Chromium 흉내로만 확인)
+- [x] **배포** — 11/21 `2fd4bc24`(`main` 73b80ca: 시트·챗 배경 밀림, iPhone 키보드 위 시트, 히어로 셋째 줄 S-023). SEO 점검 오류 0, 경고 1. 비밀값 그대로, RAG 동기화 건너뜀. S-022(dev 디자인)는 빠짐
 - [x] **배포** — 11/10 `7474b086`(`main` 1f2ebc2: 블로그 글 단 왼쪽 기준선, 그림·북마크 변환). SEO 점검 오류 0
 - [x] **배포** — 11/10 `dabbc785`(`main` d5fc8e6까지: 8 블로그 코드 S-017~S-020·목록 숨김). SEO 점검 오류 0. 블로그 목록은 비어 있음("아직 글이 없어요") — 시험 글 두 편(`/ko/blog/steps-example/`, `/ko/blog/fixture-test/`)만 목록 숨김·noindex로 운영 R2에. 실제 글이 생기면 시험 글은 Notion 동기화가 index를 새로 쓰며 빠진다
 - [x] **배포** — 11/10 `e9f3ee09`(클라우드 세션, `main` f1d8fb0까지: S-014 workers.dev 301, JSON-LD·`llms.txt`, S-015 SEO 후속·3D 늦은 시작). 배포 스크립트의 SEO 점검 통과(오류 0, 경고 1 — 홈 description 길이). 비밀값 그대로, RAG 동기화 건너뜀
