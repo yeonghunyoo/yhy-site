@@ -53,19 +53,41 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
     // 키보드가 떠 있으면 남은 높이가 좁아 보이는 영역을 꽉 채우고, data-keyboard로 손잡이·부가 문구·safe-area 여백을 뺀다
     // 아래 여백 = 시트를 담은 고정 막의 실제 바닥 − 보이는 영역의 바닥. innerHeight로 짐작하면 iPhone 15 Pro Safari(11/21)처럼
     // 고정 막은 이미 키보드 위로 줄었는데 innerHeight는 그대로인 경우 키보드 높이만큼 한 번 더 올라가 떠 버린다
+    // iOS는 입력칸이 포커스된 채 시트가 움직이면(키보드가 오르내릴 때 여백·높이·안쪽 스크롤이 바뀜) 커서를 예전 자리에
+    // 그대로 그린다 — 커서가 입력 줄 아래로 내려가 보이고 누른 곳과 어긋났다(iPhone 15 Pro, 11/21). 움직임이 멈추면
+    // 선택 범위를 같은 값으로 다시 지정해 커서를 새 자리에 그리게 한다. 한글 조합 중에는 조합이 끊기므로 건드리지 않는다
+    let composing = false;
+    const onComposeStart = () => (composing = true);
+    const onComposeEnd = () => (composing = false);
+    let caretTimer = 0;
+    const redrawCaret = () => {
+      const el = document.activeElement;
+      if (composing || !panel?.contains(el)) return;
+      if (!(el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && el.type !== 'email'))) return;
+      const { selectionStart: s, selectionEnd: e, selectionDirection: d } = el;
+      if (s !== null && e !== null) el.setSelectionRange(s, e, d ?? undefined);
+    };
+
     const stopViewport = watchViewport(({ height, top, keyboard }) => {
       if (!panel) return;
       const floor = panel.parentElement?.getBoundingClientRect().bottom ?? window.innerHeight;
       panel.style.marginBottom = `${Math.max(0, Math.round(floor - height - top))}px`;
       panel.style.maxHeight = `${Math.round(keyboard ? height : height * 0.92)}px`;
       panel.toggleAttribute('data-keyboard', keyboard);
+      clearTimeout(caretTimer);
+      caretTimer = window.setTimeout(redrawCaret, 150);
     });
     document.addEventListener('keydown', onKey);
+    document.addEventListener('compositionstart', onComposeStart);
+    document.addEventListener('compositionend', onComposeEnd);
 
     return () => {
       unlock();
       stopViewport();
+      clearTimeout(caretTimer);
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('compositionstart', onComposeStart);
+      document.removeEventListener('compositionend', onComposeEnd);
       setDragY(0);
       previous?.focus?.({ preventScroll: true });
     };

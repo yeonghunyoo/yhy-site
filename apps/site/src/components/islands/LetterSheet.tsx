@@ -64,7 +64,10 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
   };
 
   const bodyLength = draft.body.trim().length;
-  const ready = bodyLength >= LETTER_LIMITS.bodyMin && EMAIL_RE.test(draft.replyTo.trim());
+  // 길이 상한은 입력칸 maxLength가 아니라 여기서 본다(서버도 다시 본다) — iOS Safari는 maxLength가 한글 조합과 부딪쳐
+  // 지우기가 안 되는 일이 있다(11/21)
+  const tooLong = draft.body.length > LETTER_LIMITS.bodyMax || draft.subject.length > LETTER_LIMITS.subjectMax;
+  const ready = bodyLength >= LETTER_LIMITS.bodyMin && !tooLong && EMAIL_RE.test(draft.replyTo.trim());
 
   async function submit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -125,7 +128,6 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
           <input
             id="letter-subject"
             className="field mt-2"
-            maxLength={LETTER_LIMITS.subjectMax}
             value={draft.subject}
             onChange={(e) => update({ subject: e.target.value })}
           />
@@ -139,7 +141,6 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
             id="letter-body"
             data-autofocus
             className="field mt-2 min-h-40 resize-y"
-            maxLength={LETTER_LIMITS.bodyMax}
             placeholder={dict.letter.bodyPlaceholder}
             value={draft.body}
             onChange={(e) => update({ body: e.target.value })}
@@ -147,7 +148,9 @@ export function LetterSheet({ dict, locale, open, onClose, onSent }: Props) {
           />
           <p id="letter-count" className="mt-1 flex justify-between text-xs text-muted" aria-live="polite">
             <span>{bodyLength > 0 && bodyLength < LETTER_LIMITS.bodyMin ? dict.letter.minHint : ''}</span>
-            <span>{dict.letter.counter.replace('{n}', draft.body.length.toLocaleString())}</span>
+            <span className={draft.body.length > LETTER_LIMITS.bodyMax ? 'text-danger' : undefined}>
+              {dict.letter.counter.replace('{n}', draft.body.length.toLocaleString())}
+            </span>
           </p>
         </div>
         <div>
