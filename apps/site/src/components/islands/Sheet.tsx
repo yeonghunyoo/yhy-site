@@ -51,9 +51,12 @@ export function Sheet({ open, onClose, title, closeLabel, children, footer }: Sh
     // 키보드가 올라오면 보이는 영역에 맞춰 시트를 올리고 높이를 줄인다. 프레임마다 DOM에 바로 쓴다(viewport.ts) —
     // 상태로 받으면 늦게 그려져 키보드를 내릴 때마다 시트가 출렁인다.
     // 키보드가 떠 있으면 남은 높이가 좁아 보이는 영역을 꽉 채우고, data-keyboard로 손잡이·부가 문구·safe-area 여백을 뺀다
+    // 아래 여백 = 시트를 담은 고정 막의 실제 바닥 − 보이는 영역의 바닥. innerHeight로 짐작하면 iPhone 15 Pro Safari(11/21)처럼
+    // 고정 막은 이미 키보드 위로 줄었는데 innerHeight는 그대로인 경우 키보드 높이만큼 한 번 더 올라가 떠 버린다
     const stopViewport = watchViewport(({ height, top, keyboard }) => {
       if (!panel) return;
-      panel.style.marginBottom = `${Math.max(0, window.innerHeight - height - top)}px`;
+      const floor = panel.parentElement?.getBoundingClientRect().bottom ?? window.innerHeight;
+      panel.style.marginBottom = `${Math.max(0, Math.round(floor - height - top))}px`;
       panel.style.maxHeight = `${Math.round(keyboard ? height : height * 0.92)}px`;
       panel.toggleAttribute('data-keyboard', keyboard);
     });

@@ -49,6 +49,7 @@
 | --- | --- | --- |
 | Safari 16.x는 Popover API가 없어 모바일 메뉴 패널이 페이지 위에 늘 떠 있고 버튼이 동작하지 않았다 | iOS 16 | `src/styles/global.css`(`@supports not selector(:popover-open)`이면 `[popover]` 숨김), `src/components/ui/Header.astro`(`.popover-open` 클래스로 열고 바깥 탭·Esc·링크로 닫기, `aria-expanded`) |
 | 시트(로그인·레터·계정)가 배경 잠금을 `html{overflow:hidden}`으로만 해 iOS에서 배경이 밀려 스크롤됐다. 챗과 시트가 겹치면 먼저 닫힌 쪽이 잠금을 풀어 버릴 수 있었다 | iOS | 공용 `src/components/islands/scroll-lock.ts`(body `position:fixed` + 위치 복원, 잠근 횟수 계산) — `Sheet.tsx`, `ChatDock.tsx`가 함께 쓴다 |
+| (11/21) 레터·로그인 시트에서 입력칸을 누르면 시트가 키보드 높이만큼 더 올라가 위가 화면 밖으로 잘리고, 스크롤로도 내려오지 않았다 — 아래 여백을 `innerHeight − 보이는 영역`으로 짐작했는데, 고정 막은 이미 키보드 위로 줄었고 `innerHeight`는 그대로였다 | iPhone 15 Pro Safari(운영, 사용자 제보) | `Sheet.tsx` — 아래 여백을 시트를 담은 고정 막의 실제 바닥(`getBoundingClientRect().bottom`) − 보이는 영역의 바닥으로 잰다. 확인(Chromium 흉내): 예전 iOS(밀림 0·200px), 고정 막만 줄어든 경우, Android 모두 시트 바닥 = 키보드 윗선. 실기기 재확인 필요 |
 | (11/17) 레터·로그인 시트, 챗, 갤러리를 열면 배경이 오른쪽으로 살짝(약 7px) 밀렸다 — 잠금의 `overflow:hidden`이 자리를 차지하는 스크롤바를 없애 화면이 넓어졌다 | Windows, macOS "스크롤 막대 항상 보기" | `scroll-lock.ts` — 스크롤바가 있던 화면이면 `overflow: hidden scroll`로 빈 스크롤바 칸을 남긴다(body가 고정이라 스크롤은 안 된다). 오버레이 스크롤바(모바일·macOS 기본)는 그대로 `hidden`. `html{scrollbar-gutter:stable}`은 오른쪽 15px가 배경막에 안 덮여 쓰지 않았다 |
 | Esc 한 번에 위의 시트와 아래 챗이 같이 닫혔다 | 전체 | `ChatDock.tsx` — `aria-modal` 시트가 있으면 챗은 Esc를 무시 |
 | 배포 뒤 예전 HTML이 사라진 `/_astro/*.js`를 불러 로그인·레터·챗 버튼이 먹지 않았다(오래 열어 둔 탭, Safari의 bfcache·탭 복원에서 흔하다) | 전체, 특히 iOS | `src/directives/demand.ts` — `astro:hydration-error`가 모듈 로드 실패면 1분에 한 번만 새로고침하고, 누르던 동작(로그인·레터·챗)을 이어서 연다 |
